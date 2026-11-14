@@ -1,0 +1,703 @@
+<title>A Marswalk with Baroler</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a story told as a timeline. Three parts (evening, walk, after), each a numbered list of scenes with "Sees" and "Does", and screen sketches placed at the moments they appear. */
+:root {
+  --bg: #F4F6F7;
+  --surface: #FFFFFF;
+  --surface-2: #EBF0F2;
+  --fg: #13202A;
+  --muted: #566672;
+  --line: #D6DFE4;
+  --accent: #0C6A70;
+  --accent-soft: #DCEEEF;
+  --on-accent: #FFFFFF;
+  --rust: #B0462A;
+  --rust-soft: #F5E3DC;
+  --crit: #B42318;
+  --crit-soft: #FCE6E3;
+  --warn: #8F5600;
+  --warn-soft: #FBEFD7;
+  --ok: #1D7539;
+  --ok-soft: #E0F2E6;
+  --map-bg: #E8E0D4;
+  --map-line: #CABDAA;
+  --map-channel: #D6C8B4;
+  --sand: #F0DFAE;
+  --shadow-zone: #B9C1C8;
+  --photo-sky: #EAD8C4;
+  --photo-ground: #C9A27D;
+  --rock: #8C6B55;
+  --rock-spot: #3D2D24;
+  --hud-bg: #0A181D;
+  --hud-fg: #CDF3EF;
+  --hud-accent: #5ADFD2;
+  --hud-warn: #FFC15A;
+  --hud-dim: #6C8B8F;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1216; --surface: #131B21; --surface-2: #1A242B; --fg: #E2E8EC; --muted: #97A5AF; --line: #25313A;
+    --accent: #55C2C5; --accent-soft: #11343A; --on-accent: #0C1216; --rust: #E4835F; --rust-soft: #38211A;
+    --crit: #F2877C; --crit-soft: #3A1714; --warn: #E8B458; --warn-soft: #342713; --ok: #6ECD8C; --ok-soft: #13301D;
+    --map-bg: #28231E; --map-line: #463D34; --map-channel: #362E26; --sand: #55482A; --shadow-zone: #4E5961;
+    --photo-sky: #45372C; --photo-ground: #6B523F; --rock: #93735C; --rock-spot: #1E150F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1216; --surface: #131B21; --surface-2: #1A242B; --fg: #E2E8EC; --muted: #97A5AF; --line: #25313A;
+  --accent: #55C2C5; --accent-soft: #11343A; --on-accent: #0C1216; --rust: #E4835F; --rust-soft: #38211A;
+  --crit: #F2877C; --crit-soft: #3A1714; --warn: #E8B458; --warn-soft: #342713; --ok: #6ECD8C; --ok-soft: #13301D;
+  --map-bg: #28231E; --map-line: #463D34; --map-channel: #362E26; --sand: #55482A; --shadow-zone: #4E5961;
+  --photo-sky: #45372C; --photo-ground: #6B523F; --rock: #93735C; --rock-spot: #1E150F;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 44px 80px;
+}
+
+/* Header */
+.eyebrow { font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 14px; color: var(--rust); margin: 0 0 12px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(38px, 6vw, 58px); line-height: 1.02; margin: 0 0 18px; text-wrap: balance; }
+.lead { font-size: 19px; line-height: 1.55; max-width: 62ch; margin: 0 0 14px; }
+.small-note { font-size: 14px; color: var(--muted); max-width: 70ch; margin: 0; }
+
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 32px; line-height: 1.1; margin: 0 0 6px; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.2; margin: 0 0 8px; }
+p { margin: 0 0 14px; max-width: 68ch; }
+section { padding-top: 56px; scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 16px); }
+.kicker { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; margin: 0 0 16px; }
+
+/* Day at a glance */
+.glance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.glance a { display: block; padding: 14px 16px; text-decoration: none; color: var(--fg); border-left: 1px solid var(--line); min-width: 0; }
+.glance a:first-child { border-left: 0; }
+.glance a:hover { background: var(--surface-2); }
+.glance .when { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: block; }
+.glance .what { font-family: var(--font-display); font-size: 22px; font-weight: 600; display: block; line-height: 1.2; margin: 2px 0; }
+.glance .count { font-size: 13px; color: var(--muted); }
+
+/* Cast and screens */
+.cast { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.person { padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: start; }
+.badge { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 18px; background: var(--accent-soft); color: var(--accent); }
+.badge.earth { background: var(--rust-soft); color: var(--rust); }
+.person b { display: block; font-size: 16px; }
+.person span { font-size: 14.5px; color: var(--muted); }
+.screens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.screen-card { padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.screen-card .where { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+.screen-card h3 { margin: 0 0 4px; }
+.screen-card p { font-size: 14.5px; margin: 0; }
+
+/* Part header */
+.part-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 4px; }
+.part-tag { font-family: var(--font-mono); font-size: 13px; color: var(--on-accent); background: var(--accent); padding: 2px 9px; border-radius: 999px; }
+.new-tag { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rust); background: var(--rust-soft); padding: 2px 9px; border-radius: 999px; }
+
+/* Scenes */
+.scenes { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 0; }
+.scene { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; padding: 18px 0; border-top: 1px solid var(--line); }
+.scene:last-child { border-bottom: 1px solid var(--line); }
+.scene .meta { display: grid; gap: 2px; align-content: start; }
+.scene .num { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; color: var(--accent); }
+.scene .time { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg); margin-top: 6px; }
+.scene .place { font-size: 13px; color: var(--muted); }
+.scene h4 { font-family: var(--font-display); font-weight: 600; font-size: 21px; line-height: 1.25; margin: 0 0 8px; }
+.sd { display: grid; gap: 8px; margin: 0; }
+.sd div { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; }
+.sd dt { font-size: 11.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; padding-top: 3px; }
+.sd dt.sees { color: var(--accent); }
+.sd dt.does { color: var(--rust); }
+.sd dd { margin: 0; font-size: 15.5px; max-width: 62ch; }
+.quote { display: inline; font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+.quote.warn { background: var(--warn-soft); color: var(--warn); }
+.quote.crit { background: var(--crit-soft); color: var(--crit); }
+.quote.ok { background: var(--ok-soft); color: var(--ok); }
+
+/* Mock-ups */
+figure { margin: 22px 0 6px; }
+.mock { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; overflow-x: auto; }
+.mock svg { display: block; height: auto; margin: 0 auto; }
+.mock svg.wide { width: 100%; min-width: 620px; }
+.mock svg.tall { width: 100%; max-width: 340px; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; max-width: 70ch; }
+svg text { font-family: var(--font-body); }
+svg .mono { font-family: var(--font-mono); }
+svg .disp { font-family: var(--font-display); }
+
+/* Never list */
+.never { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.never li { padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font-size: 15px; }
+.never b { display: block; font-weight: 600; }
+.never span { color: var(--muted); font-size: 14.5px; }
+
+.oneline { margin-top: 18px; padding: 18px 20px; background: var(--accent-soft); border-radius: var(--radius); font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.3; }
+
+footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+footer p { max-width: none; margin: 0 0 4px; }
+
+@media (max-width: 720px) {
+  .screens, .cast, .never { grid-template-columns: minmax(0, 1fr); }
+  .scene { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .scene .meta { grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: 12px; }
+  .scene .num { grid-row: span 2; }
+  .scene .time { margin-top: 0; }
+  .lead { font-size: 17px; }
+  h2 { font-size: 28px; }
+  .glance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .glance a:nth-child(3) { border-left: 0; }
+  .glance a:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 520px) {
+  .glance { grid-template-columns: minmax(0, 1fr); }
+  .glance a { border-left: 0; border-top: 1px solid var(--line); }
+  .glance a:first-child { border-top: 0; }
+}
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">Baroler · User scenario</p>
+    <h1>A Marswalk with Baroler</h1>
+    <p class="lead">This is the story of two walks on Mars, told from the user's side. It shows what the crew sees and does with the app, from the first screen to the last. It does not explain how the app works inside.</p>
+    <p class="small-note">The people are made up. Everything they see comes from the built app: the screens, the messages in grey boxes (the app's own words), and the times and numbers from a demo run of each walk. Parts 1 to 3 follow a walk to the Bright Angel area of Jezero crater. Part 4 follows the same crew a week later, on the second walk: collecting the sample tubes at Three Forks. Times are Mars local time.</p>
+    <nav class="glance" aria-label="The story at a glance">
+      <a href="#part-1"><span class="when">Sol 112 · evening</span><span class="what">Plan the walk</span><span class="count">7 scenes · habitat</span></a>
+      <a href="#part-2"><span class="when">Sol 113 · morning</span><span class="what">Do the walk</span><span class="count">6 scenes · outside</span></a>
+      <a href="#part-3"><span class="when">Sol 113 · afternoon</span><span class="what">Look back</span><span class="count">3 scenes · habitat</span></a>
+      <a href="#part-4"><span class="when">Sol 120–121</span><span class="what">Collect the tubes</span><span class="count">8 scenes · Three Forks</span></a>
+    </nav>
+  </header>
+
+  <section id="people">
+    <h2>Who uses Baroler</h2>
+    <p class="kicker">The people in this story</p>
+    <div class="cast">
+      <div class="person"><div class="badge" aria-hidden="true">N</div><div><b>Nora, mission geologist</b><span>Chooses the science and does most of the work at each stop.</span></div></div>
+      <div class="person"><div class="badge" aria-hidden="true">K</div><div><b>Kawa, walk leader</b><span>Owns safety: the route, the time, and the walk back.</span></div></div>
+      <div class="person"><div class="badge" aria-hidden="true">S</div><div><b>Sami, habitat support</b><span>Stays inside, helps with the plan, and reads the walk report afterwards.</span></div></div>
+      <div class="person"><div class="badge earth" aria-hidden="true">E</div><div><b>Science team on Earth</b><span>Gets the walk report after the walk. Messages take minutes to arrive.</span></div></div>
+    </div>
+    <div class="screens">
+      <div class="screen-card"><p class="where">Habitat wall screen</p><h3>Plan</h3><p>A big map for planning together the evening before.</p></div>
+      <div class="screen-card"><p class="where">Tablet on the suit arm</p><h3>Walk</h3><p>The map, the next stop, photos, and the task list.</p></div>
+      <div class="screen-card"><p class="where">Helmet visor</p><h3>HUD</h3><p>Only the essentials, so eyes stay on the ground.</p></div>
+    </div>
+    <p class="small-note" style="margin-top: 10px">In the app these are the <em>Plan</em> tab, the <em>Walk (tablet)</em> tab, and the <em>Helmet view</em> switch inside the Walk tab.</p>
+  </section>
+
+  <!-- PART 1 -->
+  <section id="part-1">
+    <div class="part-head"><span class="part-tag">Part 1</span><h2>The evening before: plan the walk</h2></div>
+    <p class="kicker">Sol 112 · inside the habitat · Plan screen</p>
+    <ol class="scenes">
+      <li class="scene">
+        <div class="meta"><span class="num">01</span><span class="time">19:30</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Open Baroler</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The whole planet, then the map flies down to Jezero crater and the Bright Angel area. A menu at the top says <span class="quote">Zone Z2 · Bright Angel</span>. The side panel says <span class="quote">Plan tomorrow's walk. Everything on this screen works without internet.</span></dd></div>
+            <div><dt class="does">Does</dt><dd>Nora opens Baroler on the habitat wall screen. Kawa joins her.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">02</span><span class="time">19:33</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Read the science goal</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>A goal card: <span class="quote">Study the spotted rocks at Cheyava Falls</span>, with the question <span class="quote">Do the small dark spots in the Cheyava Falls rock hold signs of ancient life?</span> and why people are needed: a geologist can look at the spots from many angles, compare nearby rocks, and choose the best sample.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora reads it out. They agree the Cheyava Falls rock is the heart of tomorrow's walk.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">03</span><span class="time">19:40</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Look at the ground in layers</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>A sharp photo map from orbit. Switches turn on more layers: <span class="quote">Steep ground</span> (yellow for 15–25°, take care; red for over 25°, no-go), <span class="quote">Rock types</span> with named colours, <span class="quote">Rocky or dusty ground</span> from night-time heat, and the <span class="quote">Perseverance path</span>. <span class="quote">Compare side by side</span> puts the photo on the left and the layers on the right, with a handle to slide between them.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora and Kawa slide between the layers. They see red no-go patches on the steep slopes, and a band of sand ripples (the rock map calls it the eolian bedform unit) close to the habitat.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">04</span><span class="time">19:55</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Look at the stops</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>Four stops are already in the plan, each where Perseverance once stood: <span class="quote">Rover stop, sol 1159</span>, <span class="quote">Cheyava Falls rock</span>, <span class="quote">Rover stop, sol 1231</span> and <span class="quote">Rover stop, sol 1254</span>. Each stop card shows the rover's photos (<span class="quote">What you will see</span>), the rock type, the ground slope, the tasks and the minutes planned there. <span class="quote">+ Add stop</span> lets them click the map to add a new stop, and arrows change the order.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora opens the Cheyava Falls card: Upper etched unit, 40 minutes, four tasks (<span class="quote">Wide photo</span>, <span class="quote">Close-up photos of the spots</span>, <span class="quote">Voice note</span>, <span class="quote">Take sample</span>). She adds a crew note to it: <span class="quote">Bring the close-up camera</span>.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">05</span><span class="time">20:05</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Find the safest route</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>After a tap on <span class="quote">Find safest route</span>, a line joins the stops: green is easy, yellow means take care, and it is dashed where there is no radio. It goes around the red no-go ground. The summary shows <span class="quote">3.20 km</span> distance, <span class="quote">3 h 41 min</span> with stops, <span class="quote">2 h 19 min</span> in reserve, and the steepest part, <span class="quote warn">21°</span>. Below are a height profile and a list of legs, such as <span class="quote warn">Rover stop, sol 1231 → Rover stop, sol 1254 · 359 m · 19 min · up to 21°</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>Kawa looks for the hardest part. The 21° slope on the way to the last stop is yellow, not red, so they keep the route and plan to go slowly there.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+
+    <figure>
+      <div class="mock">
+        <svg class="wide" viewBox="0 0 760 420" role="img" aria-labelledby="mA-t mA-d">
+          <title id="mA-t">Sketch of the Plan screen</title>
+          <desc id="mA-d">Left panel with the walk summary (3.20 km, 3 hours 41 minutes, 2 hours 19 minutes reserve, steepest 21 degrees) and the four stops. Right side is a map with the habitat, a route line through four numbered stops, a red no-go area by the channel wall, sand ripples near the habitat, a grey area with no radio near stop 1, and yellow take-care parts near the last stop.</desc>
+          <rect x="1" y="1" width="758" height="418" rx="14" style="fill: var(--surface); stroke: var(--line)"/>
+          <text x="20" y="27" font-size="14" font-weight="600" class="disp" style="fill: var(--fg)">Baroler · Plan</text>
+          <text x="740" y="27" font-size="12" text-anchor="end" class="mono" style="fill: var(--muted)">Sol 112 · Bright Angel walk</text>
+          <line x1="1" y1="40" x2="759" y2="40" style="stroke: var(--line)"/>
+
+          <!-- left panel -->
+          <text x="20" y="66" font-size="11" font-weight="600" letter-spacing="1" style="fill: var(--muted)">WALK SUMMARY</text>
+          <g font-size="13" style="fill: var(--fg)">
+            <text x="20" y="90">Distance</text><text x="228" y="90" text-anchor="end" class="mono">3.20 km</text>
+            <text x="20" y="112">Time with stops</text><text x="228" y="112" text-anchor="end" class="mono">3 h 41 min</text>
+            <text x="20" y="134">Reserve</text><text x="228" y="134" text-anchor="end" class="mono">2 h 19 min</text>
+            <text x="20" y="156">Steepest part</text><text x="228" y="156" text-anchor="end" class="mono">21°</text>
+          </g>
+          <text x="20" y="190" font-size="11" font-weight="600" letter-spacing="1" style="fill: var(--muted)">STOPS</text>
+          <g font-size="13" style="fill: var(--fg)">
+            <circle cx="30" cy="210" r="9" style="fill: var(--accent)"/><text x="30" y="214" font-size="11" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">1</text><text x="48" y="214">Rover stop, sol 1159</text>
+            <circle cx="30" cy="234" r="9" style="fill: var(--accent)"/><text x="30" y="238" font-size="11" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">2</text><text x="48" y="238">Cheyava Falls rock</text>
+            <circle cx="30" cy="258" r="9" style="fill: var(--accent)"/><text x="30" y="262" font-size="11" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">3</text><text x="48" y="262">Rover stop, sol 1231</text>
+            <circle cx="30" cy="282" r="9" style="fill: var(--accent)"/><text x="30" y="286" font-size="11" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">4</text><text x="48" y="286">Rover stop, sol 1254</text>
+          </g>
+          <rect x="20" y="304" width="208" height="26" rx="13" style="fill: var(--warn-soft)"/>
+          <text x="124" y="321" font-size="12" font-weight="600" text-anchor="middle" style="fill: var(--warn)">344 m take care · up to 21°</text>
+          <rect x="20" y="352" width="208" height="38" rx="8" style="fill: var(--accent)"/>
+          <text x="124" y="376" font-size="14" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">Approve plan</text>
+
+          <!-- map -->
+          <rect x="248" y="52" width="498" height="354" rx="8" style="fill: var(--map-bg)"/>
+          <g fill="none" style="stroke: var(--map-line)" stroke-width="1.2">
+            <path d="M248 376 C 350 340, 460 380, 746 334"/>
+            <path d="M248 300 C 340 262, 470 300, 746 252"/>
+            <path d="M248 226 C 330 196, 450 214, 746 176"/>
+          </g>
+          <path d="M248 118 C 380 92, 520 132, 746 72" fill="none" stroke-width="30" stroke-linecap="butt" style="stroke: var(--map-channel)"/>
+          <text x="262" y="96" font-size="11" class="mono" style="fill: var(--muted)">Neretva Vallis channel</text>
+          <polygon points="420,124 472,112 522,134 494,166 442,162" style="fill: var(--crit-soft); stroke: var(--crit)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="470" y="148" font-size="11" font-weight="600" text-anchor="middle" style="fill: var(--crit)">No-go &gt; 25°</text>
+          <ellipse cx="404" cy="252" rx="46" ry="24" style="fill: var(--shadow-zone)" opacity="0.55"/>
+          <text x="378" y="243" font-size="10.5" text-anchor="middle" style="fill: var(--fg)">no radio</text>
+          <ellipse cx="338" cy="330" rx="24" ry="11" style="fill: var(--sand); stroke: var(--warn)" stroke-dasharray="2 3"/>
+          <text x="372" y="350" font-size="10" style="fill: var(--muted)">sand ripples</text>
+
+          <g fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="300,360 336,326 380,270" style="stroke: var(--ok)"/>
+            <polyline points="380,270 432,240 500,200" style="stroke: var(--ok)"/>
+            <polyline points="500,200 560,172 620,152" style="stroke: var(--ok)"/>
+            <polyline points="620,152 662,212 650,280" style="stroke: var(--warn)"/>
+            <polyline points="650,280 560,332" style="stroke: var(--warn)"/>
+            <polyline points="560,332 450,360 316,362" style="stroke: var(--ok)"/>
+          </g>
+
+          <rect x="288" y="350" width="24" height="24" rx="4" style="fill: var(--fg)"/>
+          <text x="300" y="367" font-size="12" font-weight="700" text-anchor="middle" style="fill: var(--surface)">H</text>
+          <text x="300" y="392" font-size="11" text-anchor="middle" style="fill: var(--fg)">Habitat</text>
+
+          <g font-size="12" font-weight="700" text-anchor="middle">
+            <circle cx="380" cy="270" r="12" style="fill: var(--accent); stroke: var(--surface)" stroke-width="2"/><text x="380" y="274" style="fill: var(--on-accent)">1</text>
+            <circle cx="500" cy="200" r="12" style="fill: var(--accent); stroke: var(--surface)" stroke-width="2"/><text x="500" y="204" style="fill: var(--on-accent)">2</text>
+            <circle cx="620" cy="152" r="12" style="fill: var(--accent); stroke: var(--surface)" stroke-width="2"/><text x="620" y="156" style="fill: var(--on-accent)">3</text>
+            <circle cx="650" cy="280" r="12" style="fill: var(--accent); stroke: var(--surface)" stroke-width="2"/><text x="650" y="284" style="fill: var(--on-accent)">4</text>
+          </g>
+
+          <g font-size="10.5" style="fill: var(--fg)">
+            <line x1="500" y1="390" x2="520" y2="390" stroke-width="4" style="stroke: var(--ok)"/><text x="525" y="394">Easy</text>
+            <line x1="560" y1="390" x2="580" y2="390" stroke-width="4" style="stroke: var(--warn)"/><text x="585" y="394">Care</text>
+            <rect x="620" y="384" width="14" height="12" style="fill: var(--crit-soft); stroke: var(--crit)"/><text x="639" y="394">No-go</text>
+            <rect x="684" y="384" width="14" height="12" style="fill: var(--shadow-zone)"/><text x="703" y="394">No radio</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Sketch of the Plan screen after scene 5, with the numbers from the app. The route goes around the red no-go area by the channel wall; the "Care" colour marks the 15–25° parts near the last stop.</figcaption>
+    </figure>
+
+    <ol class="scenes" start="6">
+      <li class="scene">
+        <div class="meta"><span class="num">06</span><span class="time">20:20</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Preview the walk</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>A <span class="quote">Walk-through</span> flies a drone-style camera along the route. The height profile shows where it is, and at each stop it pauses on the rover's photos.</dd></div>
+            <div><dt class="does">Does</dt><dd>They watch it twice and note where the slope gets steep near the end.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">07</span><span class="time">20:35</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Safety check and approval</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>A checklist with five green items and two amber ones. Time: <span class="quote">221 min planned. 139 min (39%) left in reserve; the rule is at least 30%.</span> Amber, the steep part: <span class="quote warn">About 344 m of the route is between 15 and 25 deg: take care there.</span> Amber, the radio: <span class="quote warn">2 short stretches with no radio, the longest about 4 min (limit 15 min). Stay together there.</span> Daylight from 07:10 to 18:03, sun activity quiet, and air between −85 and −40 °C in walk hours. The turn-back times: <span class="quote">Planned return 12:26. Latest return that keeps the reserve: 12:57.</span></dd></div>
+            <div><dt class="does">Does</dt><dd>They keep the start time of 08:45 and press <span class="quote">Approve plan</span>. The app answers <span class="quote ok">Plan approved at 20:35. Copied to tablets and helmets when they dock.</span> Kawa also saves the plan file.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- PART 2 -->
+  <section id="part-2">
+    <div class="part-head"><span class="part-tag">Part 2</span><h2>Walk day: do the walk</h2></div>
+    <p class="kicker">Sol 113 · outside · Walk tablet and HUD</p>
+    <ol class="scenes" start="8">
+      <li class="scene">
+        <div class="meta"><span class="num">08</span><span class="time">08:45</span><span class="place">Airlock</span></div>
+        <div>
+          <h4>Step outside</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The tablet: <span class="quote">08:45 local Mars time · On time · Back by 12:26</span>, and the next stop: <span class="quote">Rover stop, sol 1159 · 1.21 km · about 30 min · E</span>. The helmet shows the stop, <span class="quote">1.2 km</span>, <span class="quote">TIME LEFT 6:00</span>, a radio sign, and one line: <span class="quote warn">Sand ripples ahead · keep to firm ground</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>They leave the airlock and head east, keeping to firm ground around the sand ripples.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">09</span><span class="time">09:10</span><span class="place">Leg 1</span></div>
+        <div>
+          <h4>A radio gap and a steep bit</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>Just before the first stop the tablet warns <span class="quote">Radio drops ahead for about 4 min.</span> A minute later: <span class="quote warn">No radio to the habitat now. Stay together.</span> and <span class="quote warn">Steeper ground ahead (up to 20°). Slow down.</span></dd></div>
+            <div><dt class="does">Does</dt><dd>They stay side by side and slow down. They reach the first stop at 09:15, right on time: <span class="quote ok">You have arrived at Rover stop, sol 1159.</span> Leaving it, they cross a second short gap, and the tablet counts down: <span class="quote">Contact back in about 3 min.</span></dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">10</span><span class="time">10:00</span><span class="place">Stop 2</span></div>
+        <div>
+          <h4>Arrive at the Cheyava Falls rock</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd><span class="quote ok">You have arrived at Cheyava Falls rock.</span> The stop timer starts at 0 of 40 minutes. The crew note <span class="quote">Bring the close-up camera</span> is at the top, then the rover's photos of this spot and the task list. Below are three buttons: <span class="quote">Stay 10 more min</span>, <span class="quote">Leave now</span> and <span class="quote">Skip next stop</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora holds the tablet up and sees the same rock in front of her. She ticks the tasks as she works. She types <span class="quote">Dark spots also on the next boulder</span> and taps <span class="quote">Pin note</span>, which pins it to this spot on the map. Kawa spots another interesting rock a few steps away and taps <span class="quote">Mark for next walk</span>. It pins <span class="quote">Look at next time</span> where they stand.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+
+    <figure>
+      <div class="mock">
+        <svg class="tall" viewBox="0 0 340 540" role="img" aria-labelledby="mB-t mB-d">
+          <title id="mB-t">Sketch of the Walk tablet at stop 2</title>
+          <desc id="mB-d">The tablet says You have arrived at stop 2, Cheyava Falls rock. It shows a rover photo of a reddish rock with dark spots, a stop timer at 32 of 40 minutes, the four tasks with two done, and buttons to stay 10 more minutes or leave now.</desc>
+          <rect x="1" y="1" width="338" height="538" rx="22" style="fill: var(--surface); stroke: var(--line)" stroke-width="2"/>
+          <text x="22" y="38" font-size="11" class="mono" style="fill: var(--muted)">STOP 2 OF 4</text>
+          <text x="22" y="64" font-size="22" font-weight="700" class="disp" style="fill: var(--fg)">Cheyava Falls rock</text>
+          <rect x="22" y="76" width="122" height="22" rx="11" style="fill: var(--ok-soft)"/>
+          <text x="83" y="91" font-size="11.5" font-weight="600" text-anchor="middle" style="fill: var(--ok)">You have arrived</text>
+
+          <rect x="22" y="110" width="296" height="176" rx="8" style="fill: var(--photo-sky)"/>
+          <path d="M22 210 C 90 196, 200 214, 318 200 L 318 278 Q 318 286 310 286 L 30 286 Q 22 286 22 278 Z" style="fill: var(--photo-ground)"/>
+          <ellipse cx="170" cy="222" rx="88" ry="40" style="fill: var(--rock)"/>
+          <g style="fill: var(--rock-spot)">
+            <circle cx="132" cy="214" r="4"/><circle cx="150" cy="228" r="3"/><circle cx="170" cy="210" r="5"/>
+            <circle cx="190" cy="232" r="3.5"/><circle cx="208" cy="216" r="4"/><circle cx="226" cy="230" r="3"/>
+            <circle cx="116" cy="232" r="3"/><circle cx="182" cy="244" r="2.5"/>
+          </g>
+          <rect x="30" y="118" width="134" height="20" rx="4" style="fill: var(--surface)" opacity="0.9"/>
+          <text x="38" y="132" font-size="11" font-weight="600" style="fill: var(--fg)">What you will see</text>
+          <text x="22" y="304" font-size="10.5" class="mono" style="fill: var(--muted)">Perseverance photo · NASA/JPL-Caltech</text>
+
+          <text x="22" y="334" font-size="12" style="fill: var(--muted)">Time here</text>
+          <text x="318" y="334" font-size="12" text-anchor="end" class="mono" style="fill: var(--fg)">32 / 40 min</text>
+          <rect x="22" y="342" width="296" height="6" rx="3" style="fill: var(--surface-2)"/>
+          <rect x="22" y="342" width="237" height="6" rx="3" style="fill: var(--accent)"/>
+
+          <g font-size="13.5" style="fill: var(--fg)">
+            <rect x="22" y="368" width="16" height="16" rx="4" style="fill: var(--accent)"/><path d="M26 376 l3 3 l6 -7" fill="none" stroke-width="2" style="stroke: var(--on-accent)"/><text x="48" y="381">Wide photo</text>
+            <rect x="22" y="394" width="16" height="16" rx="4" style="fill: var(--accent)"/><path d="M26 402 l3 3 l6 -7" fill="none" stroke-width="2" style="stroke: var(--on-accent)"/><text x="48" y="407">Close-up photos of the spots</text>
+            <rect x="22" y="420" width="16" height="16" rx="4" fill="none" stroke-width="1.5" style="stroke: var(--muted)"/><text x="48" y="433">Voice note</text>
+            <rect x="22" y="446" width="16" height="16" rx="4" fill="none" stroke-width="1.5" style="stroke: var(--muted)"/><text x="48" y="459">Take sample</text>
+          </g>
+
+          <rect x="22" y="484" width="140" height="38" rx="8" fill="none" stroke-width="1.5" style="stroke: var(--accent)"/>
+          <text x="92" y="508" font-size="13.5" font-weight="600" text-anchor="middle" style="fill: var(--accent)">Stay 10 more min</text>
+          <rect x="178" y="484" width="140" height="38" rx="8" style="fill: var(--accent)"/>
+          <text x="248" y="508" font-size="13.5" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">Leave now</text>
+        </svg>
+      </div>
+      <figcaption>Sketch of the Walk tablet in scene 10. The rover photo helps the crew know they are at the right rock.</figcaption>
+    </figure>
+
+    <ol class="scenes" start="11">
+      <li class="scene">
+        <div class="meta"><span class="num">11</span><span class="time">10:56</span><span class="place">Stop 2</span></div>
+        <div>
+          <h4>Running late</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>They pressed <span class="quote">Stay 10 more min</span> four times, because the spots are worth it. The status went from <span class="quote">On time</span> to <span class="quote">10 min behind plan</span>, then <span class="quote">30 min behind plan</span>. Now it turns amber: <span class="quote warn">Running late: back at 13:06, but the reserve rule needs you back by 12:57. Skip the next stop or leave sooner.</span> The helmet says <span class="quote warn">Running late · reserve at risk</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>Kawa taps <span class="quote">Skip next stop</span>. The route redraws from where they stand, straight to the last stop, and the return time drops to 12:36. They finish the sample and leave the rock at 11:20.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+
+    <figure>
+      <div class="mock">
+        <svg class="wide" viewBox="0 0 720 250" role="img" aria-labelledby="mC-t mC-d">
+          <title id="mC-t">Sketch of the helmet display</title>
+          <desc id="mC-d">Dark visor while the crew is at stop 2, the Cheyava Falls rock. It shows the stop timer at 55 of 80 minutes, time left of 3 hours 49 minutes, a radio indicator, and one amber warning: running late, reserve at risk.</desc>
+          <rect x="1" y="1" width="718" height="248" rx="60" style="fill: var(--hud-bg)"/>
+          <text x="70" y="62" font-size="13" letter-spacing="1.5" class="mono" style="fill: var(--hud-dim)">AT STOP 2 · CHEYAVA FALLS ROCK</text>
+          <text x="70" y="128" font-size="46" font-weight="700" class="disp" style="fill: var(--hud-fg)">55 / 80 min</text>
+          <text x="70" y="152" font-size="13" letter-spacing="1.5" class="mono" style="fill: var(--hud-dim)">AT THIS STOP</text>
+          <text x="650" y="62" font-size="13" letter-spacing="1.5" text-anchor="end" class="mono" style="fill: var(--hud-dim)">TIME LEFT</text>
+          <text x="650" y="104" font-size="36" font-weight="700" text-anchor="end" class="disp" style="fill: var(--hud-fg)">3:49</text>
+          <circle cx="586" cy="124" r="5" style="fill: var(--hud-accent)"/>
+          <text x="650" y="129" font-size="13" text-anchor="end" class="mono" style="fill: var(--hud-dim)">RADIO</text>
+          <rect x="190" y="176" width="340" height="38" rx="19" fill="none" stroke-width="2" style="stroke: var(--hud-warn)"/>
+          <text x="360" y="200" font-size="15" font-weight="600" text-anchor="middle" style="fill: var(--hud-warn)">Running late · reserve at risk</text>
+        </svg>
+      </div>
+      <figcaption>Sketch of the helmet display (HUD) in scene 11, just before Kawa skips stop 3. It shows only what the walker needs right now, with one warning at a time.</figcaption>
+    </figure>
+
+    <ol class="scenes" start="12">
+      <li class="scene">
+        <div class="meta"><span class="num">12</span><span class="time">11:45</span><span class="place">Leg to stop 4</span></div>
+        <div>
+          <h4>The steep part</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>On the way to the last stop the helmet shows <span class="quote warn">Steep ground ahead · 21°</span>, and the tablet <span class="quote warn">Steeper ground ahead (up to 21°). Slow down.</span> The status stays at <span class="quote">10 min behind plan</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>They slow down on the yellow part of the route and reach <span class="quote">Rover stop, sol 1254</span> at 11:50. Its tasks: <span class="quote">Photos up the slope</span> and <span class="quote">Collect a sample if safe</span>. The ground is firm, so they take the sample.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">13</span><span class="time">12:16</span><span class="place">Return</span></div>
+        <div>
+          <h4>Head home</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The next target is now <span class="quote">Habitat · 581 m · about 20 min</span>. The sand-ripple warning comes back near the habitat. On the tablet map, the white line of where they really walked sits on top of the coloured plan.</dd></div>
+            <div><dt class="does">Does</dt><dd>They walk back and reach the habitat at 12:36. The walk ends by itself and the tablet shows <span class="quote ok">Walk complete · Back at the habitat</span>: 3.12 km walked, 3 h 51 min outside, 3 stops visited, 1 skipped.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- PART 3 -->
+  <section id="part-3">
+    <div class="part-head"><span class="part-tag">Part 3</span><h2>After the walk: look back and share</h2></div>
+    <p class="kicker">Sol 113 · inside the habitat · Plan screen</p>
+    <ol class="scenes" start="14">
+      <li class="scene">
+        <div class="meta"><span class="num">14</span><span class="time">15:30</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Replay the walk</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd><span class="quote">Replay the walk</span> moves the crew marker along the white line of where they walked, over the coloured plan, with a time slider and speeds of ×60, ×120 and ×240. A list called <span class="quote">What happened</span> shows every moment, from <span class="quote">08:45 Left the habitat</span> to <span class="quote">10:56 Skipped Rover stop, sol 1231</span> and <span class="quote">12:36 Back at the habitat</span>. A <span class="quote">Plan and reality</span> table shows <span class="quote">80 of 40 min</span> at the rock and the last stop reached <span class="quote">+10 min</span> late.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora taps lines in the list to jump to those moments. Kawa uses the table to explain why stop 3 was skipped.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">15</span><span class="time">16:00</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Send the report to Earth</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd><span class="quote">Ready to send to Earth</span>: <span class="quote">3 stops visited, 1 skipped, 3.12 km walked</span>. Earth is 1.32 AU away today, so the report takes about 11 minutes to arrive, and a reply at least 22 minutes.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora saves the report, a one-page summary with the map, the stops, the notes with their positions, the timeline, the conditions and the safety check, plus its data file, ready for the next contact with Earth.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">16</span><span class="time">16:10</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Start the next plan</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>Back on the Plan screen, each stop shows how it went: <span class="quote">visited last walk</span>, or <span class="quote">skipped last walk</span> for stop 3. Under <span class="quote">Ideas for next walk</span>, Kawa's mark appears: <span class="quote">Look at next time</span>, with a button <span class="quote">Add as stop</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora taps <span class="quote">Add as stop</span>. The rock joins the plan for the next walk, next to skipped stop 3, and the story can start again at scene 1.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- PART 4 -->
+  <section id="part-4">
+    <div class="part-head"><span class="part-tag">Part 4</span><h2>A week later: collect the sample tubes</h2><span class="new-tag">New walk</span></div>
+    <p class="kicker">Sol 120–121 · Three Forks sample depot · Plan, Walk tablet and HUD</p>
+    <p>In 2022 and 2023, Perseverance left ten sealed sample tubes on the ground at Three Forks, on the flat crater floor near the old river delta. This walk brings them back to the habitat.</p>
+    <ol class="scenes" start="17">
+      <li class="scene">
+        <div class="meta"><span class="num">17</span><span class="time">19:30</span><span class="place">Habitat · Sol 120</span></div>
+        <div>
+          <h4>Switch to the other walk area</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>At the top of the map, a menu shows <span class="quote">Zone Z2 · Bright Angel</span>. It also offers <span class="quote">Zone Z1 · Three Forks</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora picks Three Forks. The map opens on the depot area, with the same layers and the same safety rules as before.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">18</span><span class="time">19:35</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Read the goal and the depot note</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The goal card: <span class="quote">Collect the sample tubes at Three Forks</span>. Ten numbered stops, from <span class="quote">Depot spot 1 (sol 652)</span> to <span class="quote">Depot spot 10 (sol 686)</span>, each with four tasks: find the tube, photograph it where it lies, check it is sealed and clean, pick it up. A yellow note says each stop is where the rover parked while it dropped a tube, so the tube should lie within a few metres. It links NASA's depot map.</dd></div>
+            <div><dt class="does">Does</dt><dd>Kawa opens the NASA depot map and compares it with the stops. Nora opens a few stops to see the rover's photos of the ground there.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">19</span><span class="time">19:50</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Put the stops in order and find the route</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The ten pins sit close together; zoomed out they show only their numbers, and zooming in shows each name. <span class="quote">Find safest route</span> shows <span class="quote">1.2 km · 2 h 10 min · 3 h 50 min reserve</span>. Every check is green: steepest ground 6°, radio contact the whole way, sunrise 06:44, sunset 18:41.</dd></div>
+            <div><dt class="does">Does</dt><dd>Kawa tries <span class="quote">Suggest order</span>. It saves only about 10 m, because the spots are so close, so they keep the order the tubes were dropped in. This walk is mostly stops, not walking. Both astronauts approve the plan.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">20</span><span class="time">08:45</span><span class="place">Airlock · Sol 121</span></div>
+        <div>
+          <h4>Step outside</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The helmet arrow points to the first depot spot, about 580 m away. The tablet shows <span class="quote">Tubes picked up 0 of 10</span>.</dd></div>
+            <div><dt class="does">Does</dt><dd>They walk west across the flat crater floor with an empty sample carrier.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">21</span><span class="time">09:00</span><span class="place">First depot spot</span></div>
+        <div>
+          <h4>The first tube</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The tablet says <span class="quote ok">You have arrived</span>, shows the rover's photo of this spot and starts a 10-minute stop timer.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora sees the tube a few steps away. She photographs it where it lies, checks the seal, and picks it up. The tablet now shows <span class="quote">Tubes picked up 1 of 10</span>. The next spot is only about 10 m away.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">22</span><span class="time">09:50</span><span class="place">Depot spot 6</span></div>
+        <div>
+          <h4>A tube that is not right at the stop</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>At this stop there is no tube at their feet. The stop timer keeps running. Kawa remembers the note from the evening before: the tube should be within a few metres.</dd></div>
+            <div><dt class="does">Does</dt><dd>They search in a small circle and find the tube 5 m to the north, with dust on top. Nora ticks the four tasks and pins a field note: <span class="quote">Tube 6 lies 5 m north of the stop</span>. The note goes into the report, so the next crew knows.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+
+    <figure>
+      <div class="mock">
+        <svg class="tall" viewBox="0 0 340 540" role="img" aria-labelledby="mD-t mD-d">
+          <title id="mD-t">Sketch of the Walk tablet at depot spot 6</title>
+          <desc id="mD-d">The tablet shows stop 6 of 10, Depot spot 6 (sol 670). Pills say You have arrived and Tubes picked up 5 of 10. A rover photo of the flat ground near the stop has a dashed circle marking the search area of a few metres. Below are the stop timer at 6 of 10 minutes, four tasks with two done, and buttons for a field note and leaving the stop.</desc>
+          <rect x="1" y="1" width="338" height="538" rx="22" style="fill: var(--surface); stroke: var(--line)" stroke-width="2"/>
+          <text x="22" y="38" font-size="11" class="mono" style="fill: var(--muted)">STOP 6 OF 10</text>
+          <text x="22" y="64" font-size="22" font-weight="700" class="disp" style="fill: var(--fg)">Depot spot 6 (sol 670)</text>
+          <rect x="22" y="76" width="122" height="22" rx="11" style="fill: var(--ok-soft)"/>
+          <text x="83" y="91" font-size="11.5" font-weight="600" text-anchor="middle" style="fill: var(--ok)">You have arrived</text>
+          <rect x="152" y="76" width="166" height="22" rx="11" style="fill: var(--rust-soft)"/>
+          <text x="235" y="91" font-size="11.5" font-weight="600" text-anchor="middle" style="fill: var(--rust)">Tubes picked up 5 of 10</text>
+
+          <rect x="22" y="110" width="296" height="176" rx="8" style="fill: var(--photo-sky)"/>
+          <path d="M22 186 C 100 180, 220 190, 318 182 L 318 278 Q 318 286 310 286 L 30 286 Q 22 286 22 278 Z" style="fill: var(--photo-ground)"/>
+          <g style="fill: var(--rock)">
+            <ellipse cx="64" cy="262" rx="9" ry="4"/><ellipse cx="282" cy="250" rx="7" ry="3"/><ellipse cx="236" cy="272" rx="5" ry="2.5"/><ellipse cx="98" cy="214" rx="5" ry="2.5"/>
+          </g>
+          <ellipse cx="170" cy="226" rx="78" ry="26" fill="none" stroke-width="2" stroke-dasharray="6 4" style="stroke: var(--accent)"/>
+          <circle cx="170" cy="226" r="5" style="fill: var(--accent)"/>
+          <rect x="92" y="258" width="156" height="18" rx="4" style="fill: var(--surface)" opacity="0.9"/>
+          <text x="170" y="271" font-size="10.5" font-weight="600" text-anchor="middle" style="fill: var(--accent)">Tube within a few metres</text>
+          <rect x="30" y="118" width="134" height="20" rx="4" style="fill: var(--surface)" opacity="0.9"/>
+          <text x="38" y="132" font-size="11" font-weight="600" style="fill: var(--fg)">What you will see</text>
+          <text x="22" y="304" font-size="10.5" class="mono" style="fill: var(--muted)">Perseverance photo · NASA/JPL-Caltech</text>
+
+          <text x="22" y="334" font-size="12" style="fill: var(--muted)">Time here</text>
+          <text x="318" y="334" font-size="12" text-anchor="end" class="mono" style="fill: var(--fg)">6 / 10 min</text>
+          <rect x="22" y="342" width="296" height="6" rx="3" style="fill: var(--surface-2)"/>
+          <rect x="22" y="342" width="178" height="6" rx="3" style="fill: var(--accent)"/>
+
+          <g font-size="13.5" style="fill: var(--fg)">
+            <rect x="22" y="368" width="16" height="16" rx="4" style="fill: var(--accent)"/><path d="M26 376 l3 3 l6 -7" fill="none" stroke-width="2" style="stroke: var(--on-accent)"/><text x="48" y="381">Find the tube</text>
+            <rect x="22" y="394" width="16" height="16" rx="4" style="fill: var(--accent)"/><path d="M26 402 l3 3 l6 -7" fill="none" stroke-width="2" style="stroke: var(--on-accent)"/><text x="48" y="407">Photograph it where it lies</text>
+            <rect x="22" y="420" width="16" height="16" rx="4" fill="none" stroke-width="1.5" style="stroke: var(--muted)"/><text x="48" y="433">Check it is sealed and clean</text>
+            <rect x="22" y="446" width="16" height="16" rx="4" fill="none" stroke-width="1.5" style="stroke: var(--muted)"/><text x="48" y="459">Pick up the tube</text>
+          </g>
+
+          <rect x="22" y="484" width="140" height="38" rx="8" fill="none" stroke-width="1.5" style="stroke: var(--accent)"/>
+          <text x="92" y="508" font-size="13.5" font-weight="600" text-anchor="middle" style="fill: var(--accent)">Field note</text>
+          <rect x="178" y="484" width="140" height="38" rx="8" style="fill: var(--accent)"/>
+          <text x="248" y="508" font-size="13.5" font-weight="600" text-anchor="middle" style="fill: var(--on-accent)">Leave now</text>
+        </svg>
+      </div>
+      <figcaption>Sketch of the Walk tablet in scene 22. The rover photo shows the ground near the stop. The tube itself should be within a few metres, so the crew may need to look around.</figcaption>
+    </figure>
+
+    <ol class="scenes" start="23">
+      <li class="scene">
+        <div class="meta"><span class="num">23</span><span class="time">10:55</span><span class="place">Return</span></div>
+        <div>
+          <h4>Home with all ten tubes</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>After the last depot spot, the helmet arrow points to <span class="quote">Habitat · 540 m</span>. When they reach the habitat, the walk ends by itself and the tablet shows the summary: <span class="quote ok">Tubes picked up 10 of 10</span>, 10 stops visited, none skipped.</dd></div>
+            <div><dt class="does">Does</dt><dd>They hand the tube carrier to Sami for safe storage.</dd></div>
+          </dl>
+        </div>
+      </li>
+      <li class="scene">
+        <div class="meta"><span class="num">24</span><span class="time">14:00</span><span class="place">Habitat</span></div>
+        <div>
+          <h4>Replay and report</h4>
+          <dl class="sd">
+            <div><dt class="sees">Sees</dt><dd>The replay shows the short walk and the time spent at each depot spot. The report lists every spot with <span class="quote">4 of 4 tasks</span>, and the field note about tube 6 with its exact position.</dd></div>
+            <div><dt class="does">Does</dt><dd>Nora taps <span class="quote">Send to Earth</span>. The app shows that the report will take about 11 minutes to reach Earth.</dd></div>
+          </dl>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="never">
+    <h2>What the crew never has to do</h2>
+    <p class="kicker">The point of Baroler, from the user's side</p>
+    <ul class="never">
+      <li><b>Wait for the internet</b><span>Everything for the walk is already on the tablet and helmet.</span></li>
+      <li><b>Read a technical map</b><span>Colors and short messages tell them what is safe.</span></li>
+      <li><b>Jump between websites</b><span>Photos, rock types and terrain are in one place.</span></li>
+      <li><b>Guess how steep it is</b><span>The route already avoids slopes that are too steep.</span></li>
+      <li><b>Lose track of time</b><span>The app always shows when to turn back.</span></li>
+      <li><b>Arrive somewhere unknown</b><span>A rover photo shows each stop before they get there.</span></li>
+      <li><b>Search blindly for a tube</b><span>Each depot stop brings them to within a few metres of it.</span></li>
+      <li><b>Count tubes by hand</b><span>The tablet counts each tube as they pick it up.</span></li>
+    </ul>
+    <p class="oneline">Plan together the night before, walk with clear guidance, and come home on time with good science.</p>
+  </section>
+
+  <footer>
+    <p>Baroler · user scenario · written 14 November 2026; Part 4 added and Parts 1 to 3 matched to the built app the same day.</p>
+    <p>All four parts follow the built app, and the quoted messages are its own words. Two things are still story only: in the prototype the walk runs as a time-lapse demo on one screen rather than on real suit tablets and helmets, and "Send to Earth" shows the delay and saves the files instead of sending them. The people are made up. Screen sketches are rough ideas, not exact copies of the app.</p>
+  </footer>
+</div>

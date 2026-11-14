@@ -1,0 +1,16 @@
+{
+  "width": 948,
+  "height": 681,
+  "west": 77.28999373128244,
+  "south": 18.480026820369694,
+  "east": 77.32198039809343,
+  "north": 18.503004584186446,
+  "cellLonDeg": 3.374120971623821e-05,
+  "cellLatDeg": 3.374120971622791e-05,
+  "dxM": 1.8967,
+  "dyM": 2.0,
+  "rowOrder": "north-to-south",
+  "encoding": "height_2m.f32 float32-le; slope_2m.u8 whole degrees (255=unknown); rough_2m.u8 centimetres (255=unknown)",
+  "heightReference": "metres above MOLA areoid (Mars Trek DeltaGeoid DEM)",
+  "factorFrom1m": 2
+}

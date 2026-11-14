@@ -1,0 +1,15 @@
+{
+  "width": 1897,
+  "height": 1363,
+  "west": 77.28999373128244,
+  "south": 18.480009949764835,
+  "east": 77.32199726869828,
+  "north": 18.503004584186446,
+  "cellLonDeg": 1.6870604858116233e-05,
+  "cellLatDeg": 1.6870604858115176e-05,
+  "dxM": 0.9484,
+  "dyM": 1.0,
+  "rowOrder": "north-to-south",
+  "encoding": "float32-le",
+  "heightReference": "metres above MOLA areoid (Mars Trek DeltaGeoid DEM)"
+}

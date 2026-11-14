@@ -1,0 +1,24 @@
+# Large NASA/USGS downloads (HiRISE mosaic ~9.8 GB, DEM ~1.8 GB)
+data/raw/
+data/derived/*.tif
+*.tif
+*.tiff
+*.zip
+
+# Python / Node
+.venv/
+__pycache__/
+node_modules/
+dist/
+
+# Local Claude Code overrides and secrets
+.claude/settings.local.json
+.env
+.env.*
+
+.DS_Store
+
+# Test and tool caches
+.pytest_cache/
+.ruff_cache/
+*.egg-info/

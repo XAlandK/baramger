@@ -1,0 +1,550 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://baroler.local/schema/marswalk.schema.json",
+  "title": "Baroler Marswalk data model",
+  "description": "Data model for an offline Marswalk mission package and for the source registry. Coordinates: Mars 2000 sphere (R = 3,396,190 m), planetocentric latitude, east-positive longitude in [-180, 180]. Elevation: metres above the MOLA areoid unless a field says otherwise.",
+  "oneOf": [
+    { "$ref": "#/$defs/MissionPackage" },
+    { "$ref": "#/$defs/SourceRegistry" }
+  ],
+
+  "$defs": {
+
+    "SourceId": {
+      "description": "R1..R5 = the five resources the challenge lists (hard rule: all must be used). S<n> = supplementary NASA source, allowed only if decision D2 = yes, and always flagged.",
+      "type": "string",
+      "pattern": "^(R[1-5]|S[0-9]{1,2})-[a-z0-9-]+$"
+    },
+    "Id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$" },
+    "IsoDate": { "type": "string", "format": "date" },
+    "IsoDateTime": { "type": "string", "format": "date-time" },
+    "Url": { "type": "string", "format": "uri" },
+
+    "Lon": { "type": "number", "minimum": -180, "maximum": 180 },
+    "Lat": { "type": "number", "minimum": -90, "maximum": 90 },
+
+    "Position": {
+      "type": "object",
+      "required": ["lon", "lat"],
+      "properties": {
+        "lon": { "$ref": "#/$defs/Lon" },
+        "lat": { "$ref": "#/$defs/Lat" },
+        "elev_m": { "type": "number", "description": "Metres above MOLA areoid." }
+      },
+      "additionalProperties": false
+    },
+
+    "BBox": {
+      "description": "[minLon, minLat, maxLon, maxLat] in degrees.",
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/Lon" }, { "$ref": "#/$defs/Lat" },
+        { "$ref": "#/$defs/Lon" }, { "$ref": "#/$defs/Lat" }
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+
+    "Coord": {
+      "description": "[lon, lat] or [lon, lat, elev_m].",
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/Lon" }, { "$ref": "#/$defs/Lat" }, { "type": "number" }],
+      "minItems": 2,
+      "maxItems": 3
+    },
+
+    "Geometry": {
+      "description": "GeoJSON-shaped geometry, but on Mars (see MissionPackage.crs). Not WGS 84.",
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "oneOf": [
+        { "properties": { "type": { "const": "Point" }, "coordinates": { "$ref": "#/$defs/Coord" } } },
+        { "properties": { "type": { "const": "LineString" }, "coordinates": { "type": "array", "items": { "$ref": "#/$defs/Coord" }, "minItems": 2 } } },
+        { "properties": { "type": { "const": "Polygon" }, "coordinates": { "type": "array", "items": { "type": "array", "items": { "$ref": "#/$defs/Coord" }, "minItems": 4 }, "minItems": 1 } } }
+      ]
+    },
+
+    "Crs": {
+      "type": "object",
+      "required": ["body", "datum", "radius_m", "lonConvention", "elevationReference"],
+      "properties": {
+        "body": { "const": "Mars" },
+        "datum": { "const": "Mars_2000_Sphere_IAU" },
+        "authority": { "type": "string", "examples": ["IAU_2015:49900", "IAU2000:49900"] },
+        "radius_m": { "const": 3396190 },
+        "lonConvention": { "const": "planetocentric-east-180" },
+        "elevationReference": { "const": "MOLA-areoid" }
+      },
+      "additionalProperties": false
+    },
+
+    "DataSource": {
+      "type": "object",
+      "required": ["id", "name", "provider", "role", "inResourceList", "access", "credit", "verified"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SourceId" },
+        "name": { "type": "string" },
+        "provider": { "type": "string" },
+        "homepage": { "$ref": "#/$defs/Url" },
+        "role": {
+          "description": "primary_data = data drawn on the map; design_reference = visual style only; ux_inspiration = interface ideas only.",
+          "enum": ["primary_data", "design_reference", "ux_inspiration"]
+        },
+        "inResourceList": { "type": "boolean", "description": "true only for R1..R5." },
+        "bodyCovered": { "enum": ["Mars", "Earth", "multiple"] },
+        "siteCoverage": { "type": "array", "items": { "type": "string" }, "examples": [["Jezero crater"], ["Gale crater"]] },
+        "access": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["type", "url"],
+            "properties": {
+              "type": { "enum": ["wmts", "download", "json_api", "search_api", "static_media", "web_portal"] },
+              "url": { "type": "string", "description": "May be a template with {placeholders}." },
+              "notes": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "license": { "type": "string" },
+        "credit": { "type": "string" },
+        "verified": {
+          "type": "object",
+          "required": ["date", "status"],
+          "properties": {
+            "date": { "$ref": "#/$defs/IsoDate" },
+            "status": { "enum": ["ok", "partial", "failed", "not_checked"] },
+            "notes": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "caveats": { "type": "array", "items": { "type": "string" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "id": { "pattern": "^R" } } },
+          "then": { "properties": { "inResourceList": { "const": true } } },
+          "else": { "properties": { "inResourceList": { "const": false } } }
+        }
+      ],
+      "additionalProperties": false
+    },
+
+    "DataKind": {
+      "enum": ["optical", "thermal", "spectral", "topographic", "geologic", "geophysical", "atmospheric", "radiation", "chemical", "ground_imagery", "rover_track", "derived"]
+    },
+
+    "Layer": {
+      "type": "object",
+      "required": ["id", "title", "sourceId", "dataKind", "access", "attribution"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "title": { "type": "string" },
+        "sourceId": { "$ref": "#/$defs/SourceId" },
+        "dataKind": { "$ref": "#/$defs/DataKind" },
+        "mission": { "type": "string" },
+        "instrument": { "type": "string" },
+        "productId": { "type": "string", "description": "Provider's product label, e.g. Mars Trek productLabel." },
+        "resolution_m": { "type": "number", "exclusiveMinimum": 0 },
+        "mapScale": { "type": "string", "examples": ["1:75,000"] },
+        "coverage": { "$ref": "#/$defs/BBox" },
+        "access": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["wmts", "download", "package_file", "json_api", "static_media"] },
+            "urlTemplate": { "type": "string" },
+            "tileMatrixSet": { "type": "string" },
+            "format": { "type": "string", "examples": ["image/png", "image/jpeg", "GeoTIFF", "GeoJSON"] },
+            "downloadUrl": { "type": "string" },
+            "packagePath": { "type": "string", "description": "Path inside the offline mission package." },
+            "sizeBytes": { "type": "integer", "minimum": 0 },
+            "minLevel": { "type": "integer", "minimum": 0, "description": "First cached tile level (tiled layers)." },
+            "maxLevel": { "type": "integer", "minimum": 0, "description": "Last cached tile level (tiled layers)." }
+          },
+          "additionalProperties": false
+        },
+        "values": {
+          "type": "object",
+          "description": "What one pixel/feature value means.",
+          "properties": {
+            "meaning": { "type": "string" },
+            "unit": { "type": "string" },
+            "nodata": { "type": "number" },
+            "reference": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "derivedFrom": { "type": "array", "items": { "$ref": "#/$defs/Id" }, "description": "Required when dataKind = derived." },
+        "process": { "type": "string", "description": "How a derived layer was made." },
+        "display": {
+          "type": "object",
+          "properties": {
+            "defaultVisible": { "type": "boolean" },
+            "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+            "colormap": { "type": "string" },
+            "legend": { "type": "array", "items": { "type": "object", "required": ["label"], "properties": { "label": { "type": "string" }, "color": { "type": "string" }, "value": {} } } },
+            "views": { "type": "array", "items": { "enum": ["plan", "walk", "hud"] } }
+          },
+          "additionalProperties": false
+        },
+        "attribution": { "type": "string" },
+        "caveats": { "type": "array", "items": { "type": "string" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "dataKind": { "const": "derived" } } },
+          "then": { "required": ["derivedFrom", "process"], "properties": { "derivedFrom": { "minItems": 1 } } }
+        }
+      ],
+      "additionalProperties": false
+    },
+
+    "ScienceObjective": {
+      "type": "object",
+      "required": ["id", "title", "question"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "title": { "type": "string" },
+        "question": { "type": "string", "description": "The science question in one sentence." },
+        "whyHumans": { "type": "string", "description": "What a person can do here that a rover cannot." },
+        "targets": { "type": "array", "items": { "type": "string" } },
+        "layerIds": { "type": "array", "items": { "$ref": "#/$defs/Id" } }
+      },
+      "additionalProperties": false
+    },
+
+    "Site": {
+      "type": "object",
+      "required": ["id", "name", "center", "aoi", "base"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "name": { "type": "string" },
+        "region": { "type": "string", "examples": ["Jezero crater"] },
+        "center": { "$ref": "#/$defs/Position" },
+        "aoi": { "$ref": "#/$defs/BBox" },
+        "description": { "type": "string" },
+        "objectiveIds": { "type": "array", "items": { "$ref": "#/$defs/Id" } },
+        "base": {
+          "type": "object",
+          "required": ["kind", "position"],
+          "properties": {
+            "kind": { "enum": ["habitat", "lander", "pressurized_rover"] },
+            "position": { "$ref": "#/$defs/Position" },
+            "antennaHeight_m": { "type": "number", "minimum": 0, "description": "For line-of-sight (viewshed)." }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Stop": {
+      "type": "object",
+      "required": ["id", "name", "kind", "position"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "name": { "type": "string" },
+        "kind": { "enum": ["base", "science", "sample", "photo", "rest", "hazard_check", "turnaround", "rover_meetup"] },
+        "position": { "$ref": "#/$defs/Position" },
+        "plannedMinutes": { "type": "number", "minimum": 0 },
+        "tasks": { "type": "array", "items": { "type": "string" } },
+        "objectiveIds": { "type": "array", "items": { "$ref": "#/$defs/Id" } },
+        "geologicUnit": { "type": "string", "description": "Unit code from SIM 3464 (R2)." },
+        "povImageIds": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "RouteLeg": {
+      "type": "object",
+      "required": ["fromStopId", "toStopId", "geometry", "distance_m", "estMinutes"],
+      "properties": {
+        "fromStopId": { "$ref": "#/$defs/Id" },
+        "toStopId": { "$ref": "#/$defs/Id" },
+        "geometry": { "$ref": "#/$defs/Geometry" },
+        "distance_m": { "type": "number", "minimum": 0 },
+        "ascent_m": { "type": "number", "minimum": 0 },
+        "descent_m": { "type": "number", "minimum": 0 },
+        "maxSlope_deg": { "type": "number", "minimum": 0, "maximum": 90 },
+        "meanSlope_deg": { "type": "number", "minimum": 0, "maximum": 90 },
+        "estMinutes": { "type": "number", "minimum": 0 },
+        "hazardIds": { "type": "array", "items": { "$ref": "#/$defs/Id" } },
+        "lineOfSightToBase": { "enum": ["full", "partial", "none", "unknown"] }
+      },
+      "additionalProperties": false
+    },
+
+    "RouteConstraints": {
+      "description": "All values are assumptions until verified (see MissionPackage.assumptions).",
+      "type": "object",
+      "properties": {
+        "comfortSlope_deg": { "type": "number", "default": 15 },
+        "maxSlope_deg": { "type": "number", "default": 25 },
+        "walkingSpeedFlat_kmh": { "type": "number", "default": 2.5 },
+        "evaDuration_min": { "type": "number", "default": 360 },
+        "reserveFraction": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.3 },
+        "maxDistanceFromBase_m": { "type": "number", "minimum": 0 },
+        "gravity_ms2": { "const": 3.71 },
+        "crewSize": { "type": "integer", "minimum": 1, "default": 2 },
+        "buddyRule": { "type": "boolean", "default": true }
+      },
+      "additionalProperties": false
+    },
+
+    "Route": {
+      "type": "object",
+      "required": ["id", "siteId", "name", "status", "constraints", "stopIds", "legs", "totals", "costModel"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "siteId": { "$ref": "#/$defs/Id" },
+        "name": { "type": "string" },
+        "status": { "enum": ["draft", "candidate", "approved"] },
+        "constraints": { "$ref": "#/$defs/RouteConstraints" },
+        "stopIds": { "type": "array", "items": { "$ref": "#/$defs/Id" }, "minItems": 2 },
+        "legs": { "type": "array", "items": { "$ref": "#/$defs/RouteLeg" }, "minItems": 1 },
+        "totals": {
+          "type": "object",
+          "required": ["distance_m", "estMinutes"],
+          "properties": {
+            "distance_m": { "type": "number", "minimum": 0 },
+            "ascent_m": { "type": "number", "minimum": 0 },
+            "descent_m": { "type": "number", "minimum": 0 },
+            "maxSlope_deg": { "type": "number" },
+            "estMinutes": { "type": "number", "minimum": 0 },
+            "reserveMinutes": { "type": "number" },
+            "maxDistanceFromBase_m": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "costModel": {
+          "type": "object",
+          "required": ["version", "weights", "inputLayerIds"],
+          "properties": {
+            "version": { "type": "string" },
+            "algorithm": { "type": "string", "examples": ["A*", "skimage.graph.route_through_array"] },
+            "weights": {
+              "type": "object",
+              "properties": {
+                "slope": { "type": "number" },
+                "roughness": { "type": "number" },
+                "rock": { "type": "number" },
+                "unitRisk": { "type": "number" },
+                "distance": { "type": "number" }
+              },
+              "additionalProperties": false
+            },
+            "inputLayerIds": { "type": "array", "items": { "$ref": "#/$defs/Id" }, "minItems": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Hazard": {
+      "type": "object",
+      "required": ["id", "type", "severity", "geometry", "message", "evidence"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "type": { "enum": ["steep_slope", "rough_terrain", "boulder_field", "scarp_or_cliff", "loose_sand_or_dune", "crater_rim", "comm_shadow", "unknown_terrain", "other"] },
+        "severity": { "enum": ["info", "caution", "warning", "no_go"] },
+        "geometry": { "$ref": "#/$defs/Geometry" },
+        "message": { "type": "string", "maxLength": 60, "description": "Short text that fits the HUD." },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["layerId"],
+            "properties": {
+              "layerId": { "$ref": "#/$defs/Id" },
+              "value": { "type": "number" },
+              "unit": { "type": "string" },
+              "method": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RoverWaypoint": {
+      "description": "Rover localization point. Join key with raw images: rmc = '<site>_<drive>'.",
+      "type": "object",
+      "required": ["rmc", "site", "drive", "sol", "position", "sourceId"],
+      "properties": {
+        "rmc": { "type": "string", "pattern": "^[0-9]+_[0-9]+$" },
+        "site": { "type": "integer", "minimum": 0 },
+        "drive": { "type": "integer", "minimum": 0 },
+        "sol": { "type": "integer", "minimum": 0 },
+        "position": { "$ref": "#/$defs/Position" },
+        "yaw_deg": { "type": "number" },
+        "distTotal_m": { "type": "number", "minimum": 0 },
+        "note": { "type": "string" },
+        "sourceId": { "$ref": "#/$defs/SourceId" }
+      },
+      "additionalProperties": false
+    },
+
+    "PovImage": {
+      "description": "A Perseverance ground photo shown as 'what you will see'. Always from R5.",
+      "type": "object",
+      "required": ["imageId", "sourceId", "sol", "instrument", "urls", "credit", "rover", "poseSource"],
+      "properties": {
+        "imageId": { "type": "string" },
+        "sourceId": { "const": "R5-perseverance-raw-images" },
+        "sol": { "type": "integer", "minimum": 0 },
+        "instrument": { "type": "string", "examples": ["NAVCAM_LEFT", "MCZ_RIGHT", "SUPERCAM_RMI"] },
+        "takenUtc": { "type": "string" },
+        "takenMars": { "type": "string", "examples": ["Sol-02031M11:30:55.785"] },
+        "sampleType": { "type": "string", "examples": ["Full", "Thumbnail"] },
+        "urls": {
+          "type": "object",
+          "required": ["medium"],
+          "properties": {
+            "small": { "$ref": "#/$defs/Url" },
+            "medium": { "$ref": "#/$defs/Url" },
+            "large": { "$ref": "#/$defs/Url" },
+            "full": { "$ref": "#/$defs/Url" },
+            "packagePath": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "credit": { "type": "string", "minLength": 3 },
+        "caption": { "type": "string" },
+        "rover": {
+          "type": "object",
+          "required": ["site", "drive"],
+          "properties": {
+            "site": { "type": "integer" },
+            "drive": { "type": "integer" },
+            "rmc": { "type": "string" },
+            "position": { "$ref": "#/$defs/Position" },
+            "yaw_deg": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "pointing": {
+          "type": "object",
+          "properties": {
+            "mastAz_deg": { "type": "number" },
+            "mastEl_deg": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "cameraModel": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "examples": ["CAHV", "CAHVOR", "CAHVORE"] },
+            "components": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "link": {
+          "type": "object",
+          "description": "How this photo relates to a route stop.",
+          "properties": {
+            "stopId": { "$ref": "#/$defs/Id" },
+            "distance_m": { "type": "number", "minimum": 0 },
+            "bearing_deg": { "type": "number", "minimum": 0, "maximum": 360 }
+          },
+          "additionalProperties": false
+        },
+        "poseSource": { "enum": ["waypoint_join", "trek_traverse", "manual", "unknown"] }
+      },
+      "additionalProperties": false
+    },
+
+    "Assumption": {
+      "type": "object",
+      "required": ["id", "statement", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^A[0-9]{1,3}$" },
+        "statement": { "type": "string" },
+        "value": {},
+        "unit": { "type": "string" },
+        "status": { "enum": ["to_verify", "accepted", "rejected"] },
+        "reference": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "Provenance": {
+      "type": "object",
+      "required": ["generatedAt", "inputs"],
+      "properties": {
+        "generatedAt": { "$ref": "#/$defs/IsoDateTime" },
+        "generator": { "type": "string" },
+        "inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["sourceId", "retrievedAt"],
+            "properties": {
+              "sourceId": { "$ref": "#/$defs/SourceId" },
+              "layerId": { "$ref": "#/$defs/Id" },
+              "url": { "type": "string" },
+              "retrievedAt": { "$ref": "#/$defs/IsoDateTime" },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "HasAllFiveResources": {
+      "description": "Hard project rule: a package or registry must list all five challenge resources.",
+      "allOf": [
+        { "contains": { "properties": { "id": { "const": "R1-mars-trek" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "R2-usgs-pgm" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "R3-curiosity-route-map" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "R4-nasa-worldview" } }, "required": ["id"] } },
+        { "contains": { "properties": { "id": { "const": "R5-perseverance-raw-images" } }, "required": ["id"] } }
+      ]
+    },
+
+    "SourceRegistry": {
+      "type": "object",
+      "required": ["kind", "schemaVersion", "updated", "sources"],
+      "properties": {
+        "kind": { "const": "source-registry" },
+        "schemaVersion": { "type": "string" },
+        "updated": { "$ref": "#/$defs/IsoDate" },
+        "sources": { "type": "array", "items": { "$ref": "#/$defs/DataSource" }, "$ref": "#/$defs/HasAllFiveResources" },
+        "candidateLayers": { "type": "array", "items": { "$ref": "#/$defs/Layer" } }
+      },
+      "additionalProperties": false
+    },
+
+    "MissionPackage": {
+      "type": "object",
+      "required": ["kind", "schemaVersion", "id", "title", "crs", "sources", "layers", "site", "objectives", "stops", "routes", "hazards", "povImages", "assumptions", "provenance"],
+      "properties": {
+        "kind": { "const": "mission-package" },
+        "schemaVersion": { "type": "string" },
+        "id": { "$ref": "#/$defs/Id" },
+        "title": { "type": "string" },
+        "crs": { "$ref": "#/$defs/Crs" },
+        "sources": { "type": "array", "items": { "$ref": "#/$defs/DataSource" }, "$ref": "#/$defs/HasAllFiveResources" },
+        "layers": { "type": "array", "items": { "$ref": "#/$defs/Layer" }, "minItems": 3 },
+        "site": { "$ref": "#/$defs/Site" },
+        "objectives": { "type": "array", "items": { "$ref": "#/$defs/ScienceObjective" }, "minItems": 1 },
+        "stops": { "type": "array", "items": { "$ref": "#/$defs/Stop" }, "minItems": 2 },
+        "routes": { "type": "array", "items": { "$ref": "#/$defs/Route" } },
+        "hazards": { "type": "array", "items": { "$ref": "#/$defs/Hazard" } },
+        "povImages": { "type": "array", "items": { "$ref": "#/$defs/PovImage" } },
+        "roverWaypoints": { "type": "array", "items": { "$ref": "#/$defs/RoverWaypoint" } },
+        "assumptions": { "type": "array", "items": { "$ref": "#/$defs/Assumption" } },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

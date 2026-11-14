@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:trek.nasa.gov)",
+      "WebFetch(domain:mars.nasa.gov)",
+      "WebFetch(domain:science.nasa.gov)",
+      "WebFetch(domain:www.jpl.nasa.gov)",
+      "WebFetch(domain:photojournal.jpl.nasa.gov)",
+      "WebFetch(domain:worldview.earthdata.nasa.gov)",
+      "WebFetch(domain:pubs.usgs.gov)",
+      "WebFetch(domain:www.usgs.gov)",
+      "WebFetch(domain:astrogeology.usgs.gov)",
+      "WebFetch(domain:planetarymapping.wr.usgs.gov)",
+      "Bash(ls *)",
+      "Bash(unzip -l *)",
+      "Bash(gdalinfo *)",
+      "Bash(ogrinfo *)",
+      "Bash(curl -sI *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  }
+}

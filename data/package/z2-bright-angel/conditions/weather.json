@@ -1,0 +1,368 @@
+{
+ "title": "Weather measured here by Perseverance",
+ "source": "Perseverance MEDA, NASA PDS Atmospheres node (calibrated TIRS air/ground temperature, derived pressure)",
+ "sols": [
+  1210,
+  1211,
+  1212,
+  1213,
+  1214,
+  1215,
+  1216,
+  1217,
+  1218
+ ],
+ "per_sol": [
+  {
+   "sol": 1210,
+   "air_c": [
+    -84.7,
+    -36.9
+   ],
+   "ground_c": [
+    -88.4,
+    0.7
+   ],
+   "pressure_pa": [
+    730.4,
+    749.9,
+    766.4
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1211,
+   "air_c": [
+    -84.4,
+    -38.1
+   ],
+   "ground_c": [
+    -87.6,
+    -2.5
+   ],
+   "pressure_pa": [
+    733.7,
+    749.2,
+    764.0
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1212,
+   "air_c": [
+    -86.8,
+    -42.1
+   ],
+   "ground_c": [
+    -88.4,
+    -2.8
+   ],
+   "pressure_pa": [
+    734.3,
+    752.4,
+    768.2
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1213,
+   "air_c": [
+    -85.5,
+    -40.0
+   ],
+   "ground_c": [
+    -88.3,
+    -2.0
+   ],
+   "pressure_pa": [
+    731.1,
+    749.2,
+    764.2
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1214,
+   "air_c": [
+    -87.0,
+    -40.7
+   ],
+   "ground_c": [
+    -87.9,
+    -1.5
+   ],
+   "pressure_pa": [
+    731.0,
+    747.6,
+    763.8
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1215,
+   "air_c": [
+    -87.0,
+    -36.3
+   ],
+   "ground_c": [
+    -88.0,
+    -1.0
+   ],
+   "pressure_pa": [
+    727.6,
+    744.7,
+    759.0
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1216,
+   "air_c": [
+    -85.4,
+    -41.8
+   ],
+   "ground_c": [
+    -88.2,
+    -1.4
+   ],
+   "pressure_pa": [
+    728.3,
+    747.4,
+    760.7
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1217,
+   "air_c": [
+    -85.3,
+    -36.4
+   ],
+   "ground_c": [
+    -87.7,
+    -0.7
+   ],
+   "pressure_pa": [
+    722.9,
+    741.7,
+    758.3
+   ],
+   "hours_covered": 24
+  },
+  {
+   "sol": 1218,
+   "air_c": [
+    -87.2,
+    -41.2
+   ],
+   "ground_c": [
+    -87.6,
+    -1.2
+   ],
+   "pressure_pa": [
+    726.9,
+    743.5,
+    757.0
+   ],
+   "hours_covered": 24
+  }
+ ],
+ "hourly_median": [
+  {
+   "hour": 0,
+   "air_c": -75.5,
+   "ground_c": -79.5
+  },
+  {
+   "hour": 1,
+   "air_c": -77.4,
+   "ground_c": -81.4
+  },
+  {
+   "hour": 2,
+   "air_c": -77.0,
+   "ground_c": -83.1
+  },
+  {
+   "hour": 3,
+   "air_c": -79.1,
+   "ground_c": -84.2
+  },
+  {
+   "hour": 4,
+   "air_c": -81.8,
+   "ground_c": -85.6
+  },
+  {
+   "hour": 5,
+   "air_c": -82.3,
+   "ground_c": -86.8
+  },
+  {
+   "hour": 6,
+   "air_c": -82.8,
+   "ground_c": -87.8
+  },
+  {
+   "hour": 7,
+   "air_c": -82.4,
+   "ground_c": -87.3
+  },
+  {
+   "hour": 8,
+   "air_c": -81.0,
+   "ground_c": -80.4
+  },
+  {
+   "hour": 9,
+   "air_c": -77.1,
+   "ground_c": -62.5
+  },
+  {
+   "hour": 10,
+   "air_c": -70.3,
+   "ground_c": -39.9
+  },
+  {
+   "hour": 11,
+   "air_c": -66.2,
+   "ground_c": -21.0
+  },
+  {
+   "hour": 12,
+   "air_c": -60.8,
+   "ground_c": -8.5
+  },
+  {
+   "hour": 13,
+   "air_c": -54.3,
+   "ground_c": -2.2
+  },
+  {
+   "hour": 14,
+   "air_c": -49.2,
+   "ground_c": -1.9
+  },
+  {
+   "hour": 15,
+   "air_c": -43.6,
+   "ground_c": -8.2
+  },
+  {
+   "hour": 16,
+   "air_c": -42.7,
+   "ground_c": -19.0
+  },
+  {
+   "hour": 17,
+   "air_c": -46.7,
+   "ground_c": -35.1
+  },
+  {
+   "hour": 18,
+   "air_c": -54.4,
+   "ground_c": -51.9
+  },
+  {
+   "hour": 19,
+   "air_c": -59.0,
+   "ground_c": -61.7
+  },
+  {
+   "hour": 20,
+   "air_c": -61.5,
+   "ground_c": -67.6
+  },
+  {
+   "hour": 21,
+   "air_c": -64.7,
+   "ground_c": -71.1
+  },
+  {
+   "hour": 22,
+   "air_c": -67.9,
+   "ground_c": -74.2
+  },
+  {
+   "hour": 23,
+   "air_c": -71.7,
+   "ground_c": -76.9
+  }
+ ],
+ "walk_hours_air_c": [
+  -84.9,
+  -40.3
+ ],
+ "daylight": {
+  "method": "NASA GISS Mars24 equations (Allison & McEwen 2000); sun centre on the horizon",
+  "days": [
+   {
+    "sol": 1210,
+    "sunrise_lmst": "07:10",
+    "sunset_lmst": "18:03",
+    "ls_deg": 294.0
+   },
+   {
+    "sol": 1211,
+    "sunrise_lmst": "07:10",
+    "sunset_lmst": "18:04",
+    "ls_deg": 294.6
+   },
+   {
+    "sol": 1212,
+    "sunrise_lmst": "07:10",
+    "sunset_lmst": "18:05",
+    "ls_deg": 295.2
+   },
+   {
+    "sol": 1213,
+    "sunrise_lmst": "07:10",
+    "sunset_lmst": "18:05",
+    "ls_deg": 295.8
+   },
+   {
+    "sol": 1214,
+    "sunrise_lmst": "07:11",
+    "sunset_lmst": "18:06",
+    "ls_deg": 296.5
+   },
+   {
+    "sol": 1215,
+    "sunrise_lmst": "07:11",
+    "sunset_lmst": "18:07",
+    "ls_deg": 297.1
+   },
+   {
+    "sol": 1216,
+    "sunrise_lmst": "07:11",
+    "sunset_lmst": "18:07",
+    "ls_deg": 297.7
+   },
+   {
+    "sol": 1217,
+    "sunrise_lmst": "07:11",
+    "sunset_lmst": "18:08",
+    "ls_deg": 298.3
+   },
+   {
+    "sol": 1218,
+    "sunrise_lmst": "07:12",
+    "sunset_lmst": "18:09",
+    "ls_deg": 298.9
+   }
+  ],
+  "check": {
+   "compared_sols": 7,
+   "max_diff_min": 0.6,
+   "mean_diff_min": 0.4,
+   "against": "Perseverance weather feed (sunrise/sunset, sols 1127-1133)"
+  }
+ },
+ "clock_check": {
+  "rows_compared": 5,
+  "eot_max_diff_min": 0.08,
+  "what": "Equation of time from our Mars24 maths vs MEDA's LTST - LMST"
+ },
+ "date_range": "Jul 2024",
+ "note": "Real measurements from when the rover was at Bright Angel (Jul 2024). They show typical conditions for this place and season; on a crewed mission the habitat's own station would give today's values."
+}

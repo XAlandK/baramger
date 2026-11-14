@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Baroler MCP Guide</title>
+<meta name="description" content="Which MCP servers help the Baroler team get Mars data for a safe Marswalk, and how each one fits the five challenge resources.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one calm reading column, like a mission planning note. Ranked picks, then a data table, then warnings. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --ink: #121b27;
+  --ink-2: #4b5769;
+  --line: #d8dee7;
+  --accent: #2a57c0;      /* Martian sunset blue */
+  --accent-soft: #e4eaf8;
+  --dust: #9c5a17;        /* Martian dust ochre */
+  --dust-soft: #f5e8d6;
+  --ok: #1c7347;
+  --ok-soft: #dcf0e4;
+  --warn: #8f5b00;
+  --warn-soft: #faeed3;
+  --bad: #b0261e;
+  --bad-soft: #f8e0dd;
+  --code-bg: #0f1722;
+  --code-fg: #e6edf6;
+
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.1875rem;
+  --step-2: 1.5rem;
+  --step-3: clamp(1.9rem, 1.4rem + 2.2vw, 2.75rem);
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141c;
+    --surface: #151d28;
+    --ink: #e7ecf3;
+    --ink-2: #a2aebe;
+    --line: #273243;
+    --accent: #85a6f3;
+    --accent-soft: #1b2944;
+    --dust: #e2a764;
+    --dust-soft: #2e2317;
+    --ok: #72d09e;
+    --ok-soft: #13301f;
+    --warn: #f0bf60;
+    --warn-soft: #33280f;
+    --bad: #f3897f;
+    --bad-soft: #3a1815;
+    --code-bg: #0a0f16;
+    --code-fg: #e6edf6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141c;
+  --surface: #151d28;
+  --ink: #e7ecf3;
+  --ink-2: #a2aebe;
+  --line: #273243;
+  --accent: #85a6f3;
+  --accent-soft: #1b2944;
+  --dust: #e2a764;
+  --dust-soft: #2e2317;
+  --ok: #72d09e;
+  --ok-soft: #13301f;
+  --warn: #f0bf60;
+  --warn-soft: #33280f;
+  --bad: #f3897f;
+  --bad-soft: #3a1815;
+  --code-bg: #0a0f16;
+  --code-fg: #e6edf6;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-block: 48px 64px;
+  display: grid;
+  gap: 56px;
+}
+
+a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+h1 { font-size: var(--step-3); font-weight: 700; }
+h2 { font-size: var(--step-2); font-weight: 600; }
+h3 { font-size: var(--step-1); font-weight: 600; }
+p { margin: 0; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.mono { font-family: var(--font-mono); font-size: 0.92em; }
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--accent-soft);
+  color: var(--ink);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+/* Header */
+.masthead { display: grid; gap: 20px; }
+.masthead .lede {
+  font-size: var(--step-1);
+  color: var(--ink-2);
+  max-width: 62ch;
+  line-height: 1.55;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  font-size: var(--step--1);
+  color: var(--ink-2);
+}
+.meta b { color: var(--ink); font-weight: 600; }
+.site-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  padding: 10px 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.site-strip span:first-child { color: var(--dust); font-weight: 500; }
+
+/* Section heads */
+.section { display: grid; gap: 20px; }
+.section-head { display: grid; gap: 6px; }
+.section-head p { color: var(--ink-2); max-width: 65ch; }
+
+/* Short answer */
+.answer {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+.answer ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.answer li {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+.answer li > div { min-width: 0; }
+.verdict {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.verdict.use { color: var(--ok); }
+.verdict.skip { color: var(--bad); }
+
+/* Chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.chip::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+.chip.ok { color: var(--ok); background: var(--ok-soft); }
+.chip.warn { color: var(--warn); background: var(--warn-soft); }
+.chip.bad { color: var(--bad); background: var(--bad-soft); }
+.chip.tool { color: var(--ink-2); background: transparent; border-color: var(--line); }
+
+/* Ranked picks */
+.picks { display: grid; gap: 16px; }
+.pick {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.rank {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.pick-body { min-width: 0; display: grid; gap: 14px; }
+.pick-head { display: grid; gap: 4px; }
+.maker { font-size: var(--step--1); color: var(--ink-2); }
+.facts { margin: 0; display: grid; gap: 10px; }
+.facts > div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.facts dt {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  padding-top: 2px;
+}
+.facts dd { margin: 0; min-width: 0; }
+.facts dd ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.pick-link { font-size: var(--step--1); font-weight: 500; }
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 0.9375rem; }
+th, td { text-align: left; vertical-align: top; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+th {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-2);
+  background: var(--bg);
+}
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+.id {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--dust);
+  white-space: nowrap;
+}
+
+/* Warnings */
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.note {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  background: var(--surface);
+}
+.note-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.note.bad .note-label { color: var(--bad); }
+.note.warn .note-label { color: var(--warn); }
+.note.info .note-label { color: var(--accent); }
+.note p { color: var(--ink-2); }
+.note p strong { color: var(--ink); }
+
+/* Install */
+.install { display: grid; gap: 12px; }
+.cmd {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.cmd pre {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--code-fg);
+}
+.copy {
+  flex: none;
+  border: 0;
+  border-left: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: var(--code-fg);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  padding: 0 18px;
+  cursor: pointer;
+}
+.copy:hover { background: rgba(255,255,255,0.06); }
+.install-notes { margin: 0; padding-left: 1.1em; color: var(--ink-2); display: grid; gap: 4px; }
+.install-notes strong { color: var(--ink); }
+.cmd-group { display: grid; gap: 8px; }
+.cmd-label {
+  font-size: var(--step-0);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* Sources */
+.sources { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: 0.9375rem; }
+.sources li { overflow-wrap: anywhere; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  font-size: var(--step--1);
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+@media (max-width: 640px) {
+  .page { padding-block: 32px 48px; gap: 44px; }
+  .pick { grid-template-columns: 1fr; gap: 12px; padding: 20px; }
+  .rank { font-size: 1.5rem; }
+  .facts > div { grid-template-columns: 1fr; gap: 4px; }
+  .answer { padding: 20px; }
+  .answer li { grid-template-columns: 1fr; gap: 2px; }
+  .notes { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Baroler · Marswalk Planner · Research note</p>
+    <h1>MCP Guide for the Martian Map Challenge</h1>
+    <p class="lede">Which MCP servers can help us get Mars data for a safe Marswalk? Three are worth using. The famous astronomy MCPs are not a good fit, because they are made for stars and galaxies, not for the ground of Mars.</p>
+    <div class="meta">
+      <span><b>Date</b> 14 November 2026</span>
+      <span><b>Status</b> NASA, PDS and GDAL MCPs added for this project.</span>
+      <span><b>Challenge</b> NASA “Interplanetary Survival Guide: Martian Map”</span>
+    </div>
+    <div class="site-strip" aria-label="Planned site">
+      <span>Jezero crater (D1 pending)</span>
+      <span>HiRISE coverage 18.3068–18.6693° N</span>
+      <span>77.2229–77.5840° E</span>
+      <span>Mars 2000 sphere, R = 3,396,190 m</span>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="short-answer">
+    <div class="section-head">
+      <p class="eyebrow">Summary</p>
+      <h2 id="short-answer">The short answer</h2>
+    </div>
+    <div class="answer">
+      <ul>
+        <li><span class="verdict use">Use</span><div><strong>NASA-MCP-server</strong> for Mars Trek map tiles (R1) and space weather data.</div></li>
+        <li><span class="verdict use">Use</span><div><strong>NASA PDS MCP</strong> to find raw science data from Mars missions.</div></li>
+        <li><span class="verdict use">Use</span><div><strong>GDAL MCP</strong> to work with elevation maps, so we can plan a safe route.</div></li>
+        <li><span class="verdict skip">Skip</span><div>Astronomy and cosmology MCPs built on astroquery, SIMBAD, VizieR or Gaia. They do not cover the Mars surface.</div></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="picks">
+    <div class="section-head">
+      <p class="eyebrow">Ranked by how much they help this project</p>
+      <h2 id="picks">The picks</h2>
+      <p>Every feature must trace back to the five challenge resources (R1–R5). Anything else is a supplementary source (S), and we need the team's OK first (decision D2). The chips show how each MCP fits this rule.</p>
+    </div>
+
+    <div class="picks">
+      <article class="pick">
+        <div class="rank" aria-hidden="true">1</div>
+        <div class="pick-body">
+          <div class="pick-head">
+            <h3>NASA-MCP-server</h3>
+            <p class="maker">By ProgramComputer · Community project, not made by NASA · TypeScript, needs Node.js 22+</p>
+          </div>
+          <p>One server for many public NASA data services. It is the only MCP we found that reads Mars Trek, which is one of the official challenge resources.</p>
+          <dl class="facts">
+            <div>
+              <dt>Gives us</dt>
+              <dd><ul>
+                <li>Mars Trek map layers and tiles (WMTS)</li>
+                <li>DONKI space weather: solar flares, solar particle events and CMEs, for radiation safety</li>
+                <li>JPL Horizons, for Sun and planet positions at a given time</li>
+                <li>NASA Image and Video Library</li>
+              </ul></dd>
+            </div>
+            <div>
+              <dt>Fit</dt>
+              <dd class="chips">
+                <span class="chip ok">R1 Mars Trek</span>
+                <span class="chip warn">DONKI = S · needs D2</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Watch out</dt>
+              <dd>The Mars rover photo tool uses a NASA API that is now archived, so it may not work. The InSight weather feed stopped in 2020. Most tools work without an API key.</dd>
+            </div>
+          </dl>
+          <a class="pick-link" href="https://github.com/ProgramComputer/NASA-MCP-server" target="_blank" rel="noopener">Open the repository ↗</a>
+        </div>
+      </article>
+
+      <article class="pick">
+        <div class="rank" aria-hidden="true">2</div>
+        <div class="pick-body">
+          <div class="pick-head">
+            <h3>NASA-PDS/pds-mcp-server</h3>
+            <p class="maker">Hosted by NASA's Planetary Data System team on GitHub · Python · MIT license</p>
+          </div>
+          <p>Searches the Planetary Data System, NASA's main archive for planet data. It covers more than 70 missions, 4,500 datasets and 700 instruments. You can search by mission, target, instrument or product ID.</p>
+          <dl class="facts">
+            <div>
+              <dt>Gives us</dt>
+              <dd>A way to find the original science files behind Mars Trek, such as HiRISE, CTX, CRISM and THEMIS products.</dd>
+            </div>
+            <div>
+              <dt>Fit</dt>
+              <dd class="chips">
+                <span class="chip ok">Finds data behind R1</span>
+                <span class="chip warn">Direct PDS files = S · needs D2</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Watch out</dt>
+              <dd>It is a research release: 5 stars, no versioned releases yet. Its page does not confirm which Mars instruments it covers, so test it with Jezero products first.</dd>
+            </div>
+          </dl>
+          <a class="pick-link" href="https://github.com/NASA-PDS/pds-mcp-server" target="_blank" rel="noopener">Open the repository ↗</a>
+        </div>
+      </article>
+
+      <article class="pick">
+        <div class="rank" aria-hidden="true">3</div>
+        <div class="pick-body">
+          <div class="pick-head">
+            <h3>GDAL MCP <span class="maker">or gis-mcp</span></h3>
+            <p class="maker">Community projects · Python (Rasterio, PyProj, GeoPandas)</p>
+          </div>
+          <p>A tool, not a data source. It works on map files we already have. We can use it on the HiRISE and CTX elevation maps from Mars Trek to find steep or rough ground.</p>
+          <dl class="facts">
+            <div>
+              <dt>Gives us</dt>
+              <dd>Raster info, reprojection and statistics. gis-mcp also makes hillshade images.</dd>
+            </div>
+            <div>
+              <dt>Fit</dt>
+              <dd class="chips">
+                <span class="chip tool">Tool only · no new source</span>
+                <span class="chip ok">Works on R1 DEMs</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Watch out</dt>
+              <dd>A slope tool is planned, but it may not be ready yet. We can work out slope with Python and Rasterio instead. GIS tools expect Earth by default, so always set the Mars 2000 coordinate system (IAU 49900).</dd>
+            </div>
+          </dl>
+          <a class="pick-link" href="https://pypi.org/project/gdal-mcp/" target="_blank" rel="noopener">Open GDAL MCP on PyPI ↗</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="coverage">
+    <div class="section-head">
+      <p class="eyebrow">Challenge asks for at least three kinds of data</p>
+      <h2 id="coverage">Where each data layer comes from</h2>
+      <p>Some layers come from an MCP. Others are easier to get by calling the data source directly.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Data layer</th><th scope="col">Where it comes from</th><th scope="col">Source</th><th scope="col">How we get it</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Images and terrain</td><td>HiRISE and CTX images and elevation maps on Mars Trek</td><td><span class="id">R1</span></td><td>NASA-MCP-server, then GDAL MCP</td></tr>
+          <tr><td>Heat and minerals</td><td>THEMIS and TES layers on Mars Trek. CRISM files from PDS.</td><td><span class="id">R1</span> · <span class="id">S</span></td><td>NASA-MCP-server, PDS MCP</td></tr>
+          <tr><td>Geology</td><td>USGS geologic maps SIM 3464 (Jezero) and SIM 3292</td><td><span class="id">R2</span></td><td>Direct download. The zip is 349 MB, so ask first.</td></tr>
+          <tr><td>Ground photos</td><td>Perseverance raw images</td><td><span class="id">R5</span></td><td>Call the raw images JSON API directly. No MCP needed.</td></tr>
+          <tr><td>Radiation and space weather</td><td>DONKI space weather database</td><td><span class="id">S</span></td><td>NASA-MCP-server, after the team approves D2</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="watch-out">
+    <div class="section-head">
+      <p class="eyebrow">Read before you build</p>
+      <h2 id="watch-out">Things to watch out for</h2>
+    </div>
+    <div class="notes">
+      <div class="note bad">
+        <span class="note-label">Archived API</span>
+        <p><strong>The Mars Rover Photos API on api.nasa.gov is archived.</strong> Do not use the rover photo tools in NASA MCPs. Use the Perseverance raw images JSON API (R5) instead.</p>
+      </div>
+      <div class="note warn">
+        <span class="note-label">Needs team OK</span>
+        <p><strong>DONKI and direct PDS files are not in the five resources.</strong> Tag them as S, with <code>inResourceList: false</code>, and wait for decision D2.</p>
+      </div>
+      <div class="note info">
+        <span class="note-label">Gap</span>
+        <p><strong>No MCP exists for USGS Astrogeology or HiRISE.</strong> USGS has a public data service with HiRISE image footprints, and an archive of about 2,600 elevation maps of human exploration zones.</p>
+      </div>
+      <div class="note info">
+        <span class="note-label">How MCPs fit</span>
+        <p><strong>MCPs help Claude while we build.</strong> The finished app should call the data sources itself. All of these MCPs are community or research projects, so check each one before we rely on it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section install" aria-labelledby="install">
+    <div class="section-head">
+      <p class="eyebrow">Tested 14 November 2026 · Claude Code 2.1.278</p>
+      <h2 id="install">Add the MCPs to Claude Code</h2>
+      <p>Run these from the Baroler project folder. They add each server for this project only. They add tools to Claude Code and do not download any Mars data.</p>
+    </div>
+
+    <div class="cmd-group">
+      <h3 class="cmd-label">1 · NASA-MCP-server <span class="chip ok">Connected</span></h3>
+      <div class="cmd">
+        <pre id="cmd-nasa">claude mcp add nasa -- npx -y @programcomputer/nasa-mcp-server@latest</pre>
+        <button class="copy" type="button" data-target="cmd-nasa" aria-label="Copy the NASA MCP command">Copy</button>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3 class="cmd-label">2 · NASA PDS MCP <span class="chip ok">Connected</span></h3>
+      <div class="cmd">
+        <pre id="cmd-pds">git clone --depth 1 https://github.com/NASA-PDS/pds-mcp-server.git ~/mcp-servers/pds-mcp-server
+uv venv --python 3.13 ~/mcp-servers/pds-mcp-server/.venv
+uv pip install --python ~/mcp-servers/pds-mcp-server/.venv/bin/python -e ~/mcp-servers/pds-mcp-server "fastmcp==2.14.7" "mcp&lt;2"
+claude mcp add pds -- ~/mcp-servers/pds-mcp-server/.venv/bin/python -m pds_mcp_server</pre>
+        <button class="copy" type="button" data-target="cmd-pds" aria-label="Copy the PDS MCP commands">Copy</button>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3 class="cmd-label">3 · GDAL MCP <span class="chip ok">Connected</span></h3>
+      <div class="cmd">
+        <pre id="cmd-gdal">claude mcp add gdal -e GDAL_MCP_WORKSPACES="$PWD/data" -- uvx --python 3.12 --from gdal-mcp==1.1.3 gdal --transport stdio</pre>
+        <button class="copy" type="button" data-target="cmd-gdal" aria-label="Copy the GDAL MCP command">Copy</button>
+      </div>
+    </div>
+
+    <ul class="install-notes">
+      <li><strong>The version pins matter.</strong> fastmcp 4 uses a newer MCP protocol that this Claude Code version does not accept, so PDS is pinned to fastmcp 2.14.7.</li>
+      <li>GDAL MCP can only read files inside the project's <code>data/</code> folder.</li>
+      <li>New MCP tools show up when you start a new Claude Code session.</li>
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="sources">
+    <div class="section-head">
+      <p class="eyebrow">Checked 14 November 2026</p>
+      <h2 id="sources">Sources</h2>
+    </div>
+    <ol class="sources">
+      <li><a href="https://github.com/ProgramComputer/NASA-MCP-server" target="_blank" rel="noopener">NASA-MCP-server repository and README</a></li>
+      <li><a href="https://github.com/NASA-PDS/pds-mcp-server" target="_blank" rel="noopener">NASA-PDS/pds-mcp-server</a></li>
+      <li><a href="https://pypi.org/project/gdal-mcp/" target="_blank" rel="noopener">gdal-mcp on PyPI</a></li>
+      <li><a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov (Mars Rover API archive notice)</a></li>
+      <li><a href="https://astrogeology.usgs.gov/pygeoapi/collections/mars/hirise-observation-footprints-equatorial/items/5186?f=html" target="_blank" rel="noopener">USGS HiRISE observation footprints (OGC API)</a></li>
+      <li><a href="https://astrogeology.usgs.gov/search/map/mars_human_exploration_zone_dem_archive_2023" target="_blank" rel="noopener">USGS Mars Human Exploration Zone DEM Archive 2023</a></li>
+      <li><a href="https://pypi.org/project/astronomy-mcp/" target="_blank" rel="noopener">astronomy-mcp on PyPI (example of a star-catalog MCP)</a></li>
+      <li><a href="https://glama.ai/mcp/servers/@SandyYuan/astro_mcp/blob/65be516ceb6fd227a985bc9a8103f768ede4493a/README.md" target="_blank" rel="noopener">Astro MCP README (example of an astroquery MCP)</a></li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Baroler team · Marswalk Planner research note</span>
+    <span>Not made by or linked to NASA.</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  function selectText(pre) {
+    var range = document.createRange();
+    range.selectNodeContents(pre);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  document.querySelectorAll('.copy[data-target]').forEach(function (btn) {
+    var pre = document.getElementById(btn.getAttribute('data-target'));
+    if (!pre) return;
+    function done(label) {
+      btn.textContent = label;
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
+    }
+    btn.addEventListener('click', function () {
+      var text = pre.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done('Copied'); }, function () { selectText(pre); done('Press ⌘C'); });
+      } else {
+        selectText(pre);
+        done('Press ⌘C');
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

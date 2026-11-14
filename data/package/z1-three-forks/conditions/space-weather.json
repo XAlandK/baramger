@@ -1,0 +1,49 @@
+{
+ "title": "Sun activity",
+ "retrieved_utc": "2026-11-14T11:16:00Z",
+ "noaa": {
+  "flares_7d": {
+   "C": 107,
+   "M": 7,
+   "X": 0
+  },
+  "strong_flares_7d": [
+   {
+    "class": "M1.9",
+    "max_time": "2026-11-07T18:42:00Z"
+   },
+   {
+    "class": "M1.7",
+    "max_time": "2026-11-08T07:46:00Z"
+   },
+   {
+    "class": "M1.1",
+    "max_time": "2026-11-08T15:37:00Z"
+   },
+   {
+    "class": "M1.1",
+    "max_time": "2026-11-08T18:27:00Z"
+   },
+   {
+    "class": "M1.7",
+    "max_time": "2026-11-11T21:21:00Z"
+   }
+  ],
+  "latest_strong_flare": {
+   "class": "M1.7",
+   "max_time": "2026-11-11T21:21:00Z"
+  },
+  "protons_10mev_latest_pfu": 0.226,
+  "protons_10mev_latest_time": "2026-11-14T11:15:00Z",
+  "protons_10mev_max_3d_pfu": 0.386,
+  "flare_window": [
+   "2026-11-07T11:51:00Z",
+   "2026-11-14T06:02:00Z"
+  ],
+  "where_measured": "GOES satellites near Earth (1 AU). Mars is about 1.5 AU from the Sun and often on another side, so storms seen here may or may not reach Mars."
+ },
+ "donki": {
+  "status": "unreachable",
+  "error": "HTTP Error 429: Too Many Requests"
+ }
+}
