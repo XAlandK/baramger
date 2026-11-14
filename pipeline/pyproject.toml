@@ -1,7 +1,7 @@
 [project]
 name = "baroler-pipeline"
 version = "0.1.0"
-description = "Builds the offline Baroler mission package (P1: zone Z2, Bright Angel) from the challenge resources."
+description = "Builds the offline Baroler mission package for a walk zone (Z1 Three Forks, Z2 Bright Angel) from the challenge resources."
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "numpy>=2.1",
