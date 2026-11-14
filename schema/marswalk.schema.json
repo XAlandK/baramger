@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://baroler.local/schema/marswalk.schema.json",
-  "title": "Baroler Marswalk data model",
+  "$id": "https://baramger.local/schema/marswalk.schema.json",
+  "title": "Baramger Marswalk data model",
   "description": "Data model for an offline Marswalk mission package and for the source registry. Coordinates: Mars 2000 sphere (R = 3,396,190 m), planetocentric latitude, east-positive longitude in [-180, 180]. Elevation: metres above the MOLA areoid unless a field says otherwise.",
   "oneOf": [
     { "$ref": "#/$defs/MissionPackage" },

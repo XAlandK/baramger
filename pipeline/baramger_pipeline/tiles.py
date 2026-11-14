@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .config import TREK_TILE_ROOT, TileLayer
 
-UA = {"User-Agent": "baroler-pipeline/0.1 (educational hackathon project)"}
+UA = {"User-Agent": "baramger-pipeline/0.1 (educational hackathon project)"}
 
 
 def tile_deg(level: int) -> float:

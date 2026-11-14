@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 100" width="124" height="100" role="img" aria-label="Cartoon rover">
+<!-- Cartoon drawing from docs/Baramger-Like-Im-Five.html (not map data). Text font: a subset of Playpen Sans Arabic, Copyright 2023 The Playpen Sans Project Authors (https://github.com/TypeTogether/Playpen-Sans), SIL Open Font License 1.1. -->
+<defs><symbol id="rover" viewBox="0 0 124 100">
+      <g stroke="#2B2633" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+        <path d="M24 80 L42 60 L62 80 M42 60 L84 60 L100 80" fill="none"></path>
+        <path d="M30 54 L12 44 L8 62" fill="none"></path>
+        <circle cx="8" cy="66" fill="#C9CDD3" r="5"></circle>
+        <rect fill="#F7F7F7" height="22" rx="6" width="80" x="22" y="40"></rect>
+        <rect fill="#C9CDD3" height="10" rx="5" width="88" x="18" y="34"></rect>
+        <rect fill="#C9CDD3" height="24" width="7" x="84" y="12"></rect>
+        <rect fill="#F7F7F7" height="16" rx="5" width="30" x="74" y="2"></rect>
+        <circle cx="24" cy="82" fill="#4A4458" r="13"></circle>
+        <circle cx="62" cy="82" fill="#4A4458" r="13"></circle>
+        <circle cx="100" cy="82" fill="#4A4458" r="13"></circle>
+        <rect fill="#3CC6C0" height="10" rx="3" stroke-width="3" width="20" x="32" y="46"></rect>
+      </g>
+      <circle cx="83" cy="10" fill="#2B2633" r="3.6"></circle>
+      <circle cx="95" cy="10" fill="#2B2633" r="3.6"></circle>
+      <circle cx="84.2" cy="8.8" fill="#fff" r="1.2"></circle>
+      <circle cx="96.2" cy="8.8" fill="#fff" r="1.2"></circle>
+      <circle cx="24" cy="82" fill="#C9CDD3" r="4.5"></circle>
+      <circle cx="62" cy="82" fill="#C9CDD3" r="4.5"></circle>
+      <circle cx="100" cy="82" fill="#C9CDD3" r="4.5"></circle>
+    </symbol></defs><use height="100" href="#rover" width="124" x="0" y="0"></use></svg>

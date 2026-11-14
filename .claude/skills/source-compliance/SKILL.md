@@ -1,6 +1,6 @@
 ---
 name: source-compliance
-description: Check that a data source, layer, or feature for the Baroler Marswalk project traces back to the five challenge resources (R1 Mars Trek, R2 USGS PGM, R3 Curiosity route map, R4 NASA Worldview, R5 Perseverance raw images), and that any extra source passes the D2 checks (no link to China, permission, verified, qualified, real). Use before adding any new layer, data source, download, MCP, or map feature, and before a submission.
+description: Check that a data source, layer, or feature for the Baramger Marswalk project traces back to the five challenge resources (R1 Mars Trek, R2 USGS PGM, R3 Curiosity route map, R4 NASA Worldview, R5 Perseverance raw images), and that any extra source passes the D2 checks (no link to China, permission, verified, qualified, real). Use before adding any new layer, data source, download, MCP, or map feature, and before a submission.
 ---
 
 # Source compliance check

@@ -108,7 +108,7 @@ export function playIntro(root: HTMLElement, hooks: IntroHooks): IntroControl {
       </svg>
       </div>
       <div class="intro-text">
-        <p class="eyebrow">Baroler</p>
+        <p class="eyebrow">Baramger</p>
         <h1>From Earth to Mars</h1>
         <p>Tonight Mars is ${km} million km away. Its light needs ${light} minutes to reach this telescope.</p>
       </div>

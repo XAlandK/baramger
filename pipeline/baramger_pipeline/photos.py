@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .config import StopSpec
 
-UA = {"User-Agent": "baroler-pipeline/0.1 (educational hackathon project)"}
+UA = {"User-Agent": "baramger-pipeline/0.1 (educational hackathon project)"}
 RAW_API = "https://mars.nasa.gov/rss/api/"
 WAYPOINTS_URL = "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
 

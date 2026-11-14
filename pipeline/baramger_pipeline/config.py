@@ -270,7 +270,7 @@ ASSUMPTIONS = (
      "reference": "NASA JSC ICES-2026-127 (2026): estimated maximum Mars suit mass 229 lbm (104 kg); today's Artemis xEMU is 376 lbm (170 kg). An estimate, not a measured suit"},
     {"id": "A17", "statement": "Standard kit each astronaut carries from the start (tools, camera, sample bags); walking speed A3 applies with this kit",
      "value": 15, "unit": "kg", "status": "to_verify",
-     "reference": "Starting value chosen for Baroler, below the 50 lbm (22.7 kg) of tools and samples in NASA's Mars suit sizing (ICES-2026-127)"},
+     "reference": "Starting value chosen for Baramger, below the 50 lbm (22.7 kg) of tools and samples in NASA's Mars suit sizing (ICES-2026-127)"},
     {"id": "A18", "statement": "Mass of one Mars 2020 sample tube with its sample", "value": 0.08, "unit": "kg", "status": "to_verify",
      "reference": "JPL (21 Dec 2020): each empty tube weighs less than 57 g; about 20 g of sample added (estimate). https://www.jpl.nasa.gov/news/a-martian-roundtrip-nasas-perseverance-rover-sample-tubes/"},
     {"id": "A19", "statement": "Mass of one rock sample taken by the crew", "value": 1.0, "unit": "kg", "status": "to_verify",
@@ -278,7 +278,7 @@ ASSUMPTIONS = (
     {"id": "A20", "statement": "Carried load per astronaut above which to take care", "value": 22.7, "unit": "kg", "status": "to_verify",
      "reference": "NASA JSC ICES-2026-127 (2026): 50 lbm (22.7 kg) of tools and samples per astronaut assumed in Mars suit sizing"},
     {"id": "A21", "statement": "Most load one astronaut may carry; more is too heavy and the plan cannot be approved", "value": 30, "unit": "kg",
-     "status": "to_verify", "reference": "Starting value chosen for Baroler; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"},
+     "status": "to_verify", "reference": "Starting value chosen for Baramger; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"},
     # Scale card: the map draws a person next to its scale bar (the spacecraft sizes are NASA's, source S8).
     {"id": "A22", "statement": "Height of the person drawn in the map's scale card (a person in a suit)", "value": 1.8, "unit": "m",
      "status": "to_verify", "reference": "A round value, the same as the suit antenna height (A8). A drawing for scale, not a measurement"},

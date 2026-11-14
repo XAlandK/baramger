@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 170" width="220" height="170" role="img" aria-label="Cartoon: a space rock flying toward a round crater that holds an old lake, with a river and a fan of mud">
+<!-- Cartoon drawing from docs/Baramger-Like-Im-Five.html (not map data). Text font: a subset of Playpen Sans Arabic, Copyright 2023 The Playpen Sans Project Authors (https://github.com/TypeTogether/Playpen-Sans), SIL Open Font License 1.1. -->
+<defs></defs>
+          <rect fill="#D98A5F" height="158" rx="22" stroke="#2B2633" stroke-width="4" width="208" x="6" y="6"></rect>
+          <ellipse cx="44" cy="140" fill="#C4724C" rx="16" ry="6"></ellipse>
+          <ellipse cx="190" cy="140" fill="#C4724C" rx="12" ry="5"></ellipse>
+          <path d="M8 72 C30 74 44 82 64 88" fill="none" stroke="#2B2633" stroke-linecap="round" stroke-width="12"></path>
+          <path d="M8 72 C30 74 44 82 64 88" fill="none" stroke="#8FD3EA" stroke-linecap="round" stroke-width="6"></path>
+          <circle cx="118" cy="96" fill="#C4724C" r="58" stroke="#2B2633" stroke-width="4"></circle>
+          <circle cx="118" cy="96" fill="#8FD3EA" r="47" stroke="#2B2633" stroke-width="3"></circle>
+          <path d="M66 86 Q92 64 104 88 Q96 106 68 96Z" fill="#E9C08F" stroke="#2B2633" stroke-linejoin="round" stroke-width="3"></path>
+          <path d="M70 90 L96 76 M70 91 L100 88 M70 92 L94 100" stroke="#C99A6A" stroke-linecap="round" stroke-width="2"></path>
+          <path d="M120 110 q6 -5 12 0 q6 5 12 0" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="3"></path>
+          <path d="M126 124 q6 -5 12 0" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="3"></path>
+          <path d="M189 27 L202 14 M184 22 L194 12 M193 33 L205 22" stroke="#FFC93C" stroke-linecap="round" stroke-width="4"></path>
+          <circle cx="180" cy="36" fill="#8E7B6B" r="10" stroke="#2B2633" stroke-width="3"></circle>
+          <circle cx="177" cy="34" fill="#6E5F52" r="2.5"></circle>
+        </svg>

@@ -1,8 +1,22 @@
-# Baroler: a Marswalk planner for Jezero crater
+# Baramger: a Marswalk planner for Jezero crater
 
-Baroler helps two astronauts plan a walk on Mars, stay safe on the way, and do real science at each stop. It was built for the NASA challenge **"Interplanetary Survival Guide: Martian Map"** (full text in [`TheChallenge.txt`](TheChallenge.txt)).
+**The name.** Baramger (Kurdish: بارامگەڕ) is a compound word: *Baram* (بارام), an old name for the planet Mars, and *-ger* (گەڕ), "one that browses and explores", as in وێبگەڕ or تۆڕگەڕ ("web browser"). So Baramger means "Mars browser": a place to browse and explore Mars.
+
+Baramger helps two astronauts plan a walk on Mars, stay safe on the way, and do real science at each stop. It was built for the NASA challenge **"Interplanetary Survival Guide: Martian Map"** (full text in [`TheChallenge.txt`](TheChallenge.txt)).
 
 It layers NASA data from several missions into one offline map of a small walk area in Jezero crater, the place where the Perseverance rover works. It covers the whole walk: planning it the evening before, guiding the crew outside, and looking back afterwards.
+
+## Mars, like I'm five (English · کوردی)
+
+Easy cartoon answers about the NASA challenge, our app and the map, in **English** and **Central Kurdish (Sorani)**. Click a picture to read that language.
+
+<p align="center">
+<a href="docs/like-im-five/README.md"><img src="docs/like-im-five/img/preview-en.jpg" width="49%" alt="Mars, like I'm five: the English page"></a>
+<a href="docs/like-im-five/README.ckb.md"><img src="docs/like-im-five/img/preview-ckb.jpg" width="49%" alt="Mars بۆ منداڵی پێنج ساڵان: the Sorani page"></a>
+</p>
+
+- **Read it here on GitHub:** [English](docs/like-im-five/README.md) · [کوردی](docs/like-im-five/README.ckb.md)
+- **The full cartoon page**, with its English | کوردی button: [`docs/Baramger-Like-Im-Five.html`](docs/Baramger-Like-Im-Five.html). GitHub cannot show it as a page, so download it and open it in a web browser.
 
 ## What it does
 
@@ -78,7 +92,7 @@ The data pipeline is in Python. You need **[uv](https://docs.astral.sh/uv/)**; i
 
 ```bash
 cd pipeline
-uv run baroler-build --zone z2      # or --zone z1
+uv run baramger-build --zone z2      # or --zone z1
 ```
 
 - Building both zones downloaded about 0.5 GB of raw data into `data/raw/` (not in git). This includes the walk-area window of the HiRISE 1 m terrain model, read with HTTP range requests from the USGS copy.
@@ -95,7 +109,7 @@ uv run --group dev pytest -q
 
 ## Data sources and credits
 
-The challenge lists five resources. Baroler uses all five; the mission package schema refuses a package that does not list them.
+The challenge lists five resources. Baramger uses all five; the mission package schema refuses a package that does not list them.
 
 | ID | Source | Used for | Credit |
 |---|---|---|---|
@@ -151,11 +165,12 @@ app/         CesiumJS web app (launch animation, Mars globe, Plan, Walk, helmet 
 pipeline/    Python pipeline that builds and checks the mission packages
 data/        mission packages (data/package/) and the source ledger
 schema/      JSON Schema for mission packages and the source ledger
-docs/        plan, report, short summary, user scenario, MCP guide
+docs/        plan, report, short summary, user scenario, MCP guide, "like I'm five" page
+docs/like-im-five/  GitHub copy of the "like I'm five" page (English + Sorani Markdown, drawings)
 CLAUDE.md    project brief for Claude Code
 ```
 
-More detail: [`docs/PLAN.md`](docs/PLAN.md) (analysis, decisions, findings), [`docs/Baroler-Report.html`](docs/Baroler-Report.html) (full report), [`docs/Baroler-Summary.html`](docs/Baroler-Summary.html) (short summary for everyone), and [`docs/Baroler-User-Scenario.html`](docs/Baroler-User-Scenario.html) (the story of two walks, told from the user's side).
+More detail: [`docs/PLAN.md`](docs/PLAN.md) (analysis, decisions, findings), [`docs/Baramger-Report.html`](docs/Baramger-Report.html) (full report), [`docs/Baramger-Summary.html`](docs/Baramger-Summary.html) (short summary for everyone), and [`docs/Baramger-User-Scenario.html`](docs/Baramger-User-Scenario.html) (the story of two walks, told from the user's side).
 
 ## License
 

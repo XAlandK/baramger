@@ -722,7 +722,7 @@
      }
     ]
    },
-   "attribution": "Derived by Baroler from the HiRISE DEM (Mars Trek)"
+   "attribution": "Derived by Baramger from the HiRISE DEM (Mars Trek)"
   },
   {
    "id": "routing-grid-2m",
@@ -739,7 +739,7 @@
     "packagePath": "route/grid.json",
     "format": "JSON + binary grids"
    },
-   "attribution": "Derived by Baroler from the HiRISE DEM (Mars Trek)"
+   "attribution": "Derived by Baramger from the HiRISE DEM (Mars Trek)"
   },
   {
    "id": "geology-sim3464",
@@ -22144,7 +22144,7 @@
    "value": 15,
    "unit": "kg",
    "status": "to_verify",
-   "reference": "Starting value chosen for Baroler, below the 50 lbm (22.7 kg) of tools and samples in NASA's Mars suit sizing (ICES-2026-127)"
+   "reference": "Starting value chosen for Baramger, below the 50 lbm (22.7 kg) of tools and samples in NASA's Mars suit sizing (ICES-2026-127)"
   },
   {
    "id": "A18",
@@ -22176,7 +22176,7 @@
    "value": 30,
    "unit": "kg",
    "status": "to_verify",
-   "reference": "Starting value chosen for Baroler; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"
+   "reference": "Starting value chosen for Baramger; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"
   },
   {
    "id": "A22",
@@ -22189,7 +22189,7 @@
  ],
  "provenance": {
   "generatedAt": "2026-11-14T17:04:13Z",
-  "generator": "baroler-pipeline 0.1.0",
+  "generator": "baramger-pipeline 0.1.0",
   "inputs": [
    {
     "sourceId": "S1-m20-rover-waypoints",

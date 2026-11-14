@@ -19,7 +19,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-UA = {"User-Agent": "baroler-pipeline/0.1 (educational hackathon project)"}
+UA = {"User-Agent": "baramger-pipeline/0.1 (educational hackathon project)"}
 PDS_MEDA = "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda"
 M2020_WEATHER_FEED = "https://mars.nasa.gov/rss/api/?feed=weather&category=mars2020&feedtype=json&ver=1.0"
 NOAA_FLARES = "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json"

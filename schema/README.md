@@ -1,4 +1,4 @@
-# Baroler data model
+# Baramger data model
 
 `marswalk.schema.json` (JSON Schema 2020-12) describes two kinds of documents:
 

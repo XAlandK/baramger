@@ -1,5 +1,5 @@
-from baroler_pipeline import config as C
-from baroler_pipeline import tiles
+from baramger_pipeline import config as C
+from baramger_pipeline import tiles
 
 # A small layer: two levels over a tiny box, so the job list is short.
 LAYER = C.TileLayer(

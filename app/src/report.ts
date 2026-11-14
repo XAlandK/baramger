@@ -43,7 +43,7 @@ export interface ReportLoad {
 }
 
 export interface WalkReport {
-  kind: "baroler-walk-report";
+  kind: "baramger-walk-report";
   version: 1;
   title: string;
   site: string;
@@ -94,7 +94,7 @@ export function buildReport(r: ReportInput): WalkReport {
   const visited = new Map(w.log.map((l) => [l.id, l]));
   const skipped = new Set(w.skipped);
   return {
-    kind: "baroler-walk-report",
+    kind: "baramger-walk-report",
     version: 1,
     title: r.title,
     site: r.site,
@@ -217,7 +217,7 @@ export function reportHtml(r: WalkReport, mapSvg: string): string {
   @media (max-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 </style></head>
 <body><main>
-  <p class="eyebrow">Baroler · walk report</p>
+  <p class="eyebrow">Baramger · walk report</p>
   <h1>${esc(r.title)}</h1>
   <p class="muted">${esc(r.site)}, ${esc(r.region)}, Mars · crew of ${s.crewSize} · walk ${esc(s.startLmst)}–${esc(s.endLmst)} local Mars time · report made ${esc(r.generatedUtc)} UTC</p>
 
@@ -271,7 +271,7 @@ export function reportHtml(r: WalkReport, mapSvg: string): string {
   <footer>
     <p><b>Data:</b> ${r.sources.map((x) => `${esc(x.name)} (${esc(x.id.split("-")[0])}): ${esc(x.credit)}`).join(" · ")}.</p>
     <p><b>Starting values still to confirm:</b> ${r.assumptions.map(esc).join(" · ")}.</p>
-    <p>Made with Baroler, a hackathon prototype. The walk in this report was a time-lapse demo along the approved route, not a real crewed walk.</p>
+    <p>Made with Baramger, a hackathon prototype. The walk in this report was a time-lapse demo along the approved route, not a real crewed walk.</p>
   </footer>
 </main></body></html>`;
 }

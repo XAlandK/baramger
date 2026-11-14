@@ -10,15 +10,15 @@
 // Run it for both zones (#z1 and #z2) and at several window sizes, for example
 // 1280x800, 1024x560, 800x725, 600x720 and 500x600.
 //
-// The tour drives the app through window.__baroler (dev hook) and by clicking the real
+// The tour drives the app through window.__baramger (dev hook) and by clicking the real
 // buttons with element.click(). It needs the tab to be in front: a background tab gets no
 // animation frames, so the map and the route flights would not run.
 
 export async function tour() {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const $ = (s) => document.querySelector(s);
-  const B = window.__baroler;
-  if (!B) throw new Error("window.__baroler is missing: run the dev server (npm run dev)");
+  const B = window.__baramger;
+  if (!B) throw new Error("window.__baramger is missing: run the dev server (npm run dev)");
   const bad = [];
   const seen = [];
   const check = (name) => {

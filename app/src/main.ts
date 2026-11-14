@@ -496,7 +496,7 @@ function renderChip(): void {
   const globe = state.view === "globe";
   document.body.dataset.screen = state.view; // not data-view: buttons in the panel use that name
   document.body.classList.toggle("adding", state.addMode);
-  $("#chip-eyebrow").textContent = globe ? "Baroler · Mars" : state.mode === "walk" ? "Baroler · Walk" : state.mode === "replay" ? "Baroler · Replay" : "Baroler · Plan";
+  $("#chip-eyebrow").textContent = globe ? "Baramger · Mars" : state.mode === "walk" ? "Baramger · Walk" : state.mode === "replay" ? "Baramger · Replay" : "Baramger · Plan";
   $("#site-name").textContent = globe ? "Mars · the whole planet" : `${pkg.site.name} · ${pkg.site.region}`;
   $("#zone-select").hidden = globe || zones.length < 2;
   $("#to-globe").hidden = globe;
@@ -1828,7 +1828,7 @@ function savePlan(): void {
     },
   };
   const file = {
-    kind: "baroler-plan",
+    kind: "baramger-plan",
     route,
     startLmst: state.startClock,
     crewNotes: state.stops.filter((s) => s.crewNote).map((s) => ({ stopId: s.id, note: s.crewNote })),
@@ -1839,7 +1839,7 @@ function savePlan(): void {
   const blob = new Blob([JSON.stringify(file, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `baroler-plan-${pkg.site.id}.json`;
+  a.download = `baramger-plan-${pkg.site.id}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
@@ -1878,7 +1878,7 @@ function onUiClick(ev: Event): void {
     renderPopup();
   } else if (el.dataset.base) {
     state.baseStyle = el.dataset.base as BaseStyle;
-    prefs.set("baroler.base", state.baseStyle); // remembered for the next visit
+    prefs.set("baramger.base", state.baseStyle); // remembered for the next visit
     map.setBaseStyle(state.baseStyle);
     renderPanel();
   } else if (el.dataset.placeAdd) {
@@ -2001,7 +2001,7 @@ function onUiClick(ev: Event): void {
     case "globe-jezero": flyToCrater(); break;
     case "globe-home": map.flyToPlanet(zonesMiddle()); break;
     case "intro-replay":
-      session.remove("baroler.intro");
+      session.remove("baramger.intro");
       void runIntro(Promise.resolve());
       break;
     case "add-stop":
@@ -2246,8 +2246,8 @@ function bindPanel(): void {
   });
   $("#modal").addEventListener("click", (ev) => {
     const t = ev.target as HTMLElement;
-    if (t.id === "save-report" && lastReport) download(`baroler-walk-report-${pkg.site.id}.html`, lastReport.html, "text/html");
-    else if (t.id === "save-report-json" && lastReport) download(`baroler-walk-report-${pkg.site.id}.json`, JSON.stringify(lastReport.report, null, 1), "application/json");
+    if (t.id === "save-report" && lastReport) download(`baramger-walk-report-${pkg.site.id}.html`, lastReport.html, "text/html");
+    else if (t.id === "save-report-json" && lastReport) download(`baramger-walk-report-${pkg.site.id}.json`, JSON.stringify(lastReport.report, null, 1), "application/json");
     else if (t.id === "modal-close" || t.id === "modal") $("#modal").hidden = true;
   });
   $("#lightbox").addEventListener("click", (ev) => {
@@ -2342,7 +2342,7 @@ function readout(p: LonLat | null): void {
 async function loadPackage(): Promise<void> {
   const text = $("#loading-text");
   const idx = await fetch("/package/index.json");
-  if (!idx.ok) throw new Error("No mission packages yet. Run the pipeline first: cd pipeline && uv run baroler-build --zone z2");
+  if (!idx.ok) throw new Error("No mission packages yet. Run the pipeline first: cd pipeline && uv run baramger-build --zone z2");
   const index = (await idx.json()) as { zones: ZoneInfo[]; default: string; crater?: unknown };
   zones = index.zones;
   crater = index.crater ?? null;
@@ -2351,7 +2351,7 @@ async function loadPackage(): Promise<void> {
   PKG = `/package/${zone.path}`;
   text.textContent = `Loading the ${zone.name} mission package…`;
   const res = await fetch(`${PKG}mission-package.json`);
-  if (!res.ok) throw new Error("The mission package is missing. Run the pipeline first: cd pipeline && uv run baroler-build");
+  if (!res.ok) throw new Error("The mission package is missing. Run the pipeline first: cd pipeline && uv run baramger-build");
   pkg = (await res.json()) as MissionPackage;
   for (const p of pkg.povImages) photos.set(p.imageId, p);
   model = {
@@ -2430,7 +2430,7 @@ async function loadPackage(): Promise<void> {
   // official place names printed on the USGS map (R2): lettering for the whole-crater view
   map.setNames((pkg.placeNames ?? []).map((n) => ({ name: n.name, lon: n.position.lon, lat: n.position.lat, major: n.rank === "major" })));
   // the whole-planet map has two looks; start with the one the crew chose last time
-  state.baseStyle = startBaseStyle(prefs.get("baroler.base"), map.baseStyles());
+  state.baseStyle = startBaseStyle(prefs.get("baramger.base"), map.baseStyles());
   map.setBaseStyle(state.baseStyle);
   const themis = pkg.layers.find((l) => l.id === "tiles-themis-night");
   if (themis?.access.urlTemplate) {
@@ -2493,7 +2493,7 @@ async function loadZonePins(): Promise<void> {
 function enterZone(key: string): void {
   if (key !== zone.key) {
     // another zone has its own mission package: load it and go straight into that zone
-    session.set("baroler.enter", "site");
+    session.set("baramger.enter", "site");
     location.hash = key;
     location.reload();
     return;
@@ -2540,7 +2540,7 @@ function runIntro(ready: Promise<void>): Promise<void> {
       setMapFilter: (css) => { $("#map").style.filter = css; },
       arrive: showApp,
       done: () => {
-        session.set("baroler.intro", "seen");
+        session.set("baramger.intro", "seen");
         $("#map").style.filter = "";
         intro = null;
         map.showPlanet(zonesMiddle());
@@ -2684,10 +2684,10 @@ async function main(): Promise<void> {
     if (state.popup) renderPopup(); // page sizes of the pop-up lists depend on the window's width
   });
   // Coming from the zone menu or a zone marker: skip the planet view and go straight into the zone.
-  const enterSite = session.get("baroler.enter") === "site";
-  session.remove("baroler.enter");
+  const enterSite = session.get("baramger.enter") === "site";
+  session.remove("baramger.enter");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const wantIntro = !enterSite && !reducedMotion && !session.get("baroler.intro") && !new URLSearchParams(location.search).has("nointro");
+  const wantIntro = !enterSite && !reducedMotion && !session.get("baramger.intro") && !new URLSearchParams(location.search).has("nointro");
 
   let mapReady!: () => void;
   const ready = new Promise<void>((r) => (mapReady = r));
@@ -2712,11 +2712,11 @@ async function main(): Promise<void> {
   window.addEventListener("hashchange", () => {
     const key = location.hash.replace("#", "");
     if (key !== zone.key && zones.some((z) => z.key === key)) {
-      session.set("baroler.enter", "site"); // typing #z1 means "open zone Z1", not "show the planet"
+      session.set("baramger.enter", "site"); // typing #z1 means "open zone Z1", not "show the planet"
       location.reload();
     }
   });
-  document.title = `Baroler · ${zone.name}`;
+  document.title = `Baramger · ${zone.name}`;
   state.view = enterSite ? "site" : "globe";
   bindPanel();
   bindCompareHandle();
@@ -2752,7 +2752,7 @@ async function main(): Promise<void> {
   map.onRender(scheduleScale); // the scale card follows the camera
   map.showPlanet(zonesMiddle());
   if (import.meta.env.DEV) {
-    (window as unknown as { __baroler: unknown }).__baroler = {
+    (window as unknown as { __baramger: unknown }).__baramger = {
       map, state, preview, walkUi, replay, step, renderPanel, makeReport, enterZone, toGlobe, overflowReport, updateScale,
       get intro() { return intro; },
     };

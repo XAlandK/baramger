@@ -1,4 +1,4 @@
-"""Build a mission package:  uv run baroler-build --zone z1|z2 [--skip-tiles] [--skip-photos] [--walk-dem ctx]."""
+"""Build a mission package:  uv run baramger-build --zone z1|z2 [--skip-tiles] [--skip-photos] [--walk-dem ctx]."""
 
 from __future__ import annotations
 

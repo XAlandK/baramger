@@ -1,4 +1,4 @@
-# Baroler — Analysis & Plan
+# Baramger — Analysis & Plan
 
 > Challenge: **"Interplanetary Survival Guide: Martian Map"** (NASA hackathon challenge, source text in `TheChallenge.txt`).
 > Status: **built: P1 to P4, the review fixes, the gear-load feature, UI round 2 and map round 3 are done and tested in the browser (2026-11-14).** Open: the submission (video, credits), the open questions at the end of "UI round 2", and two points of "Map round 3": three more place names that need the user's decision (finding 51), and an outer ring of crater photo tiles for narrow windows (finding 54, needs a rebuild).
@@ -68,7 +68,7 @@ Working raw-image query (filter by sol):
 
 ## 5. Recommended concept
 
-**"Baroler — Marswalk Planner & Field Guide"**: one offline-first web app with three views that share one data package.
+**"Baramger — Marswalk Planner & Field Guide"**: one offline-first web app with three views that share one data package.
 
 | View | Device | Purpose |
 |---|---|---|
@@ -153,7 +153,7 @@ Record the result of each check in `data/sources.registry.json` (`verified`, `ca
 
 ### Candidate extra sources
 
-| ID | Source (producer) | Use in Baroler | Status |
+| ID | Source (producer) | Use in Baramger | Status |
 |---|---|---|---|
 | S1 | Perseverance rover waypoints (NASA JPL) | Put R5 photos on the map; the Z1 depot stops | ✅ Passed C1–C5 — in use |
 | S2 | Cesium Mars tileset (Cesium / Bentley; NASA, USGS, ESA data) | Optional far-zoom globe | ⏳ C2: read Cesium ion terms first |
@@ -303,7 +303,7 @@ Example result with the 4 package stops:
 
 ### P4 status — built 2026-11-14 (zone Z1, Three Forks)
 
-- **One pipeline, many zones:** `config.py` has a `Zone` record per walk zone (`ZONES = {z1, z2}`). Build with `uv run baroler-build --zone z1`. Each build also writes `data/package/index.json`, the zone list the app reads.
+- **One pipeline, many zones:** `config.py` has a `Zone` record per walk zone (`ZONES = {z1, z2}`). Build with `uv run baramger-build --zone z1`. Each build also writes `data/package/index.json`, the zone list the app reads.
 - **Z1 mission package** (`data/package/z1-three-forks/`, about 57 MB, all checks passed):
   - Walk area 77.394–77.424 E, 18.4435–18.4635 N, inside the HiRISE 1 m DEM (window read from the USGS copy).
   - Slope check against the rover: 124 positions, 1.3° mean error.
@@ -470,8 +470,8 @@ The user asked for three things: a true-colour planet **as an option** next to t
 ## 9. Files in this repo
 
 - `docs/PLAN.md` — this file
-- `docs/Baroler-Report.html` — the same content as a readable web page
-- `docs/Baroler-User-Scenario.html` — what the end user sees and does, start to finish
+- `docs/Baramger-Report.html` — the same content as a readable web page
+- `docs/Baramger-User-Scenario.html` — what the end user sees and does, start to finish
 - `schema/marswalk.schema.json` — data model (JSON Schema 2020-12)
 - `schema/README.md` — how the schema fits together + rules the schema can't express
 - `data/sources.registry.json` — the verified source ledger (R1–R5 and the extra sources S1, S2, S3, S4, S7, S8)

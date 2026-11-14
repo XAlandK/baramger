@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 170" width="220" height="170" role="img" aria-label="کارتۆن: دوو astronaut دەستی یەکتریان گرتووە و دڵێک لە سەروویانەوەیە">
+<!-- Cartoon drawing from docs/Baramger-Like-Im-Five.html (not map data). Text font: a subset of Playpen Sans Arabic, Copyright 2023 The Playpen Sans Project Authors (https://github.com/TypeTogether/Playpen-Sans), SIL Open Font License 1.1. -->
+<defs><symbol id="astro" viewBox="0 0 80 124">
+      <g stroke="#2B2633" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+        <rect fill="#C9CDD3" height="46" rx="9" width="56" x="12" y="38"></rect>
+        <rect fill="#fff" height="34" rx="7.5" width="15" x="4" y="46"></rect>
+        <rect fill="#fff" height="34" rx="7.5" width="15" x="61" y="46"></rect>
+        <rect fill="#fff" height="28" rx="7" width="16" x="21" y="82"></rect>
+        <rect fill="#fff" height="28" rx="7" width="16" x="43" y="82"></rect>
+        <rect fill="#fff" height="50" rx="14" width="46" x="17" y="40"></rect>
+        <rect fill="#9AA0A8" height="12" rx="5" width="22" x="17" y="106"></rect>
+        <rect fill="#9AA0A8" height="12" rx="5" width="22" x="41" y="106"></rect>
+        <circle cx="40" cy="26" fill="#fff" r="23"></circle>
+        <rect fill="#CDEFF5" height="24" rx="12" width="34" x="23" y="15"></rect>
+        <rect fill="#3CC6C0" height="12" rx="3" stroke-width="3" width="18" x="31" y="54"></rect>
+      </g>
+      <circle cx="34" cy="26" fill="#2B2633" r="2.6"></circle>
+      <circle cx="46" cy="26" fill="#2B2633" r="2.6"></circle>
+      <path d="M34 31 Q40 36 46 31" fill="none" stroke="#2B2633" stroke-linecap="round" stroke-width="2.5"></path>
+      <path d="M27 21 Q29 18 33 18" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="3"></path>
+      <circle cx="36" cy="60" fill="#E2603B" r="2"></circle>
+      <circle cx="44" cy="60" fill="#FFC93C" r="2"></circle>
+    </symbol><symbol id="sparkle" viewBox="-10 -10 20 20">
+      <path d="M0 -9 Q2 -2 9 0 Q2 2 0 9 Q-2 2 -9 0 Q-2 -2 0 -9Z" fill="#FFD84D" stroke="#2B2633" stroke-linejoin="round" stroke-width="1.6"></path>
+    </symbol></defs>
+          <rect fill="#EFEAFF" height="158" rx="22" stroke="#2B2633" stroke-width="4" width="208" x="6" y="6"></rect>
+          <rect fill="#E2895B" height="24" width="204" x="8" y="138"></rect>
+          <path d="M6 138 H214" stroke="#2B2633" stroke-width="3"></path>
+          <path d="M110 24 C110 16 98 12 94 20 C90 28 104 36 110 42 C116 36 130 28 126 20 C122 12 110 16 110 24Z" fill="#FF7AA2" stroke="#2B2633" stroke-linejoin="round" stroke-width="3"></path>
+          <use height="112" href="#astro" width="72" x="40" y="32"></use>
+          <use height="112" href="#astro" width="72" x="108" y="32"></use>
+          <circle cx="110" cy="104" fill="#fff" r="7" stroke="#2B2633" stroke-width="3"></circle>
+          <use height="22" href="#sparkle" width="22" x="22" y="22"></use>
+          <use height="18" href="#sparkle" width="18" x="178" y="40"></use>
+        </svg>

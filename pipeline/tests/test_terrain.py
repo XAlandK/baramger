@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 
-from baroler_pipeline import terrain as T
-from baroler_pipeline.tiles import tile_range
+from baramger_pipeline import terrain as T
+from baramger_pipeline.tiles import tile_range
 
 
 def plane_grid(slope_deg: float, w=60, h=40, lat=18.49) -> T.Grid:

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from baroler_pipeline import config as C
+from baramger_pipeline import config as C
 
 HIRISE_JEZERO = (77.2229331, 18.3067994, 77.583964, 18.669315)  # Mars Trek bbox of the 25 cm mosaic / 1 m DEM
 WAYPOINTS = C.RAW / "nasa" / "M20_waypoints.json"

@@ -80,12 +80,12 @@ def _layers(terrain: dict, tiles: dict, walk_dem_label: str, geo_units: list[dic
          "values": {"meaning": "slope class", "unit": "deg"},
          "display": {"defaultVisible": True, "opacity": 0.8, "views": ["plan"],
                      "legend": [{"label": "Take care (15-25 deg)", "color": "#ECB026"}, {"label": "No-go (over 25 deg)", "color": "#D63027"}]},
-         "attribution": "Derived by Baroler from the HiRISE DEM (Mars Trek)"},
+         "attribution": "Derived by Baramger from the HiRISE DEM (Mars Trek)"},
         {"id": "routing-grid-2m", "title": "Routing grid", "sourceId": "R1-mars-trek", "dataKind": "derived",
          "resolution_m": round(g2["dyM"], 3), "derivedFrom": ["dem-walk-1m"],
          "process": "2 m heights, slope (whole degrees) and roughness (cm) used by the route finder and the radio check.",
          "access": {"type": "package_file", "packagePath": "route/grid.json", "format": "JSON + binary grids"},
-         "attribution": "Derived by Baroler from the HiRISE DEM (Mars Trek)"},
+         "attribution": "Derived by Baramger from the HiRISE DEM (Mars Trek)"},
         {"id": "geology-sim3464", "title": "Rock types (USGS SIM 3464)", "sourceId": "R2-usgs-pgm", "dataKind": "geologic",
          "mapScale": "1:75,000", "coverage": [g2["west"], g2["south"], g2["east"], g2["north"]],
          "access": {"type": "package_file", "packagePath": "overlays/geology.png", "format": "image/png"},
@@ -247,7 +247,7 @@ def build(out_dir: Path, terrain: dict, photos: dict, geo: dict, tiles: dict, in
         "roverWaypoints": rover_wps,
         "placeNames": list(place_names or []),
         "assumptions": [dict(a) for a in sorted(C.ASSUMPTIONS + zone.extra_assumptions, key=lambda a: int(a["id"][1:]))],
-        "provenance": {"generatedAt": now(), "generator": "baroler-pipeline 0.1.0", "inputs": inputs},
+        "provenance": {"generatedAt": now(), "generator": "baramger-pipeline 0.1.0", "inputs": inputs},
     }
 
     schema = json.loads(C.SCHEMA.read_text())

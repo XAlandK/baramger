@@ -1,8 +1,8 @@
 {
-  "name": "baroler-app",
+  "name": "baramger-app",
   "private": true,
   "version": "0.1.0",
-  "description": "Baroler Marswalk planner: whole-Mars globe, Plan, Walk, helmet display and replay for two walk zones in Jezero crater",
+  "description": "Baramger Marswalk planner: whole-Mars globe, Plan, Walk, helmet display and replay for two walk zones in Jezero crater",
   "type": "module",
   "scripts": {
     "dev": "vite",

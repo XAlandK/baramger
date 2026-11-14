@@ -3,8 +3,8 @@ import math
 
 import pytest
 
-from baroler_pipeline import config as C
-from baroler_pipeline import geology
+from baramger_pipeline import config as C
+from baramger_pipeline import geology
 
 GDB = C.RAW / "usgs" / "sim3464" / "sim3464_JezeroNili_FINAL" / "Geodatabase" / "Nili.gdb"
 
@@ -66,7 +66,7 @@ def test_names_printed_on_the_usgs_map():
 
 def test_conditions_downloads_are_listed_under_their_own_source():
     """Every download gets a provenance entry with the right source (the DONKI answer too)."""
-    from baroler_pipeline import cli
+    from baramger_pipeline import cli
     assert cli.source_of("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json") == "S7-noaa-swpc"
     assert cli.source_of("https://api.nasa.gov/DONKI/SEP?startDate=2026-10-15&endDate=2026-11-14&api_key=<key>") == "S3-nasa-donki"
     assert cli.source_of("https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP?startDate=2026-10-15&endDate=2026-11-14") == "S3-nasa-donki"
@@ -76,7 +76,7 @@ def test_conditions_downloads_are_listed_under_their_own_source():
 def test_sun_activity_keeps_the_donki_answer_and_hides_the_key(tmp_path, monkeypatch):
     import json
     from datetime import datetime, timezone
-    from baroler_pipeline import conditions
+    from baramger_pipeline import conditions
 
     monkeypatch.setenv("NASA_API_KEY", "SECRET123")
     asked = []
@@ -109,7 +109,7 @@ def test_sun_activity_keeps_the_donki_answer_and_hides_the_key(tmp_path, monkeyp
 def test_sun_activity_keeps_an_empty_donki_answer_as_it_was_sent(tmp_path, monkeypatch):
     """DONKI sends an empty body when there is no event: that is what must be kept and hashed."""
     from datetime import datetime, timezone
-    from baroler_pipeline import conditions
+    from baramger_pipeline import conditions
 
     def fake_get(url, timeout=90):
         if "kauai" in url:
@@ -127,7 +127,7 @@ def test_sun_activity_keeps_an_empty_donki_answer_as_it_was_sent(tmp_path, monke
 def test_sun_activity_lists_no_donki_file_when_donki_does_not_answer(tmp_path, monkeypatch):
     import json
     from datetime import datetime, timezone
-    from baroler_pipeline import conditions
+    from baramger_pipeline import conditions
 
     def fake_get(url, timeout=90):
         if "DONKI" in url:
