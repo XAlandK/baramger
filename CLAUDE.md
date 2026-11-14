@@ -18,6 +18,8 @@ Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baroler-Rep
 - App: `cd app && npm run dev` (http://localhost:5173; `.claude/launch.json` has `baroler-app`). Tests: `npm test`. Type check + build: `npm run build`.
 - Install npm packages with `npm install --before=<date two weeks ago>`. uv uses `exclude-newer` in `pipeline/pyproject.toml`.
 - `app/public/package` and `app/public/cesiumStatic` are symlinks (to `data/package` and the CesiumJS build).
+- Deploy to Cloudflare: `cd app && npm run deploy` (builds, then uploads `dist/`: about 151 MB, about 2,400 files; config `app/wrangler.jsonc`, hosting = Workers static assets). Use `wrangler deploy`, not `wrangler pages deploy`: wrangler 4.x redirects Pages commands to Workers and they fail.
+- CI/CD: `.github/workflows/ci-deploy.yml` (GitHub Actions). Every push and PR runs the app checks (Node 24) and the pipeline tests (uv 0.13.6). A push to `main` then deploys. Repo secrets: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Actions are pinned to commit SHAs of releases at least two weeks old.
 
 ## Working with the user
 - The user writes in **Kurdish (Sorani)** and has asked for replies in **simple, easy English**. Use Sorani only if they ask for it again. Keep code, file names, and project docs in **English** (hackathon deliverable).

@@ -1,0 +1,108 @@
+# CI/CD for Baroler.
+# - Every push and pull request: app type check + tests + build, and pipeline tests.
+# - Push to main (or a manual run on main): if the tests pass, deploy the app
+#   to Cloudflare (Workers static assets, config app/wrangler.jsonc).
+#
+# Needs two repository secrets (GitHub > Settings > Secrets and variables > Actions):
+#   CLOUDFLARE_API_TOKEN   Cloudflare API token from the "Edit Cloudflare Workers" template
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID
+#
+# Actions are pinned to commit SHAs. Versions follow the project rule:
+# releases at least two weeks old.
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per branch at a time. Pull request runs are replaced by newer pushes;
+# runs on main wait their turn so a deploy is never cut off halfway.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  app:
+    name: App (type check, tests, build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24 # the version README.md says is tested
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build # tsc --noEmit + vite build
+
+  pipeline:
+    name: Pipeline (tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: pipeline
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          working-directory: pipeline
+      # Tests that need raw rover downloads (data/raw, git-ignored) skip themselves.
+      - run: uv run --locked --group dev pytest -q
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: [app, pipeline]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    defaults:
+      run:
+        working-directory: app
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - name: Check Cloudflare secrets
+        working-directory: .
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Missing secrets. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in GitHub > Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24 # the version README.md says is tested
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - name: Build and deploy
+        id: deploy
+        run: |
+          set -o pipefail
+          npm run deploy 2>&1 | tee deploy.log
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | tail -1 || true)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $url" >> "$GITHUB_STEP_SUMMARY"

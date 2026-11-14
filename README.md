@@ -52,6 +52,18 @@ npm run build     # type check + production build into app/dist
 
 `app/public/package` and `app/public/cesiumStatic` are symbolic links (to `data/package` and to the CesiumJS build in `node_modules`). On Windows, turn on symlink support in git before cloning.
 
+## Deploy (Cloudflare)
+
+The app is hosted on Cloudflare as static files (Workers static assets, config in `app/wrangler.jsonc`).
+
+- **Automatic:** the GitHub Actions workflow `.github/workflows/ci-deploy.yml` runs the app and pipeline tests on every push and pull request. On a push to `main`, it deploys the app if the tests pass.
+- **By hand:** from the `app` folder, run `npx wrangler login` once, then `npm run deploy` (builds, then uploads `app/dist`).
+
+The workflow needs two repository secrets (GitHub > Settings > Secrets and variables > Actions):
+
+- `CLOUDFLARE_API_TOKEN`: a Cloudflare API token made from the "Edit Cloudflare Workers" template
+- `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID
+
 ## Rebuild a mission package (optional)
 
 The data pipeline is in Python. You need **[uv](https://docs.astral.sh/uv/)**; it brings Python 3.12 and the GIS libraries itself.
