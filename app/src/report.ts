@@ -4,6 +4,7 @@ import type { LonLat } from "./grid";
 import type { Check, PlanResult } from "./plan";
 import type { LightTime } from "./lighttime";
 import type { WalkState } from "./walk";
+import { factorText, kgText } from "./load";
 
 export interface ReportStop {
   id: string;
@@ -29,6 +30,16 @@ export interface ReportInput {
   sources: { id: string; name: string; credit: string }[];
   assumptions: string[];
   lightTime: LightTime;
+  crewSize?: number;
+  load?: ReportLoad;
+}
+
+/** Gear load: planned heaviest load per leg, and what the crew carried. */
+export interface ReportLoad {
+  legs: { from: string; to: string; plannedKg: number; factor: number }[];
+  startKg: number[];
+  endKg: number[];
+  kitKg: number;
 }
 
 export interface WalkReport {
@@ -48,6 +59,7 @@ export interface WalkReport {
     plannedMinutes: number;
     stopsVisited: number;
     stopsSkipped: number;
+    crewSize: number;
   };
   stops: {
     id: string;
@@ -69,6 +81,7 @@ export interface WalkReport {
   transmission: { distanceAu: number; distanceMkm: number; oneWayMin: number };
   sources: ReportInput["sources"];
   assumptions: string[];
+  load: ReportLoad | null;
 }
 
 export function clock(min: number): string {
@@ -97,6 +110,7 @@ export function buildReport(r: ReportInput): WalkReport {
       plannedMinutes: Math.round(r.plan.totals.totalMin),
       stopsVisited: w.log.length,
       stopsSkipped: w.skipped.length,
+      crewSize: r.crewSize ?? 2,
     },
     stops: r.stops.map((s) => {
       const v = visited.get(s.id);
@@ -125,6 +139,7 @@ export function buildReport(r: ReportInput): WalkReport {
     },
     sources: r.sources,
     assumptions: r.assumptions,
+    load: r.load ?? null,
   };
 }
 
@@ -204,7 +219,7 @@ export function reportHtml(r: WalkReport, mapSvg: string): string {
 <body><main>
   <p class="eyebrow">Baroler · walk report</p>
   <h1>${esc(r.title)}</h1>
-  <p class="muted">${esc(r.site)}, ${esc(r.region)}, Mars · walk ${esc(s.startLmst)}–${esc(s.endLmst)} local Mars time · report made ${esc(r.generatedUtc)} UTC</p>
+  <p class="muted">${esc(r.site)}, ${esc(r.region)}, Mars · crew of ${s.crewSize} · walk ${esc(s.startLmst)}–${esc(s.endLmst)} local Mars time · report made ${esc(r.generatedUtc)} UTC</p>
 
   <div class="grid">
     <div><span>Walked</span><b>${km(s.walkedM)}</b></div>
@@ -229,6 +244,13 @@ export function reportHtml(r: WalkReport, mapSvg: string): string {
     <td class="num">${t.plannedMin} → ${t.actualMin ?? "–"} min</td>
     <td>${t.tasksTotal ? `${t.tasksDone.length} of ${t.tasksTotal}${t.tasksDone.length ? `<br><span class="muted small">${esc(t.tasksDone.join(", "))}</span>` : ""}` : "–"}</td></tr>`).join("")}
   </tbody></table>
+
+  ${r.load ? `<h2>Carried load</h2>
+  <p class="small">Walking time grows with the mass each astronaut moves: body, suit and load (assumptions A15–A21). The crew walks at the pace of the astronaut carrying the most, and picked-up samples go to the astronaut carrying less.</p>
+  <table><thead><tr><th>Leg</th><th>Heaviest load (plan)</th><th>Walking time</th></tr></thead><tbody>
+  ${r.load.legs.map((l) => `<tr><td>${esc(l.from)} → ${esc(l.to)}</td><td class="num">${kgText(l.plannedKg)}</td><td class="num">${factorText(l.factor) || "as with the standard kit"}</td></tr>`).join("")}
+  </tbody></table>
+  <p class="small">Load at the start: ${r.load.startKg.map((kg, i) => `astronaut ${i + 1} ${kgText(kg)}`).join(", ")}. Brought home: ${r.load.endKg.map((kg, i) => `astronaut ${i + 1} ${kgText(kg)}`).join(", ")}. Standard kit: ${kgText(r.load.kitKg)}.</p>` : ""}
 
   <h2>Field notes</h2>
   ${r.notes.length ? `<ul>${r.notes.map((n) => `<li><b>${esc(n.time)}</b> · ${n.kind === "idea" ? "For next walk: " : ""}${esc(n.text)} <span class="muted small">(${n.lat.toFixed(5)}° N, ${n.lon.toFixed(5)}° E)</span></li>`).join("")}</ul>` : `<p class="muted">No notes.</p>`}

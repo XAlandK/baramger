@@ -6,11 +6,43 @@ import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { type HeightGrid, type LonLat, bilinear, inside } from "./grid";
 import type { Leg } from "./plan";
+import { needsShaping, planetFitAltitude, widenFactor } from "./layout";
 
 export const MARS = new Cesium.Ellipsoid(3_396_190, 3_396_190, 3_396_190);
 const OCCLUDER = new Cesium.Ellipsoid(3_387_190, 3_387_190, 3_387_190);
 
 export type OverlayKey = "slope" | "geology" | "themis";
+
+/** A named place that is always labelled, whether or not it is a stop in the plan. */
+export interface PlacePin extends LonLat {
+  id: string;
+  name: string;
+}
+
+/** A walk zone, highlighted on the whole-planet map. */
+export interface ZonePin extends LonLat {
+  key: string;
+  label: string;
+  elevM: number;
+  aoi?: number[]; // west, south, east, north
+}
+
+interface Hit {
+  id: string;
+  at: Cesium.Cartesian3;
+  radius: number;
+  minDist?: number; // clickable only while the marker is shown (camera distance in metres)
+  maxDist?: number;
+}
+
+/** Camera distances (m) at which the two kinds of zone marker are shown. */
+const ZONE_NEAR_M = 12_000;
+const ZONE_SPLIT_M = 120_000;
+const ZONE_FAR_M = 80_000_000;
+const PIN_FAR_M = 250_000;
+/** Stop and place names are shown up to this camera distance (the widened views of narrow maps stand 6-7 km away). */
+const NAME_FAR_M = ZONE_NEAR_M;
+const PLACE_FAR_M = 30_000;
 
 export interface StopPin extends LonLat {
   id: string;
@@ -59,12 +91,43 @@ function markerImage(text: string, fill: string, size: number, stroke = "#0C1216
   return { key, canvas: c };
 }
 
+/** A glowing ring that marks a walk zone on the planet. */
+function ringImage(size: number): { key: string; canvas: HTMLCanvasElement } {
+  const key = `ring|${size}`;
+  let c = markerCache.get(key);
+  if (!c) {
+    const k = 2;
+    c = document.createElement("canvas");
+    c.width = c.height = size * k;
+    const g = c.getContext("2d")!;
+    g.scale(k, k);
+    const r = size / 2;
+    g.beginPath();
+    g.arc(r, r, r - 3, 0, Math.PI * 2);
+    g.fillStyle = "rgba(85, 194, 197, 0.22)";
+    g.fill();
+    g.lineWidth = 3;
+    g.strokeStyle = "#55C2C5";
+    g.shadowColor = "#55C2C5";
+    g.shadowBlur = 4;
+    g.stroke();
+    g.shadowBlur = 0;
+    g.beginPath();
+    g.arc(r, r, 3.2, 0, Math.PI * 2);
+    g.fillStyle = "#FFFFFF";
+    g.fill();
+    markerCache.set(key, c);
+  }
+  return { key, canvas: c };
+}
+
 /**
- * Markers (stop pins, the crew, notes) as their own billboard and label collections in the
- * translucent pass. Markers ignore depth so they stay visible over hills; drawn in the opaque
- * pass they would also fill the depth buffer, and the route's faint "behind the hill" copy
- * (its depth-fail material) would then paint over every pin. Here they write no depth before
- * the lines are drawn, so lines fade only behind real terrain and markers stay on top.
+ * Markers (stop pins, the crew, notes, place and zone names) as their own billboard and label
+ * collections. Markers ignore depth, so they stay visible over hills.
+ * Draw order: CesiumJS draws these collections in the opaque pass (also with
+ * BlendOption.TRANSLUCENT), in the order of scene.primitives. The faint "behind the hill"
+ * copies of the lines (setGhost) are in the same pass, so they are inserted at the front of
+ * that list: copies first, markers last, and the markers stay on top.
  */
 class MarkerLayer {
   private readonly dots: Cesium.BillboardCollection;
@@ -80,7 +143,8 @@ class MarkerLayer {
     this.labels.removeAll();
   }
 
-  dot(position: Cesium.Cartesian3, img: { key: string; canvas: HTMLCanvasElement }, size: number, id?: unknown): Cesium.Billboard {
+  /** range = camera distances (m) between which the marker is shown. */
+  dot(position: Cesium.Cartesian3, img: { key: string; canvas: HTMLCanvasElement }, size: number, id?: unknown, range?: [number, number]): Cesium.Billboard {
     const b = this.dots.add({
       position,
       id,
@@ -89,6 +153,28 @@ class MarkerLayer {
       verticalOrigin: Cesium.VerticalOrigin.CENTER,
       horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      distanceDisplayCondition: range ? new Cesium.DistanceDisplayCondition(range[0], range[1]) : undefined,
+    });
+    b.setImage(img.key, img.canvas);
+    return b;
+  }
+
+  /**
+   * A name beside a marker, for text that Cesium's own labels cannot draw (see needsShaping).
+   * It takes the same place as label() would: left edge `offsetX` px right of the point.
+   */
+  tag(position: Cesium.Cartesian3, text: string, font: string, background: string, offsetX: number, padX: number, padY: number, id: unknown, range: [number, number]): Cesium.Billboard {
+    const img = tagImage(text, font, "#FFFFFF", background, padX, padY);
+    const b = this.dots.add({
+      position,
+      id,
+      width: img.w,
+      height: img.h,
+      verticalOrigin: Cesium.VerticalOrigin.CENTER,
+      horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+      pixelOffset: new Cesium.Cartesian2(offsetX - padX, 0),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(range[0], range[1]),
     });
     b.setImage(img.key, img.canvas);
     return b;
@@ -103,6 +189,29 @@ class MarkerLayer {
       ...options,
     });
   }
+}
+
+/** A name tag drawn by the browser (any script, see needsShaping in layout.ts), as an image for a map marker. */
+function tagImage(text: string, font: string, fill: string, background: string, padX: number, padY: number): { key: string; canvas: HTMLCanvasElement; w: number; h: number } {
+  const k = 2; // drawn at twice the size, shown at half: sharp on dense screens
+  const canvas = document.createElement("canvas");
+  const g = canvas.getContext("2d")!;
+  g.font = font;
+  const textW = Math.ceil(g.measureText(text).width);
+  const size = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 13);
+  const w = textW + 2 * padX;
+  const h = Math.ceil(size * 1.35) + 2 * padY;
+  canvas.width = w * k;
+  canvas.height = h * k;
+  g.scale(k, k);
+  g.fillStyle = background;
+  g.fillRect(0, 0, w, h);
+  g.font = font;
+  g.fillStyle = fill;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(text, w / 2, h / 2 + 0.5);
+  return { key: `tag|${font}|${fill}|${background}|${text}`, canvas, w, h };
 }
 
 /** Below this gap (metres) to the nearest other pin, a pin's name label is shown only up close. */
@@ -142,7 +251,12 @@ export class MapView {
   readonly viewer: Cesium.Viewer;
   readonly overlays: Partial<Record<OverlayKey, Cesium.ImageryLayer>> = {};
   private pinLayer!: MarkerLayer;
-  private pinHits: { id: string; at: Cesium.Cartesian3; radius: number }[] = [];
+  private pinHits: Hit[] = [];
+  private placeLayer!: MarkerLayer;
+  private placeHits: Hit[] = [];
+  private zoneLayer!: MarkerLayer;
+  private zoneHits: Hit[] = [];
+  private zoneCenter: Cesium.Cartesian3 | null = null;
   private noteLayer!: MarkerLayer;
   private crewLayer!: MarkerLayer;
   private routeEntities: Cesium.Entity[] = [];
@@ -184,11 +298,40 @@ export class MapView {
     this.pinLayer = new MarkerLayer(scene);
     this.noteLayer = new MarkerLayer(scene);
     this.crewLayer = new MarkerLayer(scene);
+    this.placeLayer = new MarkerLayer(scene);
+    this.zoneLayer = new MarkerLayer(scene);
     scene.globe.baseColor = Cesium.Color.fromCssColorString("#5b3f2e");
     scene.fog.enabled = false;
     if (scene.moon) scene.moon.show = false;
+    // CesiumJS also adds its own Sun, placed for Earth's rotation. At some hours it would glow
+    // beside Mars in the whole-planet view and in the launch animation: wrong, and not Mars data.
+    if (scene.sun) scene.sun.show = false;
     scene.backgroundColor = Cesium.Color.BLACK;
     scene.screenSpaceCameraController.minimumZoomDistance = 25;
+    scene.screenSpaceCameraController.maximumZoomDistance = 40_000_000; // free flight around the planet, without losing it (see refit)
+    // The map only redraws when asked (requestRenderMode). Ask again whenever map tiles finish
+    // loading, or a still camera (the whole-planet view) would keep showing an empty globe.
+    scene.globe.tileLoadProgressEvent.addEventListener(() => scene.requestRender());
+    // A browser can drop the 3D picture while the page is in the background or its size changes.
+    // Redraw when the page is shown again, and at a slow heartbeat, so the map never stays black.
+    const again = () => {
+      this.refit();
+      scene.requestRender();
+    };
+    window.addEventListener("resize", again);
+    // Any camera move by hand ends the "fitted whole-planet view" (see showPlanet).
+    for (const ev of ["pointerdown", "wheel"]) scene.canvas.addEventListener(ev, () => { this.home = null; }, { passive: true });
+    document.addEventListener("visibilitychange", again);
+    window.addEventListener("focus", again);
+    window.addEventListener("pageshow", again);
+    window.setInterval(again, 1500);
+    // Zone outlines are plain lines (no built-in display range): show them only from mid distance.
+    scene.preRender.addEventListener(() => {
+      if (!this.zoneCenter) return;
+      const d = Cesium.Cartesian3.distance(scene.camera.positionWC, this.zoneCenter);
+      const show = d > 6000 && d < 600_000;
+      for (const prim of this.ghosts.get("zones") ?? []) if (prim.show !== show) prim.show = show;
+    });
     scene.globe.maximumScreenSpaceError = 1.5;
   }
 
@@ -274,23 +417,146 @@ export class MapView {
     this.viewer.scene.requestRender();
   }
 
-  showPlanet(center: LonLat): void {
-    this.viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, 9_000_000, MARS) });
+  /**
+   * Resolves when the map has drawn the current view with all its tiles (or after `timeoutMs`,
+   * so a slow disk or a background tab cannot hold the app back for ever).
+   */
+  whenDrawn(timeoutMs = 6000): Promise<void> {
+    const scene = this.viewer.scene;
+    const globe = scene.globe;
+    // "tilesLoaded" is also true before the first tile was even asked for, so wait until
+    // loading has started (or tiles are on screen) and then finished, plus two more frames.
+    let started = false;
+    let framesAfter = 0;
+    const onProgress = (queued: number) => { if (queued > 0) started = true; };
+    const onFrame = () => {
+      const onScreen = ((globe as unknown as { _surface?: { _tilesToRender?: unknown[] } })._surface?._tilesToRender?.length ?? 0) > 0;
+      if ((started || onScreen) && globe.tilesLoaded) framesAfter++;
+      else framesAfter = 0;
+    };
+    globe.tileLoadProgressEvent.addEventListener(onProgress);
+    scene.postRender.addEventListener(onFrame);
+    const t0 = performance.now();
+    return new Promise((resolve) => {
+      const check = () => {
+        if (framesAfter >= 2 || performance.now() - t0 > timeoutMs) {
+          globe.tileLoadProgressEvent.removeEventListener(onProgress);
+          scene.postRender.removeEventListener(onFrame);
+          resolve();
+          return;
+        }
+        scene.requestRender();
+        window.setTimeout(check, 80);
+      };
+      check();
+    });
+  }
+
+  private zoneArgs: [ZonePin[], (LonLat & { label: string; elevM: number }) | null] | null = null;
+  private zonesStacked = false;
+  /** The centre of the standard whole-planet view, while the camera still shows it (null once it was moved). */
+  private home: LonLat | null = null;
+  private homeSize = "";
+  private homeAt: Cesium.Cartesian3 | null = null; // where the fitted view put the camera
+
+  private narrowMap(): boolean {
+    return this.lens().w < 460;
+  }
+
+  /** The map's size on screen and the camera's angle across its larger side. */
+  private lens(): { w: number; h: number; fov: number } {
+    const c = this.viewer.scene.canvas;
+    const fov = (this.viewer.camera.frustum as Cesium.PerspectiveFrustum).fov ?? Cesium.Math.toRadians(60);
+    return { w: c.clientWidth || 1, h: c.clientHeight || 1, fov };
+  }
+
+  /**
+   * The camera views are framed for a wide map. On a narrow map (a small window, or a tall one)
+   * the camera sees a smaller angle from side to side, so it moves back by this factor.
+   */
+  private widen(): number {
+    const { w, h, fov } = this.lens();
+    return widenFactor(w, h, fov);
+  }
+
+  /** The camera height from which the whole planet fits the map: the disc takes about 70% of the smaller side. */
+  planetAltitude(): number {
+    const { w, h, fov } = this.lens();
+    return planetFitAltitude(w, h, fov, MARS.maximumRadius);
+  }
+
+  /**
+   * Look straight down on the planet. Without a height, the whole disc is fitted to the map, and
+   * it stays fitted when the map changes size (see refit) until the camera is moved.
+   */
+  showPlanet(center: LonLat, altitudeM?: number): void {
+    this.viewer.camera.cancelFlight();
+    this.viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, altitudeM ?? this.planetAltitude(), MARS) });
+    this.home = altitudeM === undefined ? center : null;
+    this.homeSize = this.sizeKey();
+    this.homeAt = Cesium.Cartesian3.clone(this.viewer.camera.positionWC);
+    this.redraw();
+  }
+
+  flyToPlanet(center: LonLat, duration = 3): void {
+    this.home = null;
+    this.viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, this.planetAltitude(), MARS),
+      duration,
+      complete: () => {
+        this.home = center;
+        this.homeSize = "";
+        this.homeAt = Cesium.Cartesian3.clone(this.viewer.camera.positionWC);
+        this.refit(); // the map may have changed size during the flight
+      },
+    });
+  }
+
+  /** The map changed size: fit the whole-planet view again, and place the zone names again if needed. */
+  refit(): void {
+    // The zoom-out limit: the whole planet must fit any map shape, and the zone marker must stay in range.
+    this.viewer.scene.screenSpaceCameraController.maximumZoomDistance = Math.min(ZONE_FAR_M * 0.95, Math.max(40_000_000, this.planetAltitude() * 1.6));
+    // A drag that began during the flight to the planet never passed through "pointerdown" after
+    // the flight: if the camera is no longer where the fitted view put it, the crew moved it.
+    if (this.home && (!this.homeAt || !Cesium.Cartesian3.equalsEpsilon(this.viewer.camera.positionWC, this.homeAt, 0, 1))) this.home = null;
+    if (this.home && this.homeSize !== this.sizeKey()) this.showPlanet(this.home);
+    if (this.zoneArgs && this.zonesStacked !== this.narrowMap()) this.setZones(...this.zoneArgs);
+  }
+
+  private sizeKey(): string {
+    const { w, h } = this.lens();
+    return `${w}x${h}`;
+  }
+
+  /** A view of the whole crater, where each walk zone has its own marker (so it stays below ZONE_SPLIT_M). */
+  flyToCrater(center: LonLat, duration = 3): void {
+    this.home = null;
+    const height = Math.min(ZONE_SPLIT_M * 0.9, 62_000 * this.widen());
+    this.viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat, height, MARS), duration });
+  }
+
+  /** Camera height above the reference sphere, in km. */
+  cameraHeightKm(): number {
+    return (Cesium.Cartesian3.magnitude(this.viewer.camera.positionWC) - MARS.maximumRadius) / 1000;
   }
 
   flyToSite(center: LonLat, duration = 4): void {
+    this.home = null;
     const h = this.heightAt(center.lon, center.lat);
+    const f = this.widen();
     this.viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(center.lon + 0.002, center.lat - 0.028, h + 1450, MARS),
+      destination: Cesium.Cartesian3.fromDegrees(center.lon + 0.002 * f, center.lat - 0.028 * f, h + 1450 * f, MARS),
       orientation: { heading: Cesium.Math.toRadians(-4), pitch: Cesium.Math.toRadians(-36), roll: 0 },
       duration,
     });
   }
 
   flyToPoint(p: LonLat): void {
+    this.home = null;
     const h = this.heightAt(p.lon, p.lat);
+    const f = this.widen();
     this.viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat - 0.0042, h + 260, MARS),
+      destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat - 0.0042 * f, h + 260 * f, MARS),
       orientation: { heading: 0, pitch: Cesium.Math.toRadians(-42), roll: 0 },
       duration: 1.8,
     });
@@ -308,13 +574,18 @@ export class MapView {
       const selected = p.id === selectedId;
       // Stops a few metres apart (the Z1 tube depot) would hide each other's name labels:
       // show the name only when zoomed in close enough to separate them. The number stays.
-      const nameRange = selected || near[i] >= CROWDED_M ? 6000 : Math.max(40, 5 * near[i]);
+      const nameRange = selected || near[i] >= CROWDED_M ? NAME_FAR_M : Math.max(40, 5 * near[i]);
       const color = p.kind === "base" ? COLORS.base : selected ? COLORS.selected : COLORS.stop;
       const size = selected ? 26 : 22;
       const at = this.pos(p, 3);
       const id = { pinId: p.id };
-      this.pinLayer.dot(at, markerImage(p.label, color.toCssColorString(), size), size, id);
-      this.pinHits.push({ id: p.id, at, radius: size / 2 });
+      this.pinLayer.dot(at, markerImage(p.label, color.toCssColorString(), size), size, id, [0, PIN_FAR_M]);
+      this.pinHits.push({ id: p.id, at, radius: size / 2, maxDist: PIN_FAR_M });
+      if (needsShaping(p.name)) {
+        // a name the crew typed in Kurdish, Arabic or another joined script: the browser draws it
+        this.pinLayer.tag(at, p.name, "500 13px Inter, system-ui, sans-serif", "rgba(12, 18, 22, 0.72)", 18, 7, 4, id, [0, nameRange]);
+        continue;
+      }
       this.pinLayer.label(at, {
         id,
         text: p.name,
@@ -328,6 +599,86 @@ export class MapView {
       });
     }
     this.redraw();
+  }
+
+  /**
+   * Named places that are not stops in the plan right now: a small ring and the name, always shown.
+   * They tell the crew where a stop can go, even after every stop has been removed.
+   */
+  setPlaces(places: PlacePin[]): void {
+    this.placeLayer.clear();
+    this.placeHits = [];
+    const near = nearestGaps(places);
+    for (const [i, p] of places.entries()) {
+      const at = this.pos(p, 3);
+      const id = { placeId: p.id };
+      const nameRange = near[i] >= CROWDED_M ? NAME_FAR_M : Math.max(40, 5 * near[i]);
+      this.placeLayer.dot(at, markerImage("", "rgba(12, 18, 22, 0.55)", 16, "#E8E1D9", 2), 16, id, [0, PLACE_FAR_M]);
+      this.placeHits.push({ id: p.id, at, radius: 10, maxDist: PLACE_FAR_M });
+      this.placeLayer.label(at, {
+        id,
+        text: p.name,
+        font: "500 12px Inter, system-ui, sans-serif",
+        fillColor: Cesium.Color.fromCssColorString("#E8E1D9"),
+        backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.6),
+        backgroundPadding: new Cesium.Cartesian2(6, 3),
+        horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+        verticalOrigin: Cesium.VerticalOrigin.CENTER,
+        pixelOffset: new Cesium.Cartesian2(14, 0),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, nameRange),
+      });
+    }
+    this.redraw();
+  }
+
+  /**
+   * Highlight the walk zones on the planet. From far away the zones sit on top of each other
+   * (they are a few km apart), so one marker stands for the crater; closer in, each zone has
+   * its own marker, its name and the outline of its walk area.
+   */
+  setZones(zones: ZonePin[], crater: (LonLat & { label: string; elevM: number }) | null): void {
+    this.zoneArgs = [zones, crater];
+    // On a narrow map a name beside its marker would be cut off at the map's edge:
+    // put the names under (or over) their markers instead.
+    const stacked = this.narrowMap();
+    this.zonesStacked = stacked;
+    this.zoneLayer.clear();
+    this.zoneHits = [];
+    const label = (at: Cesium.Cartesian3, id: unknown, text: string, side: number, range: [number, number]) =>
+      this.zoneLayer.label(at, {
+        id,
+        text,
+        font: "600 13px Inter, system-ui, sans-serif",
+        backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.78),
+        backgroundPadding: new Cesium.Cartesian2(8, 5),
+        horizontalOrigin: stacked ? Cesium.HorizontalOrigin.CENTER : side > 0 ? Cesium.HorizontalOrigin.LEFT : Cesium.HorizontalOrigin.RIGHT,
+        verticalOrigin: stacked ? (side > 0 ? Cesium.VerticalOrigin.TOP : Cesium.VerticalOrigin.BOTTOM) : Cesium.VerticalOrigin.CENTER,
+        pixelOffset: stacked ? new Cesium.Cartesian2(0, side * 24) : new Cesium.Cartesian2(side * 24, 0),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(range[0], range[1]),
+      });
+    const meanLon = zones.reduce((a, z) => a + z.lon, 0) / Math.max(1, zones.length);
+    const outlines: GhostRun[] = [];
+    for (const z of zones) {
+      const at = Cesium.Cartesian3.fromDegrees(z.lon, z.lat, z.elevM + 30, MARS);
+      const id = { zoneKey: z.key };
+      this.zoneLayer.dot(at, ringImage(30), 30, id, [ZONE_NEAR_M, ZONE_SPLIT_M]);
+      label(at, id, z.label, z.lon >= meanLon ? 1 : -1, [ZONE_NEAR_M, ZONE_SPLIT_M]);
+      this.zoneHits.push({ id: z.key, at, radius: 17, minDist: ZONE_NEAR_M, maxDist: ZONE_SPLIT_M });
+      if (z.aoi) {
+        const [w, s, e, n] = z.aoi;
+        const corner = (lon: number, lat: number) => Cesium.Cartesian3.fromDegrees(lon, lat, z.elevM + 20, MARS);
+        outlines.push({ positions: [corner(w, s), corner(e, s), corner(e, n), corner(w, n), corner(w, s)], color: COLORS.stop.withAlpha(0.9), width: 2 });
+      }
+    }
+    if (crater) {
+      const at = Cesium.Cartesian3.fromDegrees(crater.lon, crater.lat, crater.elevM + 30, MARS);
+      const id = { zoneKey: "crater" };
+      this.zoneLayer.dot(at, ringImage(34), 34, id, [ZONE_SPLIT_M, ZONE_FAR_M]);
+      label(at, id, crater.label, 1, [ZONE_SPLIT_M, ZONE_FAR_M]);
+      this.zoneHits.push({ id: "crater", at, radius: 19, minDist: ZONE_SPLIT_M, maxDist: ZONE_FAR_M });
+      this.zoneCenter = at;
+    } else this.zoneCenter = null;
+    this.setGhost("zones", outlines);
   }
 
   /** Draw the route in runs: green = easy, yellow = 15-25 deg; dashed where there is no radio. */
@@ -372,8 +723,9 @@ export class MapView {
    * Lines are drawn at their real height, so a small bump in the terrain can hide part of them.
    * Each line therefore gets a faint copy that ignores depth. Cesium's own option for this
    * (depthFailMaterial) also fires where a pin is "in front" of the line (pins ignore depth too),
-   * so it painted the route over the pins. This copy is drawn in the opaque pass with blending;
-   * markers come later (translucent pass), so they always stay on top.
+   * so it painted the route over the pins. This copy is drawn in the opaque pass with blending,
+   * and it is put first in the scene's list (see the add(prim, 0) below): the marker layers are
+   * in the same pass and are drawn in list order, so they come later and stay on top.
    */
   private setGhost(key: string, runs: GhostRun[]): void {
     for (const prim of this.ghosts.get(key) ?? []) this.viewer.scene.primitives.remove(prim);
@@ -409,7 +761,9 @@ export class MapView {
         asynchronous: false,
         allowPicking: false,
       });
-      prims.push(this.viewer.scene.primitives.add(prim));
+      // Index 0: first in the scene's list, so the faint copies are drawn before the marker
+      // layers. (Added at the end they were painted over every pin and name.)
+      prims.push(this.viewer.scene.primitives.add(prim, 0));
     }
     this.ghosts.set(key, prims);
     this.redraw();
@@ -509,7 +863,7 @@ export class MapView {
         font: "500 11px Inter, system-ui, sans-serif",
         backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.7),
         pixelOffset: new Cesium.Cartesian2(0, -18),
-        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 3000),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, NAME_FAR_M),
       });
     }
     this.redraw();
@@ -517,6 +871,7 @@ export class MapView {
 
   /** Camera behind and above the walkers, looking along their direction (walk-through). */
   droneView(p: LonLat & { h: number }, headingDeg: number, back = 120, up = 55): void {
+    this.home = null;
     if (this.smoothHeading === null) this.smoothHeading = headingDeg;
     const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
     this.smoothHeading = (this.smoothHeading + diff * 0.08 + 360) % 360;
@@ -538,6 +893,7 @@ export class MapView {
 
   /** Eye-level camera for the helmet view: about 1.8 m above the ground, looking where the crew walks. */
   firstPerson(p: LonLat & { h: number }, headingDeg: number): void {
+    this.home = null;
     if (this.smoothHeading === null) this.smoothHeading = headingDeg;
     const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
     this.smoothHeading = (this.smoothHeading + diff * 0.15 + 360) % 360;
@@ -551,8 +907,10 @@ export class MapView {
 
   /** Camera looking down on the walkers, north up (tablet map). */
   topView(p: LonLat & { h: number }, height = 380): void {
+    this.home = null;
+    const f = this.widen();
     this.viewer.camera.setView({
-      destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat - 0.0012, p.h + height, MARS),
+      destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat - 0.0012 * f, p.h + height * f, MARS),
       orientation: { heading: 0, pitch: Cesium.Math.toRadians(-72), roll: 0 },
     });
     this.redraw();
@@ -569,11 +927,11 @@ export class MapView {
   }
 
   /**
-   * The pin under a screen position. Pins have a fixed size on screen, so a hit test in screen
-   * space is exact; it does not depend on GPU picking (unreliable in some embedded browsers,
-   * and unavailable while the page is hidden). The nearest pin centre wins.
+   * The marker under a screen position. Markers have a fixed size on screen, so a hit test in
+   * screen space is exact; it does not depend on GPU picking (unreliable in some embedded
+   * browsers, and unavailable while the page is hidden). The nearest marker centre wins.
    */
-  pickPinId(pos: Cesium.Cartesian2): string | null {
+  private hit(list: Hit[], pos: Cesium.Cartesian2): string | null {
     const scene = this.viewer.scene;
     const cam = scene.camera;
     // Jezero lies ~2.5 km below the Mars 2000 sphere, so test against a sphere 9 km lower
@@ -582,9 +940,11 @@ export class MapView {
     const toPin = new Cesium.Cartesian3();
     let best: string | null = null;
     let bestD = Infinity;
-    for (const h of this.pinHits) {
+    for (const h of list) {
       Cesium.Cartesian3.subtract(h.at, cam.positionWC, toPin);
       if (Cesium.Cartesian3.dot(toPin, cam.directionWC) <= 0 || !occluder.isPointVisible(h.at)) continue;
+      const dist = Cesium.Cartesian3.magnitude(toPin);
+      if ((h.minDist !== undefined && dist < h.minDist) || (h.maxDist !== undefined && dist > h.maxDist)) continue;
       const w = Cesium.SceneTransforms.worldToWindowCoordinates(scene, h.at);
       if (!w) continue;
       const d = Math.hypot(w.x - pos.x, w.y - pos.y);
@@ -594,6 +954,19 @@ export class MapView {
       }
     }
     return best;
+  }
+
+  pickPinId(pos: Cesium.Cartesian2): string | null {
+    return this.hit(this.pinHits, pos);
+  }
+
+  pickPlaceId(pos: Cesium.Cartesian2): string | null {
+    return this.hit(this.placeHits, pos);
+  }
+
+  /** A zone key, or "crater" for the far-away marker that stands for all zones. */
+  pickZoneKey(pos: Cesium.Cartesian2): string | null {
+    return this.hit(this.zoneHits, pos);
   }
 
   onClick(cb: (pos: Cesium.Cartesian2) => void): void {

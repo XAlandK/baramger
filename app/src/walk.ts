@@ -3,6 +3,7 @@
 
 import type { LonLat } from "./grid";
 import { type Leg, type PlanInput, type PlanStop, type Sample, routeLegs } from "./plan";
+import { withLoadFactor } from "./load";
 
 export interface WalkStop extends PlanStop {
   tasks: string[];
@@ -33,6 +34,8 @@ export interface WalkLogEntry extends LonLat {
   clockMin: number;
   kind: LogKind;
   text: string;
+  /** The stop this entry is about (arrived, left, skipped), so its text can follow a renamed stop. */
+  stopId?: string;
 }
 
 export interface TrackPoint extends LonLat {
@@ -59,8 +62,22 @@ export interface WalkState {
   events: WalkLogEntry[];
 }
 
-export function logEvent(s: WalkState, kind: LogKind, text: string): void {
-  s.events.push({ clockMin: s.clockMin, kind, text, lon: s.pos.lon, lat: s.pos.lat });
+export function logEvent(s: WalkState, kind: LogKind, text: string, stopId?: string): void {
+  s.events.push({ clockMin: s.clockMin, kind, text, lon: s.pos.lon, lat: s.pos.lat, ...(stopId ? { stopId } : {}) });
+}
+
+/** A stop got a new name while a walk exists: its legs, queue, visit log and event texts follow. */
+export function renameStopInWalk(s: WalkState, id: string, name: string): void {
+  for (const l of s.legs) {
+    if (l.fromId === id) l.fromName = name;
+    if (l.toId === id) l.toName = name;
+  }
+  for (const q of s.queue) if (q.id === id) q.name = name;
+  for (const v of s.log) if (v.id === id) v.name = name;
+  for (const e of s.events) {
+    if (e.stopId !== id) continue;
+    e.text = e.kind === "arrived" ? `Arrived at ${name}` : e.kind === "left" ? `Left ${name}` : `Skipped ${name}`;
+  }
 }
 
 export type WalkEvent = { type: "arrived"; stop: WalkStop } | { type: "left"; stop: WalkStop } | { type: "home" };
@@ -165,7 +182,7 @@ export function leaveStop(s: WalkState): WalkEvent | null {
   const stop = s.queue.shift()!;
   const entry = s.log[s.log.length - 1];
   if (entry) entry.leftMin = s.clockMin;
-  logEvent(s, "left", `Left ${stop.name}`);
+  logEvent(s, "left", `Left ${stop.name}`, stop.id);
   s.phase = "walking";
   s.legT = 0;
   s.stopElapsed = 0;
@@ -202,7 +219,7 @@ export function tick(s: WalkState, dt: number): WalkEvent[] {
           s.extraStopMin = 0;
           const stop = s.queue[0];
           s.log.push({ id: stop.id, name: stop.name, arrivedMin: s.clockMin, tasksDone: [] });
-          logEvent(s, "arrived", `Arrived at ${stop.name}`);
+          logEvent(s, "arrived", `Arrived at ${stop.name}`, stop.id);
           events.push({ type: "arrived", stop });
         }
       }
@@ -221,6 +238,38 @@ export function tick(s: WalkState, dt: number): WalkEvent[] {
   return events;
 }
 
+/**
+ * "Jump to next event": advance the walk until something new happens, either a walk event
+ * (arrived, left a stop, home) or a warning that was not showing when the jump started.
+ * Warnings already on screen do not stop it. A warning that goes away and later comes back
+ * counts as new again. warningKeys returns a stable key per warning (not its changing text).
+ */
+export function advanceToNextEvent(
+  s: WalkState,
+  warningKeys: (s: WalkState) => string[],
+  stepMin = 0.1,
+  maxSteps = 4000,
+): WalkEvent[] {
+  const showing = new Set(warningKeys(s));
+  for (let i = 0; i < maxSteps && s.phase !== "done"; i++) {
+    const events = tick(s, stepMin);
+    if (events.length) return events;
+    const now = warningKeys(s);
+    if (now.some((k) => !showing.has(k))) return [];
+    for (const k of [...showing]) if (!now.includes(k)) showing.delete(k);
+  }
+  return [];
+}
+
+/**
+ * Gear load: set the walking time of the legs still ahead for the crew's current load.
+ * The leg being walked keeps its timing (a pickup only happens at a stop, before the next leg).
+ */
+export function setWalkLoad(s: WalkState, factor: number, loadKg: number): void {
+  const inProgress = s.phase === "walking" && s.legT > 1e-9;
+  s.legs = s.legs.map((l, i) => (inProgress && i === 0 ? l : withLoadFactor(l, factor, loadKg)));
+}
+
 /** Drop the next stop and re-plan from here. */
 export function skipNext(s: WalkState, input: PlanInput): { ok: true; skipped: WalkStop } | { ok: false; error: string } {
   if (s.phase === "done") return { ok: false, error: "The walk is over." };
@@ -235,7 +284,7 @@ export function skipNext(s: WalkState, input: PlanInput): { ok: true; skipped: W
     s.legs = r.legs;
     s.legT = 0;
     s.skipped.push(dropped.id);
-    logEvent(s, "skipped", `Skipped ${dropped.name}`);
+    logEvent(s, "skipped", `Skipped ${dropped.name}`, dropped.id);
     return { ok: true, skipped: dropped };
   }
   if (s.queue.length < 2) return { ok: false, error: "No stop left to skip." };
@@ -247,19 +296,20 @@ export function skipNext(s: WalkState, input: PlanInput): { ok: true; skipped: W
   s.queue = [current, ...rest];
   s.legs = r.legs;
   s.skipped.push(dropped.id);
-  logEvent(s, "skipped", `Skipped ${dropped.name}`);
+  logEvent(s, "skipped", `Skipped ${dropped.name}`, dropped.id);
   return { ok: true, skipped: dropped };
 }
 
-/** Leave the plan and walk straight home from here. */
+/** Leave the plan and walk straight home from here. At a stop, the crew leaves it first. */
 export function headHomeNow(s: WalkState, input: PlanInput): { ok: true } | { ok: false; error: string } {
-  if (s.phase !== "walking") return { ok: false, error: "Leave the stop first." };
+  if (s.phase === "done") return { ok: false, error: "The walk is over." };
   const here: PlanStop = { id: "here", name: "Here", lon: s.pos.lon, lat: s.pos.lat, minutes: 0 };
   const r = routeLegs(input, here, []);
   if (!r.ok) return { ok: false, error: r.error };
+  if (s.phase === "at_stop") leaveStop(s);
   for (const q of s.queue) {
     s.skipped.push(q.id);
-    logEvent(s, "skipped", `Skipped ${q.name}`);
+    logEvent(s, "skipped", `Skipped ${q.name}`, q.id);
   }
   s.queue = [];
   s.legs = r.legs;
@@ -290,7 +340,9 @@ export function trackAt(track: TrackPoint[], clockMin: number): TrackPoint {
 export function lookAhead(s: WalkState, metres: number): Sample[] {
   if (s.phase !== "walking") return [];
   const leg = s.legs[0];
-  const d0 = s.pos.d;
+  // The distance along THIS leg. Right after "Leave now", "Skip next" or "Head home" the crew
+  // stands at the start of a new leg, while s.pos still holds the distance along the old one.
+  const d0 = sampleAt(leg, s.legT).d;
   return leg.samples.filter((p) => p.d > d0 && p.d <= d0 + metres);
 }
 

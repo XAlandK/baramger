@@ -1,7 +1,7 @@
 # Baroler — Analysis & Plan
 
 > Challenge: **"Interplanetary Survival Guide: Martian Map"** (NASA hackathon challenge, source text in `TheChallenge.txt`).
-> Status: **planning only — nothing is implemented yet.**
+> Status: **built: P1 to P4, the review fixes, the gear-load feature and UI round 2 are done and tested in the browser (2026-11-14).** Open: the submission (video, credits), and the open questions at the end of "UI round 2".
 > Last verified against live NASA/USGS services: **2026-11-14**.
 
 ---
@@ -155,12 +155,13 @@ Record the result of each check in `data/sources.registry.json` (`verified`, `ca
 
 | ID | Source (producer) | Use in Baroler | Status |
 |---|---|---|---|
-| S1 | Perseverance rover waypoints (NASA JPL) | Put R5 photos on the map | ✅ Checked — ready |
+| S1 | Perseverance rover waypoints (NASA JPL) | Put R5 photos on the map; the Z1 depot stops | ✅ Passed C1–C5 — in use |
 | S2 | Cesium Mars tileset (Cesium / Bentley; NASA, USGS, ESA data) | Optional far-zoom globe | ⏳ C2: read Cesium ion terms first |
-| S3 | DONKI space weather (NASA CCMC) | Solar storm and radiation alerts | ⏳ Run C1–C5 |
-| S4 | Perseverance MEDA weather (NASA PDS) | Wind, temperature and dust at Jezero | ⏳ Run C1–C5 |
+| S3 | DONKI space weather (NASA CCMC) | Solar storm and radiation alerts | ❌ Failed: unreachable (CCMC host timed out; api.nasa.gov DEMO_KEY rate-limited). Not used; the pipeline adds it automatically if `NASA_API_KEY` is set. |
+| S4 | Perseverance MEDA weather (NASA PDS) | Air and ground temperature, air pressure at each zone | ✅ Passed C1–C5 — in use |
 | S5 | Curiosity RAD surface radiation (NASA PDS) | Typical surface dose (measured at Gale; label it so) | ⏳ Run C1–C5 |
 | S6 | MRO MARCI weather images (NASA / MSSS) | Dust storm watch | ⏳ Run C1–C5 |
+| S7 | NOAA Space Weather Prediction Center (GOES flares and protons) | Sun activity check (measured near Earth, 1 AU) | ✅ Passed C1–C5 — in use |
 
 ### MCP rules
 
@@ -217,7 +218,7 @@ Build in this order so a working demo exists early:
 - **Terrain:** HiRISE 1 m (walk area 1.9 × 1.4 km) and CTX 20 m (context).
 - **Routing grid:** 2 m cells with slope and roughness.
 - **Image layers:** steep ground and rock types.
-- **Map tiles:** 1,285 cached Trek tiles (HiRISE, CTX, THEMIS, MOLA).
+- **Map tiles:** 1,068 cached Trek tiles (HiRISE, CTX, THEMIS, MOLA), counted on disk 2026-11-14.
 - **Photos:** 15 Perseverance photos at 4 stops.
 - **Rover data:** 83 rover positions.
 - **Hazards:** 60 no-go areas.
@@ -332,6 +333,86 @@ Example result with the 4 package stops:
 35. **🚩 Clicking a pin used Cesium's GPU picking**, which was unreliable in the app's browser pane and doesn't work while the page is hidden. Pins are now hit-tested on screen (click within the pin's circle; nearest pin wins). Note: Jezero is about 2.5 km below the Mars 2000 sphere, so a "behind the planet" test must use a lower sphere (we use 9 km lower).
 36. **ℹ️ USGS typo kept on purpose:** the SIM 3464 unit list has "Crater riim unit" (next to "Crater rim unit"). The app shows source names exactly as USGS publishes them, so we keep it (user decision, 2026-11-14). Don't "fix" it in the data.
 
+### Review fixes (2026-11-14, Part 1)
+
+A full review found six small problems. Fixed:
+- **"Jump to next event" barely moved** when a warning was already showing (Z2 starts with "Sand ripples ahead"). It now stops only on a walk event or on a warning that is new; a warning that goes away and comes back counts as new. Logic in `walk.ts` (`advanceToNextEvent`); each warning has a stable key.
+- **"5 h 60 min"** on the tablet: `format.ts` `mins()` rounds the total minutes first.
+- **Tile counts with `--skip-tiles`**: the pipeline now counts the requested tiles already on disk (`tiles.count_cached`) instead of writing "0 of 0". Z2 shows the true 1,068 after the next rebuild.
+- **Fonts loaded from the internet**: Barlow Semi Condensed, IBM Plex Mono and Inter (SIL OFL, @fontsource 5.3.0) are now bundled with the app.
+- **Old text in this file** (status line, the extra-source table, the tile count, the registry list).
+- **"Buddy rule" was always green.** Now a crew-size setting (1–4, default 2) drives it: a crew of 1 fails and blocks approval. The map label, the saved plan and the report follow the crew size. (Also fixed: the saved plan named every route "route-z2-…".)
+
+**Tests:** 29 app tests (adds the jump, time-format and buddy-rule tests) and 14 pipeline tests (adds the tile-count tests). Type check and build pass.
+
+### Part 2: gear load (2026-11-14)
+
+The challenge asks how carrying equipment and supplies affects the astronauts' mobility. Before this, route time used only suit walking speed (A3) and slope.
+
+- **Model (approved by the user):** walking time grows with the total mass an astronaut moves: body + suit + load. Time factor = (A15 + A16 + heaviest load) / (A15 + A16 + A17), about +0.5% per extra kg. The crew walks at the pace of the astronaut carrying the most; each pickup goes to the astronaut carrying less. Mass, not weight: on Mars a load weighs 0.38 of its Earth weight, but its mass (inertia) stays, and NASA's metabolic model scales with mass. Only time changes; the route path stays the same; time at stops is not affected. A3 (2.5 km/h) applies with the standard kit, so default plans barely change.
+- **New assumptions (all "to verify"):** A15 body 82 kg, A16 Mars suit 104 kg (both NASA JSC ICES-2026-127 planning values), A17 standard kit 15 kg, A18 sample tube with sample 0.08 kg (JPL: empty tube < 57 g), A19 rock sample 1 kg, A20 take care above 22.7 kg (NASA's carry mass in Mars suit sizing), A21 too heavy above 30 kg.
+- **Pickups:** Z1 each "Pick up the tube" (A18); Z2 "Take sample" at Cheyava Falls and "Collect a sample if safe" at stop 4 (A19). The plan assumes all planned pickups happen; on the walk, load is added when the pickup task is ticked.
+- **App:** a load setting per astronaut, the load per leg in the leg list, a "Carried load" safety check (ok / take care / too heavy, which blocks approval), a "Carrying …" line on the tablet, time estimates on the tablet and helmet from the current load, and a "Carried load" table in the walk report. The saved plan file includes the crew and loads.
+- **Effect with the starting values:** Z1 10 tubes → +0.2% on the last legs (seconds). Z2 → +0.5% after the rock sample; total 3 h 42 min (was 3 h 41), reserve 2 h 18 min, planned return 12:27. Carrying 25 kg → +5%.
+- **Tests:** 40 app tests (adds 11 load-model tests) and 14 pipeline tests.
+- **Rebuild (2026-11-14, 13:11 and 13:17 UTC, `--skip-tiles --skip-photos`):** both zones ended with "all checks passed". Only two files changed per zone: `mission-package.json` (A15–A21 added, A3 reworded, true tile counts, new timestamps) and `conditions/space-weather.json` (NOAA fetched again: 6 M-class and 0 X-class flares in 7 days; protons 0.224 pfu for Z1 and 0.275 pfu for Z2). Terrain, routing grids, overlays, rock map, photos and weather files are byte-identical. Z2 now records 1,068 of 1,068 tiles (Z1 925 of 925).
+
+**Findings while building Part 2:**
+37. **🚩 No official study of suited walking speed versus carried load at Mars gravity.** NASA's own slides (ICES-2026-127) call Mars-gravity suit studies "limited"; the 10-km walkback test did not vary weight. So the load effect is a model on NASA planning values, not a measurement (A15–A21 "to verify").
+38. **🚩 The JPL sample-tube page contradicts itself:** "9 cubic inches (147 cubic centimeters) … about the size of a piece of chalk" (a chalk-sized core is about 15 cm³). We use only its "less than 57 g" tube mass.
+39. **ℹ️ A3 (2.5 km/h) is plausible:** Apollo 15 measured 1.1–2.3 km/h; NASA's walkback planning assumes 3.5 km/h (ICES-2026-127).
+
+### UI round 2 (2026-11-14): launch animation, Mars globe, no-scroll screens
+
+The user asked for six things after trying the app. All six are built and were tested one by one with real mouse clicks and real animation frames, in a wide window (1280 × 800) and in a narrow one (600 × 720, the size of the Claude desktop browser pane).
+
+1. **Launch animation** (`app/src/intro.ts`): night on Earth with a telescope and Mars as an orange dot; then the eyepiece, with Mars as a small disc; then the flight until the planet fills the view; then the panel slides in. It shows today's real Earth–Mars distance and light time (`lighttime.ts`). It plays once per browser tab; "Skip intro" and Escape end it; `?nointro` and "reduce motion" skip it; "Play the launch animation again" is on the whole-planet screen.
+   - **Engine choice (flag):** the user said "do it with Three.js, but if there is something better, choose that". We used the app's own CesiumJS globe for Mars and plain HTML/SVG/canvas for the Earth scene. Reasons: D4 keeps one map engine; the animation ends exactly on the globe the crew then moves, with no cut; no second 3D engine to load; and the Mars in the eyepiece is the real NASA map (R1), not a second model. The night sky is a drawing and the screen says so (C5: nothing made up is shown as real). The warm tint and blur in the eyepiece fade out during the flight.
+2. **Whole-Mars view:** the app opens on the planet (`state.view = "globe"`). Drag, scroll and tilt move it freely. One marker stands for Jezero from far away; closer in (12–120 km) each walk zone has its own marker, name and outline. Clicking a marker or "Open" flies into the zone; "Mars globe" flies back out. Another zone's package loads with a page reload and goes straight into that zone.
+3. **No scrolling, anywhere:** one side panel with tabs (Goal, Layers, Stops, Route, Weather, Safety; Now, Progress, Notes on the walk), details in pop-ups (a stop, a known place, legs and loads, warnings, data and credits, ideas), long lists in pages. The panel has a design size of 392 × 740 px and is scaled down on a short window. A test hook (`overflowReport()`) checks every screen: zero overflow on 70+ screens per zone at five window sizes.
+4. **Place names stay on the map:** every known place of the mission package (rover stops, Cheyava Falls rock, depot spots) keeps a ring and its name when it is not a stop, so the crew can see where to put stops. Click a name for its photos and "Add as stop"; "Known places off the plan" lists them. A "Place names" switch is in Layers.
+5. **Stops can be renamed:** a new stop is "New stop N" and opens with its name selected, so typing replaces it. The list, the map label, the route legs, the walk and the report follow. Empty names fall back to the default; names are cut at 40 characters. Stops from the mission package keep their NASA-based names.
+6. **No flicker on the walk screen.** There were two causes:
+   - The panel was rebuilt with `innerHTML` up to five times a second, which re-created every button and photo (hover and pressed states reset, clicks got lost). Now `morph()` (`app/src/morph.ts`) changes only the text and attributes that differ.
+   - Buttons also **jumped**: lines above them changed length with the clock (for example "Time here 13 of 30 min · then …" wrapped at some minutes), warnings came and went above the buttons, and tab labels changed width. Now the walk screen has a fixed-height card, then the buttons, then everything that can change; changing lines are single fixed-height lines; digits have equal width; tabs have equal widths; "Play / Pause" has a fixed width.
+   - Measured: over a whole walk (1,069 screen updates) and with real frames (602 frames while playing), no control changed position or size and no button or photo was re-created.
+
+**Also done in this round**
+- **Narrow windows:** the panel stays beside the map while a strip of 200 px is left (so the middle of the map is never hidden); below that it lies over the map. Camera views move back on a narrow map (`widen()`), and the whole-planet view always fits the map (`planetAltitude()`, re-fitted when the window or the panel changes). Pop-ups use the whole window when there is no room beside the panel. The helmet view takes the whole window on a narrow map ("‹ Tablet" goes back).
+- **The panel slides** in and out (also at the end of the launch animation) instead of jumping.
+- **The loading screen waits until Mars is drawn** (`map.whenDrawn()`), so the animation never opens on a black map.
+- **A window that is too short** (under 420 px) gets a notice instead of silently cut-off content.
+- Small text fixes ("1 stop visited", "1 task ticked"), "Total time" instead of a cut-off label, and the map credits kept on one line.
+- **Tests:** 86 app tests (adds 15 for `morph`, 8 for the launch animation, 19 for the screen-fitting rules, names and scripts, 4 for the walk fixes below; the DOM tests run in jsdom 29.1.1, a pinned dev dependency) and 14 pipeline tests. Type check and production build pass.
+- **"Nothing scrolls" check:** `app/dev/ui-tour.js` opens every screen and pop-up (68 to 77 per zone) and asks the app for overflow. Both zones pass at 1280×800, 1024×560, 800×725, 600×720, 500×600 and 414×896 (870 screens in all). A clean run of both zones in a fresh tab gave no console errors.
+- **"Nothing moves" check, after all fixes:** zone Z1 played for 30 seconds with real frames (1,807 frames, three stops with arrivals and departures): no control changed place or size, and all 17 fixed controls were still the same DOM nodes.
+
+**Code review of this round (2026-11-14).** Six reviewers read the new code (panel logic, screen updates, map, start-up, layout, walk and replay); a second reviewer then tried to disprove each finding and checked the fixes. They reported 43 findings, about 31 different problems. None was a false alarm, and all are fixed. What was fixed:
+- **🚩 Walk buttons changed their meaning in place.** After "Leave now", "Head home now" appeared in the same spot, so a double-click sent the crew home and skipped every stop that was left. Now the walk has one row with a fixed slot per button (Stay +10 | Leave now | Skip next | Head home); a slot is only switched off, never reused. "Head home" also works at a stop (the crew leaves it first).
+- **A place pop-up stayed open when the walk or the walk-through started.** Its "Add as stop" then cleared the plan under the walk and froze the screen. Pop-ups, add-stop mode and the selected pin now close when the crew leaves the plan screen, stops can change only on the plan screen, and one error in a frame can no longer stop all animation.
+- **Clicking the open "Walk (tablet)" tab threw a finished walk away** (also from the replay). The tab now only shows the walk; "Start a new walk" is its own button on the plan screen.
+- **A new route search ended the old approval 30 ms late**, so a fast tap could open a walk on the old plan. The approval now ends at once, and nothing can be approved while a route is being found (the second reviewer found this gap in the first fix).
+- **Arriving at a stop no longer changes the tab the crew chose** (Progress, Notes). The first tab turns into "At stop" with a dot instead.
+- **Double-clicks:** "Find safest route" and "Approve plan" keep their own cells, and a click on a button that appeared less than half a second ago is ignored. Approving twice no longer opens the walk.
+- **Blocked browser storage** no longer stops the app from starting (the session flags are optional).
+- **Warnings looked at the wrong part of a new leg** right after "Leave now", "Skip next" or "Head home" (`lookAhead`).
+- **Stop names in Kurdish, Arabic and other joined scripts** were drawn letter by letter on the map (CesiumJS labels do that). Such names are now drawn by the browser. Lists keep numbers in order beside right-to-left names.
+- **Renaming a stop during a walk** now also renames it in "What happened" and in the report.
+- **Layout:** the Z1 walk summary with four or more notes, the stop screen with a crew note, a warning and a message, the Progress tab with more than 10 stops, the "Legs and loads" and credits pop-ups on phone-size windows, and the photo viewer on short windows all fit now. The whole-planet panel has a hide button. The compare bar no longer stays on the globe. The chart's hover line and the replay slider follow correctly.
+- **Typing `#z1` in the address bar** now opens that zone, not the planet.
+- **Map:** CesiumJS's own Sun is switched off (it is placed for Earth's rotation and could glow beside Mars at some hours; it is not Mars data). Stop and place names stay visible when the camera stands back on a narrow map. On a very wide, low map the camera stands back too, so no stop falls below the edge. A stop's pin wins over the zone ring that sits on it when zoomed out, and zone markers do nothing during a walk. The fitted whole-planet view ends when the camera was moved during a flight.
+- **🚩 The faint line copies were drawn over pins and names after all** (finding 34 was only half fixed). A reviewer read it from the CesiumJS source: marker collections with `BlendOption.TRANSLUCENT` are still drawn in the opaque pass, in the order of `scene.primitives`, and the copies were added after them. With the real, faint colours it was hard to see; a thick red test line showed it clearly. The copies are now inserted at the front of the list, and the same test line passes under the pin and its name.
+
+**Findings in UI round 2:**
+40. **🚩 A `data-view` attribute on `<body>` broke every tick box.** The click handler looks for the nearest `[data-view]` (the helmet button); with the attribute on `<body>`, every click in the panel matched it, redrew the panel and undid the tick. Scripted tests missed it because they set the boxes directly; real mouse clicks found it. The body now uses `data-screen`, and the handler ignores matches outside the panel.
+41. **ℹ️ "Flicker" had two causes** (see point 6): rebuilt nodes, and buttons that jumped when text above them changed length. A DOM-diff alone would not have fixed the second.
+42. **🚩 A browser tab that is not in front gets no animation frames**, even when `document.visibilityState` says "visible" (seen in the Claude desktop browser pane). The map stays black and nothing animates until the tab is shown. Tests must front the tab or drive the steps by hand; the app's loading screen gives up waiting after 6 seconds.
+43. **ℹ️ CesiumJS `globe.tilesLoaded` is true before the first tile is asked for**, so "wait until tiles are loaded" needs "loading has started" as well.
+44. **ℹ️ CesiumJS `fov` is the angle across the larger side of the map.** On a tall, narrow map the side-to-side angle is much smaller (20° instead of 60° on a 218 × 718 strip), so every fixed camera view cut off its subject. The views now scale with the map's shape.
+45. **🚩 The whole-planet layer is the MOLA height-colour map** (blue = low ground). It can be read as "Mars with seas". A true-colour layer (for example the Viking colour mosaic on Mars Trek, R1) would be better for the globe and the launch animation. It needs a tile download and a package rebuild, so it is an **open question for the user**.
+46. **ℹ️ Between 12 km and 120 km the map is blurry** (MOLA at about 460 m per pixel; the CTX photo map covers only each zone). A wider CTX layer for the crater would fix the crater view; same open question as 45.
+47. **ℹ️ The Z2 numbers moved by one minute with the gear-load model:** 3 h 42 min with stops, reserve 2 h 18 min (38%), back at 12:27. The README is corrected; the three HTML docs still say 3 h 41 min and describe the screens before this round (**open: update them?**).
+
 ## 9. Files in this repo
 
 - `docs/PLAN.md` — this file
@@ -339,5 +420,5 @@ Example result with the 4 package stops:
 - `docs/Baroler-User-Scenario.html` — what the end user sees and does, start to finish
 - `schema/marswalk.schema.json` — data model (JSON Schema 2020-12)
 - `schema/README.md` — how the schema fits together + rules the schema can't express
-- `data/sources.registry.json` — the verified source ledger (R1–R5 + S1)
+- `data/sources.registry.json` — the verified source ledger (R1–R5 and the extra sources S1, S2, S3, S4, S7)
 - `CLAUDE.md`, `.claude/` — Claude Code setup

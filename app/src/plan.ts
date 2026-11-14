@@ -2,6 +2,7 @@
 
 import { type LonLat, type RouteGrid, bilinear, cellIndex, metresBetween } from "./grid";
 import { type CostModel, cellPenalty, findRoute, tobler } from "./router";
+import { type LoadModel, heaviest, kgText, loadStatus, loadsPerLeg, timeFactor, withLoadFactor } from "./load";
 import { hasLineOfSight } from "./los";
 
 export interface PlanStop extends LonLat {
@@ -22,6 +23,27 @@ export interface Conditions {
   dataDate: string; // when the sun data was retrieved
 }
 
+/** Carried load: the heaviest load any astronaut has at any point of the walk (A20, A21). */
+export function loadCheck(m: LoadModel, perLeg: number[][]): Check {
+  const kg = Math.max(...perLeg.map(heaviest));
+  const status = loadStatus(m, kg);
+  const pct = (timeFactor(m, kg) - 1) * 100;
+  const effect = Math.abs(pct) < 0.05 ? ""
+    : ` Walking takes about ${Math.abs(pct).toFixed(1)}% ${pct > 0 ? "longer" : "less time"} than with the standard ${kgText(m.kitKg)} kit.`;
+  const detail =
+    status === "ok" ? `Up to ${kgText(kg)} per astronaut, within the ${kgText(m.careKg)} NASA planning value.${effect}`
+    : status === "care" ? `Up to ${kgText(kg)} per astronaut, above the ${kgText(m.careKg)} NASA planning value: take care.${effect}`
+    : `Up to ${kgText(kg)} per astronaut, more than the ${kgText(m.maxKg)} limit. Take less kit or share the samples.`;
+  return { id: "load", label: "Carried load", status, detail };
+}
+
+/** Buddy rule: at least two astronauts walk together. A crew of one fails, which blocks approval. */
+export function buddyCheck(crewSize: number): Check {
+  return crewSize >= 2
+    ? { id: "buddy", label: "Buddy rule", status: "ok", detail: `${crewSize} astronauts walk together the whole time.` }
+    : { id: "buddy", label: "Buddy rule", status: "fail", detail: "Only 1 astronaut. The buddy rule needs at least 2 walking together: add a crew member." };
+}
+
 export interface PlanInput {
   grid: RouteGrid;
   model: CostModel;
@@ -33,6 +55,14 @@ export interface PlanInput {
   maxRadioGapMin: number; // A9
   startMin: number; // walk start, minutes after local midnight
   conditions?: Conditions;
+  crewSize?: number; // astronauts on the walk (default 2); the buddy rule needs at least 2
+  load?: PlanLoad; // gear load; without it, legs keep the standard-kit time
+}
+
+export interface PlanLoad {
+  model: LoadModel;
+  startKg: number[]; // load of each astronaut when leaving the habitat
+  pickupKgPerStop: number[]; // samples picked up at each stop, in walking order
 }
 
 export interface Sample extends LonLat {
@@ -57,6 +87,8 @@ export interface Leg {
   careM: number;
   minutes: number;
   noRadioMin: number;
+  loadKg?: number; // heaviest load in the crew on this leg (gear-load model)
+  loadFactor?: number; // walking-time multiplier from that load (1 = standard kit)
 }
 
 export type CheckStatus = "ok" | "care" | "fail";
@@ -269,7 +301,14 @@ export function computePlan(input: PlanInput): PlanResult {
   }
   const routed = routeLegs(input, null, input.stops);
   if (!routed.ok) return { ok: false, error: routed.error, legs: [], totals: empty, radioGaps: [], checks: [] };
-  const legs = routed.legs;
+  // Gear load: legs after a pickup take longer. Only time changes, not the path.
+  const perLeg = input.load ? loadsPerLeg(input.load.startKg, input.load.pickupKgPerStop) : null;
+  const legs = perLeg
+    ? routed.legs.map((l, i) => {
+        const kg = heaviest(perLeg[Math.min(i, perLeg.length - 1)]);
+        return withLoadFactor(l, timeFactor(input.load!.model, kg), kg);
+      })
+    : routed.legs;
 
   const walkMin = legs.reduce((s, l) => s + l.minutes, 0);
   const stopMin = input.stops.reduce((s, x) => s + x.minutes, 0);
@@ -342,12 +381,8 @@ export function computePlan(input: PlanInput): PlanResult {
           : `No radio for about ${Math.round(longestGap)} min in one stretch, more than the ${input.maxRadioGapMin} min limit. Move a stop or plan a radio relay.`,
     },
     ...conditionChecks(input, totals.finishClockMin),
-    {
-      id: "buddy",
-      label: "Buddy rule",
-      status: "ok",
-      detail: "Two astronauts walk together the whole time.",
-    },
+    ...(input.load && perLeg ? [loadCheck(input.load.model, perLeg)] : []),
+    buddyCheck(input.crewSize ?? 2),
   ];
   return { ok: true, legs, totals, radioGaps, checks };
 }

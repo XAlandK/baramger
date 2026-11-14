@@ -7,7 +7,8 @@
 - P3: the helmet display (HUD), the after-walk replay, and the walk report with "Send to Earth" (light time).
 
 - P4: zone Z1 (Three Forks sample depot) — built and browser-tested (2026-11-14) at the user's request. Depot stops are inferred rover parking spots (A14, to verify).
-Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baroler-Report.html`.
+- Review fixes, the gear-load feature (A15–A21) and **UI round 2** (2026-11-14): launch animation, whole-Mars globe with the zones marked, no-scroll screens (tabs, pop-ups, pages), place names that stay on the map, stops the crew can rename, and a walk screen where nothing flickers or moves. Details: `docs/PLAN.md` ("UI round 2").
+Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baroler-Report.html` (the three HTML docs still describe the screens before UI round 2).
 
 ## How to run
 - Build a mission package: `cd pipeline && uv run baroler-build --zone z2` (or `--zone z1`).
@@ -15,7 +16,8 @@ Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baroler-Rep
   - It ends with "all checks passed" or lists what failed, and it updates `data/package/index.json` (the app's zone list).
 - Zones are defined in `pipeline/baroler_pipeline/config.py` (`Zone`, `ZONES`). The app opens a zone with `#z1` / `#z2` in the URL, or with the zone switcher.
 - Pipeline tests: `cd pipeline && uv run --group dev pytest -q`
-- App: `cd app && npm run dev` (http://localhost:5173; `.claude/launch.json` has `baroler-app`). Tests: `npm test`. Type check + build: `npm run build`.
+- App: `cd app && npm run dev` (http://localhost:5173; `.claude/launch.json` has `baroler-app`). Tests: `npm test` (the DOM tests use jsdom, pinned). Type check + build: `npm run build`.
+  - The app opens with the launch animation, then the whole planet. `?nointro` skips the animation (it plays once per tab; flag in `sessionStorage`).
 - Install npm packages with `npm install --before=<date two weeks ago>`. uv uses `exclude-newer` in `pipeline/pyproject.toml`.
 - `app/public/package` and `app/public/cesiumStatic` are symlinks (to `data/package` and the CesiumJS build).
 - Deploy to Cloudflare: `cd app && npm run deploy` (builds, then uploads `dist/`: about 151 MB, about 2,400 files; config `app/wrangler.jsonc`, hosting = Workers static assets). Use `wrangler deploy`, not `wrangler pages deploy`: wrangler 4.x redirects Pages commands to Workers and they fail.
@@ -77,7 +79,22 @@ Candidate extras S1–S6 and their status: `docs/PLAN.md` section 6.
   - NASA DONKI (S3): the CCMC host timed out, and the api.nasa.gov DEMO_KEY allows only 10 calls per hour.
   - Set `NASA_API_KEY` (free sign-up by the user) and the pipeline uses DONKI automatically.
 - Earth–Mars light time: `app/src/lighttime.ts` (JPL approximate elements, valid 1800–2050). It matches astropy to 0.0001 AU; tests in `app/test/lighttime.test.ts`.
-- Dev-only hook: `window.__baroler` (map, state, walkUi, replay, step, renderPanel, makeReport) for testing. The browser pauses animation frames while the pane is hidden, so drive `step()` by hand to test.
+- **Gear load (A15–A21, `app/src/load.ts`):** walking time × (body + suit + heaviest load) / (body + suit + standard kit), about +0.5% per kg. Mass, not weight (inertia stays at 0.38 g). Only time changes, never the route path. Values are NASA planning values (ICES-2026-127) or guesses, all `to_verify`. The JPL tube page contradicts itself (147 cm³ vs "a piece of chalk"): use only its "< 57 g".
+- Dev-only hook: `window.__baroler` (map, state, preview, walkUi, replay, step, renderPanel, makeReport, enterZone, toGlobe, overflowReport, intro) for testing.
+  - The browser gives no animation frames while the pane is hidden **or the tab is not the front tab** (even when `document.visibilityState` says "visible"). Then the map stays black and nothing animates: front the tab (`tabs_select`), or drive `step()` / `intro.step()` / `map.viewer.render()` by hand.
+  - Click coordinates are in the screenshot's frame, not CSS pixels (scale = screenshot width / `innerWidth`).
+- **UI rules (UI round 2, `app/src/main.ts`, `style.css`):**
+  - **Nothing scrolls.** One side panel (design size 392 × 740 px, scaled by `--ui-scale` on short windows) with tabs; details open in `#popup`; long lists use `paged()`. `window.__baroler.overflowReport()` must return `[]` on every screen. New content must fit or be paged.
+  - **The panel is never rebuilt with `innerHTML`.** `renderPanel()` uses `morph()` (`app/src/morph.ts`), which changes only what differs, so buttons keep their place, hover and focus. Nodes match by position + tag + id + `data-key`; give a block a `data-key` when it must be replaced as a whole.
+  - **No control may move while a clock runs** (walk, replay, walk-through): put changing text on its own fixed-height line (`.one-line`), warnings below the buttons, and use equal-width tabs (`.subtabs.even`).
+  - **A button's place never changes its action.** The walk has one row with a fixed slot per button (Stay +10 | Leave now | Skip next | Head home); slots are only switched off. Where a button must replace another (plan footer), a click within 0.45 s of the change is ignored (`footerJustChanged()`), so a double-click cannot hit the new button.
+  - Leaving the plan screen calls `leavePlanEditing()` (closes pop-ups, add-stop mode, selection). Stops change only in plan mode. A new route search ends the approval at once.
+  - Check after any UI change: in the dev app run `(await import("/dev/ui-tour.js")).tour()` (opens every screen and pop-up; `bad` must be `[]`) for `#z1` and `#z2` at several window sizes, e.g. 1280×800, 1024×560, 800×725, 600×720, 500×600, 414×896.
+  - Names typed by the crew can be in any script: CesiumJS labels draw letter by letter, so `needsShaping()` names are drawn by the browser (`MarkerLayer.tag`). Session flags go through `session` (storage can be blocked).
+  - Don't name a `data-*` attribute on `<body>` like one the click handler looks for (`data-view` on `<body>` once made every click match it). The body uses `data-screen`.
+  - Window layout: `fitUi()` sets `body.narrow` (panel lies over the map) and `body.popup-full` (pop-ups use the whole window; the helmet view takes the whole window). Camera views use `map.widen()` and `map.planetAltitude()` so they fit a narrow map (Cesium's `fov` is the angle across the **larger** side). Rules as plain functions: `app/src/layout.ts`.
+  - Cesium's `globe.tilesLoaded` is also true before the first tile is asked for; use `map.whenDrawn()`.
+- **Launch animation (`app/src/intro.ts`):** an HTML/SVG night sky (a drawing, labelled as one on screen) and then the app's own CesiumJS Mars seen through a CSS "eyepiece"; it ends on the fitted whole-planet view while the panel slides in. Not Three.js: the user allowed "something better", and D4 keeps one map engine.
 - Cesium Mars tileset (ion asset 3644333) = extra source **S2**, not walk-scale at Jezero (6 m image / 20 m terrain; sharp only at Gale: 25 cm / 1 m). Needs a Cesium ion account + internet. Optional far-zoom globe only, and only after C2 (Cesium ion terms) is checked.
 
 ## MCP servers (added 2026-11-14, local scope, see `docs/mcp-guide.html`)
@@ -116,7 +133,7 @@ Candidate extras S1–S6 and their status: `docs/PLAN.md` section 6.
 - D1 location: **Jezero** — *decided* (follows from D3 = Z2)
 - D2 extra data: **yes, only if it passes C1–C5** (see "Extra data rules") — *decided*
 - D3 walk zone: **Z2 Bright Angel / Cheyava Falls** — *decided*. Z1 (Three Forks) added as P4 when the user asked.
-- D4 stack: **CesiumJS** as the only map engine (3D Plan screen, top-down tablet, walk-through and replay) + Vite/TypeScript app; Python (uv) pipeline also builds Cesium terrain tiles from the HiRISE DEM. HUD = plain HTML/SVG. Not Three.js, not OpenLayers — *decided 2026-11-14*
+- D4 stack: **CesiumJS** as the only map engine (whole-Mars globe, launch animation, 3D Plan screen, top-down tablet, walk-through and replay) + Vite/TypeScript app; Python (uv) pipeline also builds Cesium terrain tiles from the HiRISE DEM. HUD and the launch animation's Earth scene = plain HTML/SVG. Not Three.js, not OpenLayers — *decided 2026-11-14*
 - D5 deadline / team size — *dropped by the user*. Build by priority:
   - P1 ✅ Z2 package + Plan screen with route, photos, safety.
   - P2 ✅ tablet view, walk-through, weather/space-weather.
