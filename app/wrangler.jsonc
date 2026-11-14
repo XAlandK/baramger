@@ -2,7 +2,7 @@
 // Deploy with `npm run deploy` (builds first). See CLAUDE.md "How to run".
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "baroler",
+  "name": "baramger",
   "compatibility_date": "2026-10-23",
   "assets": {
     "directory": "./dist"

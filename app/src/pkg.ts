@@ -75,6 +75,14 @@ export interface RoverWaypoint {
   position: Position;
 }
 
+/** An official place name (from the USGS map, R2): where the map prints the label. */
+export interface PlaceName {
+  name: string;
+  position: Position;
+  rank?: "major" | "minor";
+  sourceId: string;
+}
+
 export interface MissionPackage {
   id: string;
   title: string;
@@ -92,6 +100,7 @@ export interface MissionPackage {
   stops: Stop[];
   povImages: PovImage[];
   roverWaypoints: RoverWaypoint[];
+  placeNames?: PlaceName[];
   assumptions: Assumption[];
   sources: { id: string; name: string; credit: string; role: string }[];
 }

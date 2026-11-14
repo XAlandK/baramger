@@ -3,25 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Baroler · Plan</title>
+    <title>Baramger</title>
     <meta name="description" content="Plan a safe Marswalk in Jezero crater, Mars." />
   </head>
   <body>
     <div id="app">
-      <div id="map" aria-label="3D map of the walk area"></div>
-      <div id="map-title" class="map-chip">
-        <span class="eyebrow">Baroler · Plan</span>
-        <strong id="site-name">Loading…</strong>
-        <select id="zone-select" aria-label="Walk zone" hidden></select>
+      <div id="map" aria-label="3D map of Mars and the walk area"></div>
+      <div id="map-area">
+        <div id="map-corner">
+          <div id="map-title" class="map-chip">
+            <span class="eyebrow" id="chip-eyebrow">Baramger</span>
+            <strong id="site-name">Loading…</strong>
+            <div class="chip-row">
+              <select id="zone-select" aria-label="Walk zone" hidden></select>
+              <button type="button" id="to-globe" class="chip-btn" hidden title="See the whole planet">Mars globe</button>
+            </div>
+          </div>
+          <div id="scale" class="map-chip" role="group" aria-label="Map scale" hidden></div>
+        </div>
       </div>
       <div id="add-hint" class="map-chip hint" hidden>Click the map to place the new stop. <button id="add-cancel" type="button">Cancel</button></div>
+      <div id="globe-hint" class="map-chip hint" hidden>Drag to turn Mars · scroll to zoom · click a marked zone</div>
+      <div id="size-hint" class="map-chip hint" role="status" hidden>This window is too short to show everything. Make it taller (at least 420 px).</div>
       <div id="readout" class="map-chip readout" aria-live="off"></div>
       <div id="compare-handle" hidden><span>Photo</span><span>Layers</span></div>
+      <button type="button" id="panel-show" class="map-chip" hidden aria-label="Show the panel">‹ Panel</button>
       <aside id="panel" aria-label="Walk plan"></aside>
       <div id="hud" aria-label="Helmet display" hidden></div>
+      <div id="popup" hidden></div>
       <div id="lightbox" hidden></div>
       <div id="modal" hidden></div>
       <div id="chart-tip" role="status" hidden></div>
+      <div id="intro" hidden></div>
       <div id="loading"><div class="spinner"></div><p id="loading-text">Loading the mission package…</p></div>
     </div>
     <script type="module" src="/src/main.ts"></script>

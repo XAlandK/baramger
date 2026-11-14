@@ -2,10 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "baroler-app",
+      "name": "baramger-app",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "app", "run", "dev", "--", "--port", "5173", "--strictPort"],
       "port": 5173
+    },
+    {
+      "name": "baramger-docs",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["app/node_modules/vite/bin/vite.js", "docs", "--port", "8765", "--strictPort"],
+      "port": 8765
     }
   ]
 }

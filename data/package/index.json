@@ -8,7 +8,7 @@
    "title": "Three Forks Marswalk (zone Z1, Jezero crater)",
    "description": "The Three Forks sample depot at the foot of the old river delta, where Perseverance left 10 sample tubes in Dec 2022 - Jan 2023.",
    "stops": 10,
-   "generatedAt": "2026-11-14T11:25:19Z"
+   "generatedAt": "2026-11-14T17:03:16Z"
   },
   {
    "key": "z2",
@@ -18,8 +18,15 @@
    "title": "Bright Angel Marswalk (zone Z2, Jezero crater)",
    "description": "Walk area around the Cheyava Falls rock, where Perseverance worked in mid-2024.",
    "stops": 4,
-   "generatedAt": "2026-11-14T11:09:22Z"
+   "generatedAt": "2026-11-14T17:04:13Z"
   }
  ],
- "default": "z2"
+ "default": "z2",
+ "crater": {
+  "name": "Jezero",
+  "lon": 77.68734927,
+  "lat": 18.4082,
+  "diameter_km": 47.52,
+  "source": "R1-mars-trek"
+ }
 }

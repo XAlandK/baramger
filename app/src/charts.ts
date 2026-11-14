@@ -43,7 +43,7 @@ export function tempChart(points: TempPoint[], o: { sunriseH: number; sunsetH: n
     ${ticksX.map((h) => `<text x="${x(h)}" y="${H - 6}" class="c-tick" text-anchor="middle">${String(h).padStart(2, "0")}${h === 24 ? " h" : ""}</text>`).join("")}
     <path d="${line("ground")}" fill="none" stroke="${COL.ground}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     <path d="${line("air")}" fill="none" stroke="${COL.air}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <line class="c-xh" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" visibility="hidden"/>
+    <line class="c-xh" data-keep x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" visibility="hidden"/>
     <rect class="c-hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/>
   </svg>`;
 }
@@ -87,17 +87,22 @@ export function profileChart(points: ProfilePoint[], stops: { d: number; label: 
     ${stops.map((s) => `<line x1="${x(s.d)}" x2="${x(s.d)}" y1="${m.t}" y2="${H - m.b}" class="c-stop"/><text x="${x(s.d)}" y="${m.t - 5}" class="c-tick strong" text-anchor="middle">${s.label}</text>`).join("")}
     ${runs.map((r) => `<path d="${r.pts.map((p, i) => `${i ? "L" : "M"}${x(p.d).toFixed(1)},${y(p.h).toFixed(1)}`).join("")}" fill="none" stroke="${r.care ? COL.care : COL.easy}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join("")}
     ${current !== undefined ? `<line x1="${x(current)}" x2="${x(current)}" y1="${m.t}" y2="${H - m.b}" class="c-now"/>` : ""}
-    <line class="c-xh" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" visibility="hidden"/>
+    <line class="c-xh" data-keep x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" visibility="hidden"/>
     <rect class="c-hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/>
   </svg>`;
 }
 
 /** One hover handler for every chart in a container: crosshair + tooltip with the nearest values. */
 export function bindChartHover(container: HTMLElement, tip: HTMLElement): void {
+  // The hover line is kept by redraws (data-keep), so it must be hidden here, together with the tooltip.
+  const hide = () => {
+    tip.hidden = true;
+    container.querySelectorAll(".c-xh").forEach((l) => l.setAttribute("visibility", "hidden"));
+  };
   container.addEventListener("pointermove", (ev) => {
     const svg = (ev.target as Element).closest?.("svg.chart") as SVGSVGElement | null;
     if (!svg) {
-      tip.hidden = true;
+      hide();
       return;
     }
     const m = JSON.parse(svg.dataset.m!);
@@ -105,7 +110,7 @@ export function bindChartHover(container: HTMLElement, tip: HTMLElement): void {
     const r = svg.getBoundingClientRect();
     const sx = ((ev.clientX - r.left) / r.width) * W;
     if (sx < m.l || sx > W - m.r) {
-      tip.hidden = true;
+      hide();
       return;
     }
     const f = (sx - m.l) / (W - m.l - m.r);
@@ -134,8 +139,5 @@ export function bindChartHover(container: HTMLElement, tip: HTMLElement): void {
     tip.style.left = `${Math.min(window.innerWidth - 250, Math.max(4, ev.clientX - 120))}px`;
     tip.style.top = `${Math.max(4, r.top - 30)}px`;
   });
-  container.addEventListener("pointerleave", () => {
-    tip.hidden = true;
-    container.querySelectorAll(".c-xh").forEach((l) => l.setAttribute("visibility", "hidden"));
-  });
+  container.addEventListener("pointerleave", hide);
 }

@@ -1,19 +1,38 @@
-# Baroler: a Marswalk planner for Jezero crater
+# Baramger: a Marswalk planner for Jezero crater
 
-Baroler helps two astronauts plan a walk on Mars, stay safe on the way, and do real science at each stop. It was built for the NASA challenge **"Interplanetary Survival Guide: Martian Map"** (full text in [`TheChallenge.txt`](TheChallenge.txt)).
+**The name.** Baramger (Kurdish: بارامگەڕ) is a compound word: *Baram* (بارام), an old name for the planet Mars, and *-ger* (گەڕ), "one that browses and explores", as in وێبگەڕ or تۆڕگەڕ ("web browser"). So Baramger means "Mars browser": a place to browse and explore Mars.
+
+Baramger helps two astronauts plan a walk on Mars, stay safe on the way, and do real science at each stop. It was built for the NASA challenge **"Interplanetary Survival Guide: Martian Map"** (full text in [`TheChallenge.txt`](TheChallenge.txt)).
 
 It layers NASA data from several missions into one offline map of a small walk area in Jezero crater, the place where the Perseverance rover works. It covers the whole walk: planning it the evening before, guiding the crew outside, and looking back afterwards.
+
+## Mars, like I'm five (English · کوردی)
+
+Easy cartoon answers about the NASA challenge, our app and the map, in **English** and **Central Kurdish (Sorani)**. Click a picture to read that language.
+
+<p align="center">
+<a href="docs/like-im-five/README.md"><img src="docs/like-im-five/img/preview-en.jpg" width="49%" alt="Mars, like I'm five: the English page"></a>
+<a href="docs/like-im-five/README.ckb.md"><img src="docs/like-im-five/img/preview-ckb.jpg" width="49%" alt="Mars بۆ منداڵی پێنج ساڵان: the Sorani page"></a>
+</p>
+
+- **Read it here on GitHub:** [English](docs/like-im-five/README.md) · [کوردی](docs/like-im-five/README.ckb.md)
+- **The full cartoon page**, with its English | کوردی button: [`docs/Baramger-Like-Im-Five.html`](docs/Baramger-Like-Im-Five.html). GitHub cannot show it as a page, so download it and open it in a web browser.
 
 ## What it does
 
 | Step | Screen | What the crew gets |
 |---|---|---|
-| **Plan** | Habitat wall screen | A 3D map with layers (photo map, steep ground, rock types, rocky or dusty ground, the rover's path). Stops with real rover photos of each spot. The safest route between stops. A safety check (time and reserve, slope, radio contact, daylight, sun activity, buddy rule, turn-back times). Walk conditions measured by Perseverance. A walk-through preview. |
-| **Walk** | Tablet on the suit arm | The next stop with distance, time and direction. Warnings ahead (steep ground, sand ripples, rocky ground, radio loss, running late, sunset). Stop timer and task list. Skip a stop or head home, and the route re-plans from where the crew stands. Field notes pinned to the map. |
+| **Start** | Habitat wall screen | A short launch animation: a telescope on Earth finds Mars, then the view flies to the planet. It ends on the whole of Mars, which can be turned and zoomed freely, in height colours or in natural colour. The walk zones are marked; click one to fly in. "Fly to Jezero crater" shows the whole crater as a sharp photo map with its official place names. |
+| **Plan** | Habitat wall screen | A 3D map with layers (photo map, steep ground, rock types, rocky or dusty ground, the rover's path). Stops with real rover photos of each spot; the crew can add their own stops and name them. Known places keep their name on the map, also when they are not stops. The safest route between stops. A crew size and the load each astronaut carries. A safety check (time and reserve, slope, radio contact, daylight, sun activity, carried load, buddy rule, turn-back times). Walk conditions measured by Perseverance. A walk-through preview. |
+| **Walk** | Tablet on the suit arm | The next stop with distance, time and direction. Warnings ahead (steep ground, sand ripples, rocky ground, radio loss, running late, sunset). Stop timer and task list; picking up a tube or a sample adds to the crew's load and to the walking time. Skip a stop or head home, and the route re-plans from where the crew stands. Field notes pinned to the map. |
 | **Helmet** | Helmet display (HUD) | An eye-level view with only the essentials: next stop, time left, radio, and one warning at a time. |
 | **After** | Habitat | A replay of the walk, "plan and reality" per stop, and a printable walk report. "Send to Earth" shows today's Earth–Mars signal delay (about 11 minutes on 14 Nov 2026). |
 
 On the tablet and in the helmet, the walk runs as a **time-lapse demo** along the approved route. On Mars, the suits' navigation would give the real position.
+
+**A sense of scale.** A small card in the top-right corner of the map shows a scale bar and a drawing at the same scale (on a narrow map it sits under the map title). It changes with the zoom: a person in a suit, the Perseverance rover, NASA's Mars Reconnaissance Orbiter, a Space Shuttle orbiter, the International Space Station. From far away it says how many space stations would fit in the bar.
+
+**Nothing scrolls.** Every screen is one side panel with tabs; details open in pop-ups, and long lists have pages. On a short window the panel is scaled down to fit. While the walk plays, no button moves or blinks: the screen updates only the text that changed.
 
 ## Two walk zones
 
@@ -21,13 +40,13 @@ On the tablet and in the helmet, the walk runs as a **time-lapse demo** along th
 |---|---|---|
 | Science goal | Study the spotted rocks at Cheyava Falls | Collect the ten sample tubes Perseverance left on the ground |
 | Stops | 4 | 10 |
-| Route | 3.20 km, 3 h 41 min with stops | 1.23 km, 2 h 10 min with stops |
-| Reserve (rule: at least 30%) | 39% | 64% |
+| Route | 3.20 km, 3 h 42 min with stops | 1.23 km, 2 h 10 min with stops |
+| Reserve (rule: at least 30%) | 38% | 64% |
 | Steepest ground | 21° | 6° |
 | Radio contact | 2 short gaps, 4 min at most | The whole walk |
 | Weather reference | Perseverance MEDA, sols 1210–1218 (Jul 2024) | Perseverance MEDA, sols 653–659 (Dec 2022) |
 
-Pick a zone with the menu at the top of the map, or open `#z1` / `#z2` in the address bar.
+The app opens on the whole planet. Click a marked zone on the map or press **Open** in the zone list. Inside a zone, the menu at the top of the map switches zones and **Mars globe** goes back to the planet. `#z1` / `#z2` in the address bar opens that zone.
 
 **About the Z1 tube positions:** NASA publishes the exact tube spots only as a picture ([PIA25682](https://www.jpl.nasa.gov/images/pia25682-perseverances-three-forks-sample-depot-map/)), not as data. Each depot stop is where Perseverance parked while it dropped a tube, so the tube should lie within a few metres. The app says this on screen (assumption A14, to verify).
 
@@ -41,12 +60,15 @@ npm ci
 npm run dev
 ```
 
-Then open http://localhost:5173. The app works without internet: map tiles, terrain, photos and weather are all in the mission packages.
+Then open http://localhost:5173. The app works without internet: map tiles, terrain, photos, weather and fonts are all in the app and the mission packages.
+
+- The launch animation plays once per browser tab. Add `?nointro` to the address to skip it; it is also skipped when the system asks for reduced motion. "Play the launch animation again" is on the whole-planet screen.
+- The app is made for a wide window (about 1100 px or more). In a narrow window the map gets a small strip beside the panel; the `›` button hides the panel, and the helmet view uses the whole window.
 
 Other commands, from the `app` folder:
 
 ```bash
-npm test          # unit tests (vitest)
+npm test          # unit tests (vitest; the screen tests use jsdom)
 npm run build     # type check + production build into app/dist
 ```
 
@@ -70,13 +92,13 @@ The data pipeline is in Python. You need **[uv](https://docs.astral.sh/uv/)**; i
 
 ```bash
 cd pipeline
-uv run baroler-build --zone z2      # or --zone z1
+uv run baramger-build --zone z2      # or --zone z1
 ```
 
 - Building both zones downloaded about 0.5 GB of raw data into `data/raw/` (not in git). This includes the walk-area window of the HiRISE 1 m terrain model, read with HTTP range requests from the USGS copy.
 - Add `--skip-tiles --skip-photos` to reuse tiles and photos that were already downloaded.
 - The build ends with "all checks passed" or a list of what failed, and it updates `data/package/index.json` (the app's zone list).
-- Optional: set `NASA_API_KEY` (a free key from api.nasa.gov) to add NASA DONKI space-weather events. NOAA SWPC sun data is always used.
+- NASA DONKI space-weather events are asked for at every build with NASA's shared demo key, which often has no calls left. Set `NASA_API_KEY` (a free key from api.nasa.gov) for steady access. NOAA SWPC sun data is always used.
 
 Pipeline tests:
 
@@ -87,12 +109,12 @@ uv run --group dev pytest -q
 
 ## Data sources and credits
 
-The challenge lists five resources. Baroler uses all five; the mission package schema refuses a package that does not list them.
+The challenge lists five resources. Baramger uses all five; the mission package schema refuses a package that does not list them.
 
 | ID | Source | Used for | Credit |
 |---|---|---|---|
-| R1 | [JPL Mars Trek](https://trek.nasa.gov/mars/) | HiRISE and CTX photo maps, HiRISE 1 m and CTX terrain, THEMIS night heat, MOLA | NASA/JPL-Caltech Mars Trek; instrument teams per layer |
-| R2 | [USGS–NASA Planetary Geologic Mapping](https://planetarymapping.wr.usgs.gov/) | Rock types at each stop and along the route | Sun, V.Z., and Stack, K.M., 2020, [USGS SIM 3464](https://doi.org/10.3133/sim3464) |
+| R1 | [JPL Mars Trek](https://trek.nasa.gov/mars/) | HiRISE and CTX photo maps, HiRISE 1 m and CTX terrain, THEMIS night heat, the two whole-planet maps (MOLA height colours, Viking colour mosaic) | NASA/JPL-Caltech Mars Trek; instrument teams per layer |
+| R2 | [USGS–NASA Planetary Geologic Mapping](https://planetarymapping.wr.usgs.gov/) | Rock types at each stop and along the route; the ten official place names on the crater map | Sun, V.Z., and Stack, K.M., 2020, [USGS SIM 3464](https://doi.org/10.3133/sim3464) |
 | R3 | [Curiosity's Proposed Path up Mount Sharp (PIA23179)](https://www.jpl.nasa.gov/images/pia23179-curiositys-proposed-path-up-mount-sharp/) | Design reference for the annotated route (not map data) | NASA/JPL-Caltech/ESA/Univ. of Arizona/JHUAPL/MSSS/USGS |
 | R4 | [NASA Worldview](https://worldview.earthdata.nasa.gov/) | Design reference for the layer list and compare view (Earth only, not Mars data) | NASA Worldview / EOSDIS |
 | R5 | [Mars Perseverance Raw Images](https://mars.nasa.gov/mars2020/multimedia/raw-images/) | "What you will see" photos at each stop | Per image, e.g. NASA/JPL-Caltech/LANL/CNES/IRAP |
@@ -104,6 +126,8 @@ Extra sources are used **next to** the five resources, never instead of them. Ea
 | S1 | [Perseverance rover waypoints](https://mars.nasa.gov/mars2020/mission/where-is-the-rover/) | Placing rover photos on the map; the Z1 depot stops | NASA/JPL-Caltech |
 | S4 | [Perseverance MEDA weather, NASA PDS](https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/) | Air and ground temperature, air pressure | NASA/JPL-Caltech/CAB (MEDA), NASA PDS |
 | S7 | [NOAA Space Weather Prediction Center](https://www.swpc.noaa.gov/) | Solar flares and particle levels (measured near Earth) | NOAA SWPC |
+| S3 | [NASA DONKI](https://kauai.ccmc.gsfc.nasa.gov/DONKI/) | The number of solar particle events in the 30 days before the build: one sentence under "Checks and limits", when the service answers at build time. The sun values on screen are NOAA's | NASA CCMC DONKI |
+| S8 | NASA fact pages ([Perseverance](https://science.nasa.gov/mission/mars-2020-perseverance/rover-components/), [MRO press kit](https://www.jpl.nasa.gov/news/press_kits/mro-launch.pdf), [Space Shuttle](https://www.nasa.gov/reference/the-space-shuttle/), [space station](https://www.nasa.gov/international-space-station/space-station-facts-and-figures/)) | Real sizes of the drawings in the scale card | NASA; NASA/JPL-Caltech (Perseverance, MRO) |
 
 The full source ledger, with what was checked and when, is in [`data/sources.registry.json`](data/sources.registry.json). Every photo in the app carries its own credit line.
 
@@ -111,8 +135,8 @@ NASA does not endorse this project.
 
 ## How it works
 
-1. **Pipeline** (`pipeline/`) builds one offline **mission package** per zone in `data/package/`: terrain grids, a 2 m routing grid with slope and roughness, no-go areas (steeper than 25°), rock types, map tiles, rover photos and positions, weather, daylight and sun activity. Every download is recorded with its URL, time and sha256. The package is checked against [`schema/marswalk.schema.json`](schema/marswalk.schema.json).
-2. **App** (`app/`, Vite + TypeScript + CesiumJS 1.146) loads the package and does the rest in the browser: route finding (A* with walking speed by slope), radio line of sight from the habitat antenna, safety checks, the walk demo, the replay and the report.
+1. **Pipeline** (`pipeline/`) builds one offline **mission package** per zone in `data/package/`: terrain grids, a 2 m routing grid with slope and roughness, no-go areas (steeper than 25°), rock types, map tiles, rover photos and positions, weather, daylight and sun activity. Every download is recorded with its URL and time, and with a sha256 where the file is kept (map tiles are listed per layer). The package is checked against [`schema/marswalk.schema.json`](schema/marswalk.schema.json).
+2. **App** (`app/`, Vite + TypeScript + CesiumJS 1.146) loads the package and does the rest in the browser: route finding (A* with walking speed by slope), radio line of sight from the habitat antenna, safety checks, the walk demo, the replay and the report. CesiumJS is the only map engine: the Mars in the launch animation is the same globe the crew then plans on (the night sky before it is a drawing, and the screen says so).
 
 Some facts we checked along the way:
 
@@ -123,24 +147,30 @@ Some facts we checked along the way:
 
 ## Limits and open assumptions
 
-- **Starting values to confirm (A1–A14).** For example: 15° comfortable slope, 25° maximum slope, 2.5 km/h walking speed on flat ground, a 6-hour walk, and 30% time kept in reserve. The app lists them on screen.
+- **Starting values to confirm (A1–A22).** For example: 15° comfortable slope, 25° maximum slope, 2.5 km/h walking speed on flat ground, a 6-hour walk, and 30% time kept in reserve. The app lists them on screen.
+- **Carried load is a model, not a measurement.** Walking time grows with the mass each astronaut moves (body + suit + load, about +0.5% per extra kg), using NASA planning values for body and suit mass (A15–A21). NASA has no published test of suited walking speed versus load at Mars gravity yet.
 - **Small rocks.** The terrain model has 1 m detail and routing uses 2 m cells. Rocks smaller than that do not show up as obstacles; the crew sees them on the 25 cm photo map and in the rover photos.
 - **Rock borders.** The USGS rock map's unit borders can be 100–200 m off (USGS readme), and the app says so. Unit names are shown exactly as USGS publishes them, including its typo "Crater riim unit".
 - **Weather and sun activity** are real measurements from a reference period, not a forecast for the day of the walk. Sun activity is measured near Earth.
 - **Demo mode.** The walk runs as a time-lapse on one screen, and "Send to Earth" saves the report files instead of sending them.
+- **The planet's colours are approximate.** The whole-planet map has two looks from Mars Trek. "Height colours" is the MOLA height map (blue is low ground, not water). "Natural colour" is the Viking orbiter mosaic, which its producer (USGS) calls a colourised mosaic. Mars Trek has no true-colour map of the planet, and its photo maps of Jezero (CTX, HiRISE) are grey.
+- **The wide photo map of the crater is for context only.** Mars Trek calls that CTX mosaic preliminary: it lies about 80 m off the controlled mosaic and shows seams. Routes, slopes and stops use only the controlled HiRISE and CTX data of each walk zone. The whole-crater view stays inside this photo map when the window's shape allows it; on a very wide or a tall, narrow window the coarser planet map shows at its edges. The mosaic also has one small gap (about 3 km²) south-west of the rim.
+- **Place names** are the ten official names printed on the USGS map (Jezero, Belva, Neretva Vallis and others). Each stands where the map prints it: good from far away, not exact. Bright Angel, Cheyava Falls and Three Forks are the Perseverance team's own informal names.
+- **The scale card** measures the map's scale at the middle of the view; a tilted view has no single scale. Its drawings are simple silhouettes with real overall sizes (NASA); the person (1.8 m, starting value A22) is a round value.
 
 ## Repository layout
 
 ```
-app/         CesiumJS web app (Plan, Walk, helmet display, replay, report)
+app/         CesiumJS web app (launch animation, Mars globe, Plan, Walk, helmet display, replay, report)
 pipeline/    Python pipeline that builds and checks the mission packages
 data/        mission packages (data/package/) and the source ledger
 schema/      JSON Schema for mission packages and the source ledger
-docs/        plan, report, short summary, user scenario, MCP guide
+docs/        plan, report, short summary, user scenario, MCP guide, "like I'm five" page
+docs/like-im-five/  GitHub copy of the "like I'm five" page (English + Sorani Markdown, drawings)
 CLAUDE.md    project brief for Claude Code
 ```
 
-More detail: [`docs/PLAN.md`](docs/PLAN.md) (analysis, decisions, findings), [`docs/Baroler-Report.html`](docs/Baroler-Report.html) (full report), [`docs/Baroler-Summary.html`](docs/Baroler-Summary.html) (short summary for everyone), and [`docs/Baroler-User-Scenario.html`](docs/Baroler-User-Scenario.html) (the story of two walks, told from the user's side).
+More detail: [`docs/PLAN.md`](docs/PLAN.md) (analysis, decisions, findings), [`docs/Baramger-Report.html`](docs/Baramger-Report.html) (full report), [`docs/Baramger-Summary.html`](docs/Baramger-Summary.html) (short summary for everyone), and [`docs/Baramger-User-Scenario.html`](docs/Baramger-User-Scenario.html) (the story of two walks, told from the user's side).
 
 ## License
 

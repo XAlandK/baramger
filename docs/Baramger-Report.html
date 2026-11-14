@@ -1,0 +1,873 @@
+<title>Baramger Marswalk Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: mission-briefing document. Sticky contents rail on the left, one reading column on the right; tables and diagrams scroll inside their own boxes. */
+:root {
+  --bg: #F4F6F7;
+  --surface: #FFFFFF;
+  --surface-2: #EBF0F2;
+  --fg: #13202A;
+  --muted: #566672;
+  --line: #D6DFE4;
+  --accent: #0C6A70;
+  --accent-soft: #DCEEEF;
+  --rust: #B0462A;
+  --rust-soft: #F5E3DC;
+  --crit: #B42318;
+  --crit-soft: #FCE6E3;
+  --warn: #8F5600;
+  --warn-soft: #FBEFD7;
+  --note: #375A8C;
+  --note-soft: #E3EBF6;
+  --ok: #1D7539;
+  --ok-soft: #E0F2E6;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1216; --surface: #131B21; --surface-2: #1A242B; --fg: #E2E8EC; --muted: #97A5AF; --line: #25313A;
+    --accent: #55C2C5; --accent-soft: #11343A; --rust: #E4835F; --rust-soft: #38211A;
+    --crit: #F2877C; --crit-soft: #3A1714; --warn: #E8B458; --warn-soft: #342713; --note: #93B3E5; --note-soft: #172439; --ok: #6ECD8C; --ok-soft: #13301D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1216; --surface: #131B21; --surface-2: #1A242B; --fg: #E2E8EC; --muted: #97A5AF; --line: #25313A;
+  --accent: #55C2C5; --accent-soft: #11343A; --rust: #E4835F; --rust-soft: #38211A;
+  --crit: #F2877C; --crit-soft: #3A1714; --warn: #E8B458; --warn-soft: #342713; --note: #93B3E5; --note-soft: #172439; --ok: #6ECD8C; --ok-soft: #13301D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+.shell {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 56px;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+
+/* Contents rail */
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; }
+.toc-label { font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; border-left: 1px solid var(--line); }
+.toc a { display: block; padding: 5px 0 5px 14px; margin-left: -1px; border-left: 2px solid transparent; color: var(--muted); text-decoration: none; font-size: 14px; line-height: 1.35; }
+.toc a:hover { color: var(--fg); border-left-color: var(--line); }
+.toc a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+main { min-width: 0; max-width: 800px; }
+
+/* Header */
+.eyebrow { font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 14px; color: var(--rust); margin: 0 0 12px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 5.4vw, 54px); line-height: 1.04; letter-spacing: -0.01em; margin: 0 0 18px; text-wrap: balance; }
+.lead { font-size: 19px; line-height: 1.55; color: var(--fg); max-width: 64ch; margin: 0 0 26px; }
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); margin: 0 0 12px; }
+.facts div { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
+.facts div:first-child { border-left: 0; }
+.facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+.facts dd { margin: 0; font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.2; }
+.facts dd small { display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.meta-line { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* Sections */
+section { padding-top: 56px; scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 16px); }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 32px; line-height: 1.1; margin: 0 0 6px; text-wrap: balance; }
+.section-kicker { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; margin: 0 0 14px; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.2; margin: 28px 0 10px; }
+p { margin: 0 0 14px; max-width: 68ch; }
+ul.plain { margin: 0 0 14px; padding-left: 20px; display: grid; gap: 6px; }
+ul.plain li { max-width: 66ch; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); margin: 6px 0 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.45; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; background: var(--surface-2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .id { font-family: var(--font-mono); font-weight: 500; color: var(--accent); white-space: nowrap; }
+
+/* Chips */
+.chip { display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; line-height: 1.6; }
+.chip.must { background: var(--accent-soft); color: var(--accent); }
+.chip.should { background: var(--note-soft); color: var(--note); }
+.chip.may { background: var(--surface-2); color: var(--muted); }
+.chip.crit { background: var(--crit-soft); color: var(--crit); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.note { background: var(--note-soft); color: var(--note); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.part { background: var(--warn-soft); color: var(--warn); }
+.chip.rust { background: var(--rust-soft); color: var(--rust); }
+
+/* Resource list */
+.resources { display: grid; gap: 12px; margin: 8px 0 18px; }
+.res { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.res-id { font-family: var(--font-mono); font-weight: 500; font-size: 15px; color: var(--accent); padding-top: 2px; }
+.res h4 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0 0 2px; line-height: 1.25; }
+.res .role { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.res p { margin: 0 0 6px; font-size: 15px; }
+.res p.use { color: var(--muted); }
+.res p.use strong { color: var(--fg); font-weight: 600; }
+
+/* Flags */
+.flag-group { margin: 22px 0 8px; }
+.flag-group-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.flag-group-head h3 { margin: 0; }
+.flag-group-head span { color: var(--muted); font-size: 14px; }
+.flags { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.flag { padding: 14px 18px 14px 16px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 6px var(--radius) var(--radius) 6px; }
+.flag.crit { border-left-color: var(--crit); }
+.flag.warn { border-left-color: var(--warn); }
+.flag.note { border-left-color: var(--note); }
+.flag h4 { font-size: 16px; font-weight: 600; margin: 0 0 4px; line-height: 1.35; }
+.flag p { font-size: 15px; margin: 0 0 4px; }
+.flag p.fix { color: var(--muted); margin: 0; }
+.flag p.fix b { color: var(--fg); font-weight: 600; }
+
+/* Figures */
+figure { margin: 10px 0 22px; }
+.fig-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 10px 6px; overflow-x: auto; }
+.fig-box svg { display: block; width: 100%; min-width: 600px; height: auto; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; max-width: 70ch; }
+svg text { font-family: var(--font-body); fill: var(--fg); }
+svg .t-muted { fill: var(--muted); }
+svg .t-mono { font-family: var(--font-mono); }
+svg .grid { stroke: var(--line); stroke-width: 1; }
+svg .axis { stroke: var(--muted); stroke-width: 1; }
+svg .band { fill: var(--accent-soft); }
+svg .dot-good { fill: var(--accent); }
+svg .dot-ctx { fill: var(--muted); }
+svg .stem { stroke: var(--line); stroke-width: 2; }
+svg .site-a { fill: var(--accent); }
+svg .site-b { fill: var(--rust); }
+svg .route { stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+svg .halo { fill: var(--surface); }
+
+/* Views */
+.views { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 10px 0 18px; }
+.view { padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.view .where { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.view h4 { font-family: var(--font-display); font-size: 21px; font-weight: 600; margin: 0 0 6px; }
+.view p { font-size: 14.5px; margin: 0; }
+
+/* Photo join flow */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 10px 0 18px; }
+.step { flex: 1 1 150px; min-width: 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font-size: 14px; }
+.step b { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 2px; }
+.step code { font-size: 12px; }
+.arrow { align-self: center; color: var(--muted); font-size: 20px; flex: 0 0 auto; }
+
+/* Phases */
+.phases { list-style: none; margin: 8px 0 18px; padding: 0; display: grid; gap: 0; counter-reset: ph; }
+.phases li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); counter-increment: ph; }
+.phases li:last-child { border-bottom: 1px solid var(--line); }
+.phases li::before { content: counter(ph, decimal-leading-zero); font-family: var(--font-mono); font-size: 14px; color: var(--accent); padding-top: 2px; }
+.phases b { display: block; font-weight: 600; }
+.phases span { color: var(--muted); font-size: 14.5px; }
+
+/* Decision callout */
+.callout { padding: 16px 18px; border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); margin: 12px 0 18px; }
+.callout p { margin: 0; }
+.callout p + p { margin-top: 8px; }
+
+footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+footer p { max-width: none; }
+
+@media (max-width: 920px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding-block: 24px 64px; }
+  .toc { position: static; margin-bottom: 28px; }
+  .toc ol { border-left: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .toc a { padding: 4px 10px; margin: 0; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--surface); }
+  .toc a.active { border-color: var(--accent); }
+}
+@media (max-width: 640px) {
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts div:nth-child(3) { border-left: 0; }
+  .facts div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .views { grid-template-columns: minmax(0, 1fr); }
+  .lead { font-size: 17px; }
+  h2 { font-size: 28px; }
+  .res { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .arrow { transform: rotate(90deg); width: 100%; text-align: center; }
+}
+</style>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <p class="toc-label">Contents</p>
+    <ol>
+      <li><a href="#built">What we built</a></li>
+      <li><a href="#challenge">The challenge</a></li>
+      <li><a href="#resources">The five resources</a></li>
+      <li><a href="#flags">Flags and surprises</a></li>
+      <li><a href="#scale">How sharp is the data?</a></li>
+      <li><a href="#concept">Our concept</a></li>
+      <li><a href="#layers">Map layers</a></li>
+      <li><a href="#route">Finding a safe route</a></li>
+      <li><a href="#schema">Data model</a></li>
+      <li><a href="#phases">Work plan</a></li>
+      <li><a href="#decisions">Decisions and rules</a></li>
+      <li><a href="#setup">Claude Code setup</a></li>
+      <li><a href="#links">Sources</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header>
+      <p class="eyebrow">NASA challenge · Interplanetary Survival Guide: Martian Map</p>
+      <h1>Baramger: a Marswalk planner for Jezero crater</h1>
+      <p class="lead">Baramger is a map that helps two astronauts plan a walk on Mars, stay safe on the way, and do real science at each stop. This page explains the challenge, checks every data source we were given, lists the problems we found, and sets out the plan. The app is now built and tested in two walk zones.</p>
+      <dl class="facts">
+        <div><dt>Site</dt><dd>Jezero crater<small>Zones Z2 and Z1</small></dd></div>
+        <div><dt>Resources</dt><dd>5 of 5 used<small>R1 to R5</small></dd></div>
+        <div><dt>Flags raised</dt><dd>16<small>4 critical</small></dd></div>
+        <div><dt>Status</dt><dd>Built<small>P1 to P4 done</small></dd></div>
+      </dl>
+      <p class="meta-line">All data services checked live on 14 November 2026. The newest Perseverance image at that time was from sol 2031 (6 November 2026). Updated the same day with the build results, including P4 (zone Z1).</p>
+    </header>
+
+    <section id="built">
+      <h2>What we built</h2>
+      <p class="section-kicker">Four build steps, all done · tested in the browser on 14 November 2026</p>
+      <p>We built the app in order of importance. Each step works on its own, and the next one adds to it. The newest step, P4, adds a second walk zone: the Three Forks sample depot.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Step</th><th>What it adds</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><span class="id">P1</span></td><td>The Z2 mission package and the 3D Plan screen: map layers, stops with rover photos, the safest route and the safety check.</td><td><span class="chip ok">Built</span></td></tr>
+            <tr><td><span class="id">P2</span></td><td>Walk conditions (weather measured by Perseverance, daylight, sun activity), a walk-through preview, and the Walk tablet view with a time-lapse demo.</td><td><span class="chip ok">Built</span></td></tr>
+            <tr><td><span class="id">P3</span></td><td>The helmet display, the after-walk replay, and the walk report with "Send to Earth" (today a message takes about 11 minutes).</td><td><span class="chip ok">Built</span></td></tr>
+            <tr><td><span class="id">P4</span></td><td>Zone Z1, the Three Forks sample depot, as a second walk in the same app.</td><td><span class="chip ok">Built</span> <span class="chip rust">New</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>P4: zone Z1, the Three Forks sample depot</h3>
+      <p>Between December 2022 and January 2023 (sols 652 to 692), Perseverance put ten sealed sample tubes on the ground at Three Forks, spread over a patch of flat ground about 50 m across. They are a backup in case the rover cannot deliver its other samples. In this walk, two astronauts go out to find the ten tubes, check them and bring them back.</p>
+      <div class="views">
+        <div class="view"><p class="where">One app, two zones</p><h4>Zone switcher</h4><p>Pick Z1 or Z2 at the top of the map. Each zone has its own data package; the app and the safety rules are the same.</p></div>
+        <div class="view"><p class="where">Ten depot stops</p><h4>Four tasks each</h4><p>Find the tube, photograph it where it lies, check it is sealed and clean, then pick it up. About 10 minutes per stop.</p></div>
+        <div class="view"><p class="where">During the walk</p><h4>Tube counter</h4><p>The tablet shows "tubes picked up 3 of 10", and the end-of-walk summary shows the total.</p></div>
+      </div>
+
+      <ul class="flags">
+        <li class="flag warn">
+          <h4>Where exactly are the tubes? NASA shows this only as a picture.</h4>
+          <p>NASA publishes the tube spots as a map image (PIA25682), not as data, and the rover team's sample layer is closed to the public. So each depot stop is the spot where Perseverance parked while it dropped a tube (from its official position list, S1). The tube should lie within a few metres of that spot.</p>
+          <p class="fix"><b>How we handle it:</b> the app says this on screen, links the NASA depot map, and lists it as assumption A14, "to verify". A clue that it is right: the rover's tube camera took exactly 50 photos at each of the ten spots, which looks like the fixed photo set for one tube drop.</p>
+        </li>
+      </ul>
+
+      <h3>Z1 and Z2 side by side</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Measure</th><th class="num">Z2 Bright Angel</th><th class="num">Z1 Three Forks</th></tr></thead>
+          <tbody>
+            <tr><td>Science goal</td><td class="num">Spotted rocks at Cheyava Falls</td><td class="num">Collect the ten tubes</td></tr>
+            <tr><td>Stops</td><td class="num">4</td><td class="num">10</td></tr>
+            <tr><td>Rover photos at the stops</td><td class="num">15</td><td class="num">39</td></tr>
+            <tr><td>Route length</td><td class="num">3.20 km</td><td class="num">1.23 km</td></tr>
+            <tr><td>Time, with stops</td><td class="num">3 h 41 min</td><td class="num">2 h 10 min</td></tr>
+            <tr><td>Time kept in reserve (rule: at least 30%)</td><td class="num">39%</td><td class="num">64%</td></tr>
+            <tr><td>Steepest ground on the route</td><td class="num">21°</td><td class="num">6°</td></tr>
+            <tr><td>Climb</td><td class="num">121 m</td><td class="num">15 m</td></tr>
+            <tr><td>Radio contact with the habitat</td><td class="num">2 short gaps, 4 min at most</td><td class="num">Whole walk</td></tr>
+            <tr><td>No-go areas (steeper than 25°)</td><td class="num">60</td><td class="num">18</td></tr>
+            <tr><td>Daylight (local Mars time)</td><td class="num">07:10–18:03</td><td class="num">06:44–18:41</td></tr>
+            <tr><td>Air in walk hours (measured by Perseverance)</td><td class="num">−85 to −40 °C</td><td class="num">−85 to −26 °C</td></tr>
+            <tr><td>Weather reference</td><td class="num">Sols 1210–1218, Jul 2024</td><td class="num">Sols 653–659, Dec 2022</td></tr>
+            <tr><td>Slope check against the rover's own tilt</td><td class="num">1.9° mean error, 79 points</td><td class="num">1.3° mean error, 124 points</td></tr>
+            <tr><td>Mission package size</td><td class="num">66 MB</td><td class="num">58 MB</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Z1 is a short, flat, easy walk on the crater floor. Most of the time goes to the stops, not to walking. Z2 is longer and steeper, with two short radio gaps.</p>
+
+      <h3>Browser test of Z1</h3>
+      <p>We walked the whole Z1 flow in the browser: plan, safest route, approve, the walk with all ten tubes picked up, the helmet display, the replay, the walk report and "Send to Earth". Everything worked, with no errors. The test also found these problems, now fixed in both zones:</p>
+      <ul class="plain">
+        <li><strong>Stop numbers were hidden</strong> under the round pins. Each pin now shows its number.</li>
+        <li><strong>Depot names piled on top of each other,</strong> because the spots are only 7 to 22 m apart. Names of stops that close together now show only when you zoom in; the selected stop always shows its name.</li>
+        <li><strong>The route line was drawn over the pins.</strong> Pins, the crew marker and notes now always sit on top. The route still shows faintly where a hill hides it.</li>
+        <li><strong>Clicking a pin did not always select it.</strong> The app now checks whether the click is inside the pin's circle on screen.</li>
+        <li>Smaller fixes: assumption A14 showed a stray ": ." at the end, an old hint stayed on the map, and typing <code>#z1</code> or <code>#z2</code> in the address bar did not switch zones.</li>
+      </ul>
+
+      <h3>Learned in P4</h3>
+      <ul class="flags">
+        <li class="flag note">
+          <h4>The weather station has no files for sols 660 and 661.</h4>
+          <p class="fix"><b>Effect:</b> Z1 uses the seven sols 653 to 659 as its weather reference.</p>
+        </li>
+        <li class="flag note">
+          <h4>Three depot sols had more than 800 rover photos.</h4>
+          <p class="fix"><b>Effect:</b> we read up to 800 per sol, so photo counts for some cameras on sols 658, 669 and 670 may be a little low. The tube camera shows 50 at every spot, so its counts look complete.</p>
+        </li>
+        <li class="flag note">
+          <h4>Jezero lies about 2.5 km below the Mars reference sphere.</h4>
+          <p class="fix"><b>Effect:</b> any "is this point behind the planet?" test must use a lower sphere, or every pin counts as hidden. The app uses a sphere 9 km lower, below the deepest point on Mars.</p>
+        </li>
+      </ul>
+      <p>The full list of findings, P1 to P4, is in <code>docs/PLAN.md</code>.</p>
+    </section>
+
+    <section id="challenge">
+      <h2>The challenge</h2>
+      <p class="section-kicker">From TheChallenge.txt</p>
+      <p>NASA asks for a map, tool, or screen that a Mars astronaut can use during a surface walk. It should stack data from several NASA missions into one clear view of a <strong>small area or one route</strong>.</p>
+      <p>This is the key gap. Tools like Mars Trek and the USGS geologic maps show Mars at a global or regional scale. A single walk covers only a few hundred metres to a few kilometres. Our job is to zoom in to that walking scale and turn the data into decisions: where to go, what to avoid, and what you will see.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Level</th><th>What is asked</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip must">Must</span></td><td>A map, tool, or interface for use during a surface mission</td></tr>
+            <tr><td><span class="chip must">Must</span></td><td>Uses NASA data and tools, from more than one mission</td></tr>
+            <tr><td><span class="chip must">Must</span></td><td>A layered view of one location or route</td></tr>
+            <tr><td><span class="chip rust">Our rule</span></td><td>Use the data in the Resources section of the challenge</td></tr>
+            <tr><td><span class="chip should">Should</span></td><td>Choose science goals and a place that fits them</td></tr>
+            <tr><td><span class="chip should">Should</span></td><td>At least three kinds of data (optical, thermal, spectral, terrain, and so on)</td></tr>
+            <tr><td><span class="chip should">Should</span></td><td>Put crew safety first, and show a route that avoids large obstacles</td></tr>
+            <tr><td><span class="chip should">Should</span></td><td>Think about walking in a spacesuit while carrying tools</td></tr>
+            <tr><td><span class="chip may">May</span></td><td>Habitat screen, tablet, or helmet display (HUD)</td></tr>
+            <tr><td><span class="chip may">May</span></td><td>Ground photos from rovers, so the crew knows what to expect</td></tr>
+            <tr><td><span class="chip may">May</span></td><td>Robot or rover support, and astronauts working in pairs</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="resources">
+      <h2>The five resources</h2>
+      <p class="section-kicker">What each one really contains, checked against the live services</p>
+      <p>The text file names five resources but has no links, so we found and tested each one. Here is what they actually give us and how we plan to use them.</p>
+      <div class="resources">
+        <article class="res">
+          <div class="res-id">R1</div>
+          <div>
+            <h4>JPL Mars Trek</h4>
+            <div class="role"><span class="chip ok">Works</span><span class="chip must">Main data</span></div>
+            <p>Map layers for Jezero crater: a HiRISE photo mosaic at 25 cm per pixel, a 1 m terrain model (DEM), CTX images and terrain, THEMIS day and night heat images, TES minerals, global geology, and the Perseverance path. It also has Gale crater terrain.</p>
+            <p class="use"><strong>We use it for:</strong> the base map, slopes, heat-based rock hints, and geology tiles. Access is through standard map tiles (WMTS), a search API, and file downloads.</p>
+          </div>
+        </article>
+        <article class="res">
+          <div class="res-id">R2</div>
+          <div>
+            <h4>USGS–NASA Planetary Geologic Mapping</h4>
+            <div class="role"><span class="chip part">Partly checked</span><span class="chip must">Main data</span></div>
+            <p>Two useful maps: the global geologic map of Mars (SIM 3292, scale 1:20,000,000) and a detailed map of Jezero crater and Nili Planum (SIM 3464, scale 1:75,000, public domain).</p>
+            <p class="use"><strong>We use it for:</strong> the rock unit under each stop and the science story. The 349 MB GIS file has not been opened yet.</p>
+          </div>
+        </article>
+        <article class="res">
+          <div class="res-id">R3</div>
+          <div>
+            <h4>Curiosity's proposed route map (PIA23179)</h4>
+            <div class="role"><span class="chip ok">Works</span><span class="chip note">Design reference</span></div>
+            <p>An annotated picture and animation of a planned route up Mount Sharp in Gale crater, released in May 2019. It is an image, not map data.</p>
+            <p class="use"><strong>We use it for:</strong> the visual style of our route map: labelled regions, a clear path line, and short notes.</p>
+          </div>
+        </article>
+        <article class="res">
+          <div class="res-id">R4</div>
+          <div>
+            <h4>NASA Worldview</h4>
+            <div class="role"><span class="chip ok">Works</span><span class="chip note">Interface ideas</span></div>
+            <p>Satellite imagery of <strong>Earth</strong>. It has no Mars data at all.</p>
+            <p class="use"><strong>We use it for:</strong> proven interface patterns: the layer picker, the time slider, and side-by-side comparison. The challenge itself suggests learning from maps of other worlds, Earth included.</p>
+          </div>
+        </article>
+        <article class="res">
+          <div class="res-id">R5</div>
+          <div>
+            <h4>Mars Perseverance raw images</h4>
+            <div class="role"><span class="chip ok">Works</span><span class="chip must">Main data</span></div>
+            <p>A public JSON feed with 1,055,868 images. Each image has its sol, camera, time, links in four sizes, a credit line, and the rover's <code>site</code> and <code>drive</code> numbers.</p>
+            <p class="use"><strong>We use it for:</strong> "what you will see" photos at each stop, taken from the ground at human eye level.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="flags">
+      <h2>Flags and surprises</h2>
+      <p class="section-kicker">16 findings · 4 critical · 5 important · 7 notes</p>
+      <p>These are the things we did not expect, or that could hurt the project if we ignore them.</p>
+
+      <div class="flag-group">
+        <div class="flag-group-head"><h3>Critical</h3><span>These change the plan</span></div>
+        <ul class="flags">
+          <li class="flag crit">
+            <h4>The resources point to two places 3,750 km apart</h4>
+            <p>The challenge's example (boxwork rocks, Curiosity, Mount Sharp) and the route map (R3) are in Gale crater. The only ground photos we were given (R5, Perseverance) are in Jezero crater. One walk cannot use both rovers' ground data.</p>
+            <p class="fix"><b>What we do:</b> choose Jezero. It is the only site where all five resources play a real part.</p>
+          </li>
+          <li class="flag crit">
+            <h4>NASA Worldview shows Earth, not Mars</h4>
+            <p>It cannot supply a single Mars layer.</p>
+            <p class="fix"><b>What we do:</b> use it only for interface ideas, and say so clearly.</p>
+          </li>
+          <li class="flag crit">
+            <h4>No safety data on radiation, weather, or dust storms</h4>
+            <p>The challenge asks for safety and "current conditions", but none of the five resources has this data.</p>
+            <p class="fix"><b>Decided (D2):</b> add NASA weather and space-weather data as clearly tagged extras, after each one passes our five checks. No data linked to China.</p>
+          </li>
+          <li class="flag crit">
+            <h4>There is no internet on Mars</h4>
+            <p>Messages take 4 to 24 minutes each way. A real crew tool cannot load map tiles from a NASA server during a walk.</p>
+            <p class="fix"><b>What we do:</b> build offline first. Everything the walk needs is packed into one "mission package" before the walk starts.</p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="flag-group">
+        <div class="flag-group-head"><h3>Important</h3><span>These shape the work</span></div>
+        <ul class="flags">
+          <li class="flag warn">
+            <h4>Most layers are too blurry for a walk</h4>
+            <p>A walk needs detail of 1 m or better. Only HiRISE (25 cm images, 1 m terrain) is that sharp. The geology maps, THEMIS, and TES are 75 m to 20 km. See the chart in the next section.</p>
+            <p class="fix"><b>What we do:</b> use HiRISE for hazards and route finding, and the rest as background context.</p>
+          </li>
+          <li class="flag warn">
+            <h4>No walk-scale mineral data for Jezero</h4>
+            <p>The CRISM mineral tiles in Mars Trek cover other regions. TES mineral maps are kilometres per pixel.</p>
+            <p class="fix"><b>What we do:</b> show minerals as regional context only, and rely on the geology map for each stop.</p>
+          </li>
+          <li class="flag warn">
+            <h4>Rover photos do not come with map coordinates</h4>
+            <p>The position field is often <code>(0,0,0)</code>. To place a photo, we must match its <code>site</code> and <code>drive</code> numbers to the rover's waypoint list. That list sits on the same NASA website but is not one of the five resources.</p>
+            <p class="fix"><b>Decided (D2):</b> use it as extra source S1. It is NASA data, and we have already checked it.</p>
+          </li>
+          <li class="flag warn">
+            <h4>Mars Trek's rover path stopped in July 2024</h4>
+            <p>It ends near sol 1219. Since sol 1815 the rover has been west of the sharp HiRISE coverage.</p>
+            <p class="fix"><b>What we do:</b> pick a walk zone the rover visited before about sol 1800.</p>
+          </li>
+          <li class="flag warn">
+            <h4>Very large files</h4>
+            <p>The HiRISE mosaic is 9.8 GB and the 1 m terrain model is 1.8 GB. The server sends whole files only, and the terrain model has no map tiles.</p>
+            <p class="fix"><b>What we do:</b> download once (with your OK), cut out only our area, and use map tiles for the photo mosaic.</p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="flag-group">
+        <div class="flag-group-head"><h3>Notes</h3><span>Good to know</span></div>
+        <ul class="flags">
+          <li class="flag note">
+            <h4>The text file lost its links</h4>
+            <p>The resource names are there but the URLs are missing, and lines 32 to 34 are broken. The text also says more resources may be added, so the live Resources tab should be checked again.</p>
+          </li>
+          <li class="flag note">
+            <h4>The Curiosity route map is from 2019</h4>
+            <p>Curiosity's real path has changed since then, and the map is a picture. We use it for style only.</p>
+          </li>
+          <li class="flag note">
+            <h4>Coordinates and heights need one standard</h4>
+            <p>Sources mix height above the Mars "sea level" (the MOLA areoid) with distance from the planet's centre. We will use the Mars 2000 sphere (radius 3,396,190 m), east-positive longitude, and height in metres above the areoid.</p>
+          </li>
+          <li class="flag note">
+            <h4>Spacesuit limits are our best guess</h4>
+            <p>No resource gives safe slopes or walking speeds for a suit. Our starting values are marked as assumptions until we can confirm them.</p>
+          </li>
+          <li class="flag note">
+            <h4>Every photo needs its own credit</h4>
+            <p>Each raw image has a credit line, for example <code>NASA/JPL-Caltech/LANL/CNES/IRAP</code>. The app must show it.</p>
+          </li>
+          <li class="flag note">
+            <h4>The computer needs a few tools</h4>
+            <p>There is no GDAL, and the system Python is version 3.9. We will use <code>uv</code> with Python 3.12 when building starts.</p>
+          </li>
+          <li class="flag note">
+            <h4>Cesium's ready-made 3D Mars is sharp only at Gale</h4>
+            <p>Cesium Mars shows Gale crater at 25 cm, but Jezero only at 6 m. It also needs the internet and a Cesium account, and it is not one of the five resources.</p>
+            <p class="fix"><b>What we do:</b> use the free CesiumJS engine with Mars Trek data. Cesium Mars is at most an optional far-away view of the planet (extra source S2).</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="scale">
+      <h2>How sharp is the data?</h2>
+      <p class="section-kicker">Smallest detail each layer can show, on a log scale</p>
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 720 326" role="img" aria-labelledby="scale-title scale-desc">
+            <title id="scale-title">Detail level of each map layer</title>
+            <desc id="scale-desc">Dot chart on a log scale from 10 cm to 100 km. Only the HiRISE image (25 cm) and HiRISE terrain model (1 m) fall inside the walk-ready zone of 1 m or better.</desc>
+            <rect class="band" x="200" y="30" width="83.3" height="240" rx="3"/>
+            <text x="204" y="22" font-size="12" font-weight="600" style="fill: var(--accent)">Walk-ready (≤ 1 m)</text>
+            <g class="grid">
+              <line x1="200" y1="30" x2="200" y2="270"/>
+              <line x1="283.3" y1="30" x2="283.3" y2="270"/>
+              <line x1="366.7" y1="30" x2="366.7" y2="270"/>
+              <line x1="450" y1="30" x2="450" y2="270"/>
+              <line x1="533.3" y1="30" x2="533.3" y2="270"/>
+              <line x1="616.7" y1="30" x2="616.7" y2="270"/>
+              <line x1="700" y1="30" x2="700" y2="270"/>
+            </g>
+            <g font-size="13" text-anchor="end">
+              <text x="190" y="48">HiRISE image (R1)</text>
+              <text x="190" y="78">HiRISE terrain (R1)</text>
+              <text x="190" y="108">CTX image (R1)</text>
+              <text x="190" y="138">CTX terrain (R1)</text>
+              <text x="190" y="168">Jezero geology (R2)</text>
+              <text x="190" y="198">THEMIS heat (R1)</text>
+              <text x="190" y="228">TES minerals (R1)</text>
+              <text x="190" y="258">Global geology (R2)</text>
+            </g>
+            <g>
+              <line class="stem" x1="200" y1="44" x2="233.2" y2="44"/><circle class="dot-good" cx="233.2" cy="44" r="6"/>
+              <line class="stem" x1="200" y1="74" x2="283.3" y2="74"/><circle class="dot-good" cx="283.3" cy="74" r="6"/>
+              <line class="stem" x1="200" y1="104" x2="348.2" y2="104"/><circle class="dot-ctx" cx="348.2" cy="104" r="6"/>
+              <line class="stem" x1="200" y1="134" x2="391.8" y2="134"/><circle class="dot-ctx" cx="391.8" cy="134" r="6"/>
+              <line class="stem" x1="200" y1="164" x2="439.6" y2="164"/><circle class="dot-ctx" cx="439.6" cy="164" r="6"/>
+              <line class="stem" x1="200" y1="194" x2="450" y2="194"/><circle class="dot-ctx" cx="450" cy="194" r="6"/>
+              <line class="stem" x1="200" y1="224" x2="573.1" y2="224"/><circle class="dot-ctx" cx="573.1" cy="224" r="6"/>
+              <line class="stem" x1="200" y1="254" x2="641.8" y2="254"/><circle class="dot-ctx" cx="641.8" cy="254" r="6"/>
+            </g>
+            <g font-size="12" class="t-mono">
+              <text x="243" y="48">0.25 m</text>
+              <text x="293" y="78">1 m</text>
+              <text x="358" y="108">6 m</text>
+              <text x="402" y="138">20 m</text>
+              <text x="450" y="160" class="t-muted" style="fill: var(--muted)">≈ 75 m</text>
+              <text x="460" y="198">100 m</text>
+              <text x="583" y="228">≈ 3 km</text>
+              <text x="652" y="258">≈ 20 km</text>
+            </g>
+            <line class="axis" x1="200" y1="276" x2="700" y2="276"/>
+            <g font-size="12" class="t-muted t-mono" text-anchor="middle" style="fill: var(--muted)">
+              <text x="200" y="294">10 cm</text>
+              <text x="283.3" y="294">1 m</text>
+              <text x="366.7" y="294">10 m</text>
+              <text x="450" y="294">100 m</text>
+              <text x="533.3" y="294">1 km</text>
+              <text x="616.7" y="294">10 km</text>
+              <text x="700" y="294">100 km</text>
+            </g>
+            <text x="450" y="318" font-size="12" text-anchor="middle" class="t-muted" style="fill: var(--muted)">Smallest visible detail (log scale)</text>
+          </svg>
+        </div>
+        <figcaption>For the two geologic maps, detail is estimated as 1 mm on the printed map (1:75,000 gives about 75 m; 1:20,000,000 gives about 20 km). TES is about 3 km per pixel. A boulder that could trip a suited astronaut is about 1 m across, so only the two HiRISE layers can show it.</figcaption>
+      </figure>
+    </section>
+
+    <section id="concept">
+      <h2>Our concept</h2>
+      <p class="section-kicker">One offline app, three screens, one shared data package</p>
+      <div class="views">
+        <div class="view"><p class="where">Habitat wall screen</p><h4>Plan</h4><p>Choose science stops. The app builds the safest route and checks time, slope, and the walk back.</p></div>
+        <div class="view"><p class="where">Tablet on the suit arm</p><h4>Walk</h4><p>Current leg, distance and direction to the next stop, hazards ahead, and a ground photo of the view.</p></div>
+        <div class="view"><p class="where">Helmet visor (mock-up)</p><h4>HUD</h4><p>Only the essentials: an arrow, distance, time left, and warnings.</p></div>
+      </div>
+
+      <h3>Where: Jezero crater</h3>
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 720 300" role="img" aria-labelledby="map-title map-desc">
+            <title id="map-title">Jezero and Gale craters on Mars</title>
+            <desc id="map-desc">Simple map from 60 to 150 degrees east and 15 south to 30 north. Jezero crater, where Perseverance works, is at 18.4 north 77.4 east. Gale crater, where Curiosity works, is at 4.6 south 137.4 east. They are about 3,750 km apart.</desc>
+            <g class="grid">
+              <line x1="20" y1="20" x2="20" y2="280"/><line x1="133.3" y1="20" x2="133.3" y2="280"/><line x1="246.7" y1="20" x2="246.7" y2="280"/>
+              <line x1="360" y1="20" x2="360" y2="280"/><line x1="473.3" y1="20" x2="473.3" y2="280"/><line x1="586.7" y1="20" x2="586.7" y2="280"/><line x1="700" y1="20" x2="700" y2="280"/>
+              <line x1="20" y1="20" x2="700" y2="20"/><line x1="20" y1="106.7" x2="700" y2="106.7"/><line x1="20" y1="280" x2="700" y2="280"/>
+            </g>
+            <line class="axis" x1="20" y1="193.3" x2="700" y2="193.3" stroke-dasharray="2 4"/>
+            <g font-size="11" class="t-mono" style="fill: var(--muted)">
+              <text x="24" y="34">30° N</text><text x="24" y="120">15° N</text><text x="24" y="188">0°</text><text x="24" y="274">15° S</text>
+              <text x="137" y="274">75° E</text><text x="364" y="274">105° E</text><text x="591" y="274">135° E</text>
+            </g>
+            <line class="route" x1="151.5" y1="87" x2="604.8" y2="219.9"/>
+            <rect class="halo" x="318" y="138" width="120" height="24" rx="4"/>
+            <text x="378" y="155" font-size="13" font-weight="600" text-anchor="middle">≈ 3,750 km</text>
+            <circle class="site-a" cx="151.5" cy="87" r="8"/>
+            <text x="166" y="72" font-size="14" font-weight="600">Jezero crater</text>
+            <text x="166" y="90" font-size="12" style="fill: var(--muted)">Perseverance · R5 photos</text>
+            <text x="166" y="106" font-size="12" style="fill: var(--muted)">HiRISE 25 cm + 1 m terrain · SIM 3464</text>
+            <circle class="site-b" cx="604.8" cy="219.9" r="8"/>
+            <text x="590" y="244" font-size="14" font-weight="600" text-anchor="end">Gale crater</text>
+            <text x="590" y="260" font-size="12" text-anchor="end" style="fill: var(--muted)">Curiosity · R3 route map · boxwork example</text>
+          </svg>
+        </div>
+        <figcaption>Simple equirectangular sketch, not to the exact scale of the planet's curve. Distance measured along the surface on the Mars sphere.</figcaption>
+      </figure>
+
+      <p>Inside Jezero we have three possible walk zones. All are inside the sharp HiRISE coverage and have many rover photos.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Zone</th><th>Why it is interesting</th><th class="num">Rover sols</th></tr></thead>
+          <tbody>
+            <tr><td><span class="id">Z1</span> Three Forks sample depot <span class="chip ok">Built (P4)</span></td><td>Perseverance left 10 sample tubes here at the foot of the old river delta. Astronauts could pick them up.</td><td class="num">652–692</td></tr>
+            <tr><td><span class="id">Z2</span> Bright Angel / Cheyava Falls <span class="chip ok">Chosen · built (P1)</span></td><td>Source of the "Sapphire Canyon" rock sample, which NASA called a potential sign of past life. A human geologist can study it in context.</td><td class="num">≈ 1200–1219</td></tr>
+            <tr><td><span class="id">Z3</span> Crater floor (Máaz / Séítah)</td><td>Flattest and safest. A good first "training" walk.</td><td class="num">≈ 13–400</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="layers">
+      <h2>Map layers</h2>
+      <p class="section-kicker">Every layer traces back to one of the five resources</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Kind</th><th>From</th><th class="num">Detail</th><th>Used for</th></tr></thead>
+          <tbody>
+            <tr><td>HiRISE photo mosaic</td><td>Optical</td><td><span class="id">R1</span></td><td class="num">0.25 m</td><td>Base map, spotting boulders</td></tr>
+            <tr><td>CTX photo mosaic</td><td>Optical</td><td><span class="id">R1</span></td><td class="num">6 m</td><td>Wider context view</td></tr>
+            <tr><td>HiRISE terrain model</td><td>Terrain</td><td><span class="id">R1</span></td><td class="num">1 m</td><td>Slope, roughness, height profile, line of sight</td></tr>
+            <tr><td>CTX terrain model</td><td>Terrain</td><td><span class="id">R1</span></td><td class="num">20 m</td><td>Regional terrain</td></tr>
+            <tr><td>THEMIS night heat image</td><td>Thermal</td><td><span class="id">R1</span></td><td class="num">100 m</td><td>Rock hint: rocky ground stays warmer at night</td></tr>
+            <tr><td>TES heat holding and minerals</td><td>Thermal / spectral</td><td><span class="id">R1</span></td><td class="num">≈ 3 km</td><td>Regional context only</td></tr>
+            <tr><td>Jezero geologic units (SIM 3464)</td><td>Geology</td><td><span class="id">R2</span></td><td class="num">1:75k</td><td>Rock unit at each stop</td></tr>
+            <tr><td>Global geology (SIM 3292)</td><td>Geology</td><td><span class="id">R1/R2</span></td><td class="num">1:20M</td><td>Big picture</td></tr>
+            <tr><td>Perseverance path</td><td>Rover track</td><td><span class="id">R1</span></td><td class="num">–</td><td>Where ground photos exist</td></tr>
+            <tr><td>Perseverance ground photos</td><td>Ground images</td><td><span class="id">R5</span></td><td class="num">–</td><td>"What you will see" at each stop</td></tr>
+            <tr><td>Slope, roughness, hazards, route, line of sight</td><td>Derived</td><td><span class="id">R1/R2</span></td><td class="num">1 m</td><td>The combined view: our main value</td></tr>
+            <tr><td>Annotated route style</td><td>Design</td><td><span class="id">R3</span></td><td class="num">–</td><td>How the route looks</td></tr>
+            <tr><td>Layer picker, time slider, compare view</td><td>Interface</td><td><span class="id">R4</span></td><td class="num">–</td><td>How the app works</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="route">
+      <h2>Finding a safe route</h2>
+      <p class="section-kicker">How the route engine works (built in P1)</p>
+      <ul class="plain">
+        <li><strong>Cost map.</strong> The 1 m HiRISE terrain is turned into a grid of 2 m squares. Each square gets a walking time from its slope (slower on steeper ground, up or down) and its roughness. Ground steeper than 25° is no-go; ground of 15–25° counts as 1.5 times slower, so the route avoids it when it can.</li>
+        <li><strong>Quickest safe path.</strong> A standard path-finding method (A*) finds the quickest safe line between each pair of stops, in about a second.</li>
+        <li><strong>Safety checks.</strong> The app checks the time budget, keeps a reserve for the walk back, checks daylight and sun activity, and marks where the crew loses line of sight to the habitat antenna (taking the curve of Mars into account).</li>
+        <li><strong>Pairs.</strong> Two astronauts walk together (buddy rule).</li>
+      </ul>
+      <h3>Starting values (to be confirmed)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th class="num">Value</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Comfortable slope</td><td class="num">≤ 15°</td><td><span class="chip part">Assumption</span></td></tr>
+            <tr><td>Caution slope</td><td class="num">15–25°</td><td><span class="chip part">Assumption</span></td></tr>
+            <tr><td>No-go slope</td><td class="num">&gt; 25°</td><td><span class="chip part">Assumption</span></td></tr>
+            <tr><td>Walking speed on flat ground</td><td class="num">≈ 2.5 km/h</td><td><span class="chip part">Assumption</span></td></tr>
+            <tr><td>Walk length</td><td class="num">≈ 6 h</td><td><span class="chip part">Assumption</span></td></tr>
+            <tr><td>Time kept in reserve</td><td class="num">≥ 30 %</td><td><span class="chip part">Assumption</span></td></tr>
+            <tr><td>Mars gravity</td><td class="num">3.71 m/s²</td><td><span class="chip ok">Known</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="schema">
+      <h2>Data model</h2>
+      <p class="section-kicker">schema/marswalk.schema.json · JSON Schema 2020-12</p>
+      <p>The schema describes two kinds of files. The <strong>source registry</strong> lists every data source and whether it was checked. The <strong>mission package</strong> holds everything the offline app needs for one walk.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Part</th><th>What it holds</th></tr></thead>
+          <tbody>
+            <tr><td><code>DataSource</code></td><td>One resource: ID (R1 to R5, or S for extra), role, access links, credit, date checked</td></tr>
+            <tr><td><code>Layer</code></td><td>One map layer: source, kind, detail, coverage, how to load it, what its values mean</td></tr>
+            <tr><td><code>Site</code></td><td>The walk area, its bounds, and the habitat or rover base</td></tr>
+            <tr><td><code>ScienceObjective</code></td><td>A science question and why a human is needed to answer it</td></tr>
+            <tr><td><code>Stop</code></td><td>A point on the walk: type, position, tasks, time, rock unit, photos</td></tr>
+            <tr><td><code>Route</code> / <code>RouteLeg</code></td><td>Ordered stops, path lines, distance, climb, slope, time, and the limits used</td></tr>
+            <tr><td><code>Hazard</code></td><td>A danger: type, severity, shape, the data that proves it, and a short HUD message</td></tr>
+            <tr><td><code>PovImage</code></td><td>A Perseverance ground photo with its credit, rover position, and camera direction</td></tr>
+            <tr><td><code>RoverWaypoint</code></td><td>A rover position, used to place photos on the map</td></tr>
+            <tr><td><code>Assumption</code> / <code>Provenance</code></td><td>Guessed values to confirm, and a record of every download</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>How a photo gets onto the map</h3>
+      <div class="flow" role="list">
+        <div class="step" role="listitem"><b>Raw image</b>From R5: <code>site 56</code>, <code>drive 0</code></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="step" role="listitem"><b>Join key</b><code>RMC = "56_0"</code></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="step" role="listitem"><b>Waypoint</b>Latitude, longitude, height, heading</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="step" role="listitem"><b>On the map</b>Linked to the nearest stop</div>
+      </div>
+
+      <h3>Rules built into the schema</h3>
+      <ul class="plain">
+        <li>Every registry and mission package must list <strong>all five resources</strong>, R1 to R5. We tested this: removing Worldview makes the check fail.</li>
+        <li>Extra sources (S1, S2, and so on) must be marked as "not in the resource list".</li>
+        <li>A derived layer must say which layers it came from and how it was made.</li>
+        <li>Every ground photo must come from R5 and carry its credit.</li>
+        <li>Hazard messages are 60 characters or fewer, so they fit on the helmet display.</li>
+      </ul>
+      <p>Some rules need a small checker program later, such as "at least three different kinds of data" and "every ID points to something real". These are listed in <code>schema/README.md</code>.</p>
+    </section>
+
+    <section id="phases">
+      <h2>Work plan</h2>
+      <p class="section-kicker">In order; each step needs the one before it</p>
+      <ol class="phases">
+        <li><div><b>Decisions</b><span>Done. D1 to D4 are decided, and D5 was dropped.</span></div></li>
+        <li><div><b>Data package</b><span>Done, for two zones. Terrain and photos cut to each area, the Jezero geology loaded, and rover photos placed on the map.</span></div></li>
+        <li><div><b>Derived layers</b><span>Done. Slope, roughness, rock hint, no-go areas, and line of sight.</span></div></li>
+        <li><div><b>Route engine</b><span>Done. Stops to legs to totals, inside the safety limits.</span></div></li>
+        <li><div><b>App screens</b><span>Done. Plan, Walk, helmet display, replay and report, all working offline.</span></div></li>
+        <li><div><b>Checks and polish</b><span>Done for both zones: every layer traced to R1 to R5, every credit shown, and a full browser test.</span></div></li>
+        <li><div><b>Submission</b><span>Still to do: demo video, README, and data credits.</span></div></li>
+      </ol>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions and rules</h2>
+      <p class="section-kicker">All decisions settled on 14 November 2026</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Question</th><th>Decision</th></tr></thead>
+          <tbody>
+            <tr><td><span class="id">D1</span></td><td>Jezero (Perseverance) or Gale (Curiosity)?</td><td><span class="chip ok">Decided</span> <strong>Jezero</strong>, because the chosen zone is there</td></tr>
+            <tr><td><span class="id">D2</span></td><td>May we add extra data next to the five resources?</td><td><span class="chip ok">Decided</span> <strong>Yes</strong>, but only data that passes all five checks below</td></tr>
+            <tr><td><span class="id">D3</span></td><td>Which walk zone inside Jezero?</td><td><span class="chip ok">Decided</span> <strong>Z2, Bright Angel / Cheyava Falls.</strong> Z1 was added later as P4, when you asked for it.</td></tr>
+            <tr><td><span class="id">D4</span></td><td>Which tools to build with?</td><td><span class="chip ok">Decided</span> <strong>CesiumJS</strong> for all maps, in a TypeScript web app, with a Python data pipeline</td></tr>
+            <tr><td><span class="id">D5</span></td><td>What is the deadline, and how big is the team?</td><td><span class="chip may">Dropped</span> We build in order of priority instead</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Five checks for any extra data</h3>
+      <p>Extra data is used next to the five resources, never instead of them. It must pass every check. If one check fails, we don't use it.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Check</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td><span class="id">C1</span> No link to China</td><td>Not from a Chinese mission or agency (such as Tianwen-1, Zhurong or Chang'e). Not stored in China, and not mixed with Chinese data. No tool or MCP that talks to servers in China.</td></tr>
+            <tr><td><span class="id">C2</span> Permission</td><td>A license or terms of use that allow our project. We record the credit line.</td></tr>
+            <tr><td><span class="id">C3</span> Verified</td><td>It comes from the official source, such as NASA, JPL, USGS, the PDS archive or ESA, and we opened and checked it.</td></tr>
+            <tr><td><span class="id">C4</span> Qualified</td><td>An official product with known detail level, date and accuracy.</td></tr>
+            <tr><td><span class="id">C5</span> Real</td><td>Measured data only. Nothing simulated, AI-made or invented shown as real.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Extra sources we may use</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Source</th><th>Used for</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><span class="id">S1</span></td><td>Perseverance rover positions (NASA JPL)</td><td>Putting rover photos on the map, and the Z1 depot stops</td><td><span class="chip ok">Checked · in use</span></td></tr>
+            <tr><td><span class="id">S2</span></td><td>Cesium Mars 3D globe</td><td>Zoomed-out view of the planet</td><td><span class="chip part">Read terms first</span></td></tr>
+            <tr><td><span class="id">S3</span></td><td>DONKI space weather (NASA)</td><td>Solar storm and radiation alerts</td><td><span class="chip warn">Could not be reached</span></td></tr>
+            <tr><td><span class="id">S4</span></td><td>Perseverance weather station, MEDA (NASA PDS)</td><td>Temperature and air pressure at each zone</td><td><span class="chip ok">Checked · in use</span></td></tr>
+            <tr><td><span class="id">S5</span></td><td>Curiosity radiation sensor, RAD (NASA)</td><td>Typical radiation on the surface (measured at Gale)</td><td><span class="chip part">To check</span></td></tr>
+            <tr><td><span class="id">S6</span></td><td>MRO weather camera, MARCI (NASA)</td><td>Watching for dust storms</td><td><span class="chip part">To check</span></td></tr>
+            <tr><td><span class="id">S7</span></td><td>Sun activity, NOAA Space Weather Prediction Center</td><td>Solar flares and particle storms (measured near Earth)</td><td><span class="chip ok">Checked · in use</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Care with MCP servers</h3>
+      <ul class="plain">
+        <li>Use only the three MCPs set up for this project: <code>nasa</code>, <code>pds</code> and <code>gdal</code>. A new one needs your OK and the same five checks.</li>
+        <li>Fix each MCP to one exact version. The <code>nasa</code> MCP is a community project, not made by NASA, and is still set to "latest". We will read its code and then fix the version.</li>
+        <li>Allow only official servers, such as NASA and USGS. No servers in China.</li>
+        <li>Treat what an MCP returns as data to double-check, never as instructions.</li>
+        <li>MCPs only help while we build. The finished app gets its data straight from the checked sources.</li>
+      </ul>
+
+      <h3>Build order</h3>
+      <p>With no deadline set, we build the most important parts first, so a working demo exists early.</p>
+      <ol class="phases">
+        <li><div><b>Must (P1) · built</b><span>The Z2 data package and the 3D Plan screen, with layers, stops with rover photos, the safest route and the safety summary.</span></div></li>
+        <li><div><b>Should (P2) · built</b><span>The tablet view, the walk-through preview, and the weather and space-weather panel.</span></div></li>
+        <li><div><b>Could (P3) · built</b><span>The helmet display mock-up, the after-walk replay and the walk report.</span></div></li>
+        <li><div><b>Only when you ask (P4) · built</b><span>Zone Z1, the Three Forks sample depot.</span></div></li>
+      </ol>
+      <div class="callout">
+        <p><strong>Why CesiumJS?</strong> It is built for maps of whole planets and has a ready Mars shape. It shows the sharp Mars Trek photos on real 3D ground, draws the route on the surface, and has a clock for the walk-through and the replay. The same engine shows the top-down tablet map, so we need only one map tool. The helmet display is a simple overlay.</p>
+        <p><strong>Why not Three.js?</strong> It is great for general 3D, but we would have to build the globe, the coordinates and the map loading ourselves.</p>
+        <p><strong>Why not the ready-made Cesium Mars?</strong> At Jezero it is only 6 m sharp, it needs the internet and an account, and it is not one of our five resources.</p>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2>Claude Code setup</h2>
+      <p class="section-kicker">Files added to the project folder</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>CLAUDE.md</code></td><td>Project brief for Claude: the five-resource rule, key facts, data rules, decisions, how to run the app, and the build status (P1 to P4)</td></tr>
+            <tr><td><code>.claude/settings.json</code></td><td>Allows reading NASA and USGS websites and a few safe inspection commands, and blocks reading secret files</td></tr>
+            <tr><td><code>.claude/skills/source-compliance/</code></td><td>A checklist Claude runs before adding any new layer or data source</td></tr>
+            <tr><td><code>docs/PLAN.md</code></td><td>The full plan in text form</td></tr>
+            <tr><td><code>schema/</code></td><td>The data model and its guide</td></tr>
+            <tr><td><code>data/sources.registry.json</code></td><td>The checked list of sources and candidate layers (it passes the schema check)</td></tr>
+            <tr><td><code>pipeline/</code></td><td>The Python data pipeline: builds a mission package for a zone (<code>--zone z1</code> or <code>z2</code>) and checks it</td></tr>
+            <tr><td><code>app/</code></td><td>The CesiumJS web app: Plan, Walk, helmet display, replay and report</td></tr>
+            <tr><td><code>.gitignore</code></td><td>Keeps the very large downloads and local settings out of version control</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="links">
+      <h2>Sources</h2>
+      <ul class="plain">
+        <li><a href="https://trek.nasa.gov/mars/" target="_blank" rel="noopener">JPL Mars Trek</a> and its <a href="https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars" target="_blank" rel="noopener">map service guide</a></li>
+        <li><a href="https://planetarymapping.wr.usgs.gov/" target="_blank" rel="noopener">USGS–NASA Planetary Geologic Mapping Program</a></li>
+        <li><a href="https://pubs.usgs.gov/publication/sim3464" target="_blank" rel="noopener">SIM 3464: Geologic Map of Jezero Crater and the Nili Planum Region</a></li>
+        <li><a href="https://www.jpl.nasa.gov/images/pia23179-curiositys-proposed-path-up-mount-sharp/" target="_blank" rel="noopener">PIA23179: Curiosity's Proposed Path up Mount Sharp</a></li>
+        <li><a href="https://worldview.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Worldview</a></li>
+        <li><a href="https://mars.nasa.gov/mars2020/multimedia/raw-images/" target="_blank" rel="noopener">Mars Perseverance Raw Images</a></li>
+        <li><a href="https://mars.nasa.gov/mars2020/mission/where-is-the-rover/" target="_blank" rel="noopener">Where is Perseverance? (rover waypoints, extra source S1)</a></li>
+        <li><a href="https://www.jpl.nasa.gov/images/pia25682-perseverances-three-forks-sample-depot-map/" target="_blank" rel="noopener">PIA25682: Perseverance's Three Forks sample depot map</a> (used to explain the Z1 stops)</li>
+        <li><a href="https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/" target="_blank" rel="noopener">Perseverance MEDA weather data, NASA PDS (extra source S4)</a></li>
+        <li><a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">NOAA Space Weather Prediction Center (extra source S7)</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>Baramger · plan and build report · data checked and app tested 14 November 2026. Images and data: NASA/JPL-Caltech, University of Arizona, MSSS, Arizona State University, USGS. NASA does not endorse this project.</p>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        links.forEach(function (a) { a.classList.remove('active'); });
+        var a = map[e.target.id];
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('main section[id]').forEach(function (s) { obs.observe(s); });
+})();
+</script>

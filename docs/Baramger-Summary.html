@@ -1,0 +1,263 @@
+<title>Baramger at a Glance</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one calm reading column for a non-technical reader. Short sections, big type, a three-step strip and a simple progress line. */
+:root {
+  --bg: #F4F6F7;
+  --surface: #FFFFFF;
+  --surface-2: #EBF0F2;
+  --fg: #13202A;
+  --muted: #566672;
+  --line: #D6DFE4;
+  --accent: #0C6A70;
+  --accent-soft: #DCEEEF;
+  --on-accent: #FFFFFF;
+  --rust: #B0462A;
+  --rust-soft: #F5E3DC;
+  --warn: #8F5600;
+  --warn-soft: #FBEFD7;
+  --ok: #1D7539;
+  --ok-soft: #E0F2E6;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1216; --surface: #131B21; --surface-2: #1A242B; --fg: #E2E8EC; --muted: #97A5AF; --line: #25313A;
+    --accent: #55C2C5; --accent-soft: #11343A; --on-accent: #0C1216; --rust: #E4835F; --rust-soft: #38211A;
+    --warn: #E8B458; --warn-soft: #342713; --ok: #6ECD8C; --ok-soft: #13301D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1216; --surface: #131B21; --surface-2: #1A242B; --fg: #E2E8EC; --muted: #97A5AF; --line: #25313A;
+  --accent: #55C2C5; --accent-soft: #11343A; --on-accent: #0C1216; --rust: #E4835F; --rust-soft: #38211A;
+  --warn: #E8B458; --warn-soft: #342713; --ok: #6ECD8C; --ok-soft: #13301D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 48px 72px;
+}
+
+.eyebrow { font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 14px; color: var(--rust); margin: 0 0 10px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(40px, 7vw, 60px); line-height: 1.02; margin: 0 0 16px; text-wrap: balance; }
+.lead { font-size: 20px; line-height: 1.55; margin: 0 0 18px; max-width: 58ch; }
+.status { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pill { font-size: 13.5px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.wait { background: var(--warn-soft); color: var(--warn); }
+
+section { padding-top: 48px; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1.15; margin: 0 0 12px; text-wrap: balance; }
+p { margin: 0 0 14px; max-width: 64ch; }
+
+/* Three steps */
+.steps { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: s; }
+.steps li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-bottom: 10px; }
+.steps b { display: block; font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.2; margin-bottom: 4px; }
+.steps span { font-size: 15.5px; color: var(--muted); }
+
+/* Place */
+.place { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+.place p:last-child { margin-bottom: 0; }
+
+/* Lists */
+.helps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
+.helps li { padding: 12px 0; border-top: 1px solid var(--line); min-width: 0; }
+.helps b { display: block; font-weight: 600; }
+.helps span { color: var(--muted); font-size: 15.5px; }
+
+.sources { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.sources li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; }
+.sources .tag { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; text-align: center; padding: 2px 0; }
+
+.checks { background: var(--accent-soft); border-radius: var(--radius); padding: 18px 20px; }
+.checks h3 { font-family: var(--font-display); font-size: 21px; font-weight: 600; margin: 0 0 8px; }
+.checks ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+.watch { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.watch li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; }
+.watch b { display: block; font-weight: 600; margin-bottom: 2px; }
+.watch span { color: var(--muted); font-size: 15.5px; }
+
+/* Progress */
+.progress { list-style: none; margin: 6px 0 22px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+.progress li { position: relative; padding-top: 26px; font-size: 15px; font-weight: 600; min-width: 0; }
+.progress li::before { content: ""; position: absolute; top: 6px; left: 0; right: 0; height: 4px; background: var(--line); }
+.progress li::after { content: ""; position: absolute; top: 0; left: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); }
+.progress li.done::before { background: var(--accent); }
+.progress li.done::after { background: var(--accent); border-color: var(--accent); }
+.progress li.next::after { border-color: var(--accent); }
+.progress small { display: block; font-weight: 400; color: var(--muted); font-size: 13.5px; }
+
+.order { margin: 0 0 16px; padding-left: 22px; display: grid; gap: 6px; }
+
+/* Two walks */
+.walks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.walks li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
+.walks b { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.2; }
+.walks .goal { color: var(--muted); font-size: 15.5px; margin: 4px 0 12px; }
+.walks dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; font-size: 15px; }
+.walks dt { color: var(--muted); }
+.walks dd { margin: 0; font-weight: 600; }
+.pill.new { background: var(--rust-soft); color: var(--rust); font-family: var(--font-body); font-size: 12.5px; }
+.note { background: var(--warn-soft); border-radius: var(--radius); padding: 14px 18px; margin-top: 12px; }
+.note p { margin: 0; }
+
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+footer p { max-width: none; margin: 0 0 6px; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .lead { font-size: 18px; }
+  h2 { font-size: 26px; }
+  .steps, .helps, .walks { grid-template-columns: minmax(0, 1fr); }
+  .progress { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 18px; }
+}
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">Baramger · Summary for everyone</p>
+    <h1>Baramger at a glance</h1>
+    <p class="lead">Baramger is a map app that helps astronauts take a safe walk on Mars and do good science along the way. We built it for a NASA challenge called "Martian Map", and it now works for two different walks.</p>
+    <ul class="status">
+      <li class="pill ok">Planning: finished</li>
+      <li class="pill ok">Building: finished</li>
+      <li class="pill ok">Testing: finished</li>
+      <li class="pill wait">Presenting: next</li>
+    </ul>
+  </header>
+
+  <section>
+    <h2>The idea in three steps</h2>
+    <ol class="steps">
+      <li><b>Plan</b><span>The night before, the crew picks places to visit. The app draws the safest path between them.</span></li>
+      <li><b>Walk</b><span>On the walk, a tablet and the helmet show the way, warn about danger, and count down the time.</span></li>
+      <li><b>Look back</b><span>Back inside, the crew replays the walk and sends a report to scientists on Earth.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Where on Mars</h2>
+    <div class="place">
+      <p>We chose <strong>Jezero crater</strong>, a place that held a lake long ago. NASA's Perseverance rover has been exploring it since 2021, so there are many photos of the ground.</p>
+      <p>We made two walks in this crater. The first goes to an area called <strong>Bright Angel</strong>. The second, new one goes to <strong>Three Forks</strong>, where the rover left sample tubes on the ground.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Two walks to choose from</h2>
+    <p>The crew picks a walk at the top of the map. Both use the same app and the same safety rules.</p>
+    <ul class="walks">
+      <li>
+        <b>Bright Angel</b>
+        <p class="goal">Study a rock with small spots that NASA says may be a sign of ancient life. A human geologist could study it far better than a robot.</p>
+        <dl>
+          <dt>Stops</dt><dd>4</dd>
+          <dt>Distance</dt><dd>3.2 km</dd>
+          <dt>Time</dt><dd>About 3 h 40 min</dd>
+          <dt>Ground</dt><dd>Some steep parts</dd>
+          <dt>Radio</dt><dd>Two short gaps</dd>
+        </dl>
+      </li>
+      <li>
+        <b>Three Forks <span class="pill new">New</span></b>
+        <p class="goal">Collect the ten sealed sample tubes that Perseverance left on the ground in 2022 and 2023, and bring them back.</p>
+        <dl>
+          <dt>Stops</dt><dd>10, one for each tube</dd>
+          <dt>Distance</dt><dd>1.2 km</dd>
+          <dt>Time</dt><dd>About 2 h 10 min</dd>
+          <dt>Ground</dt><dd>Flat and easy</dd>
+          <dt>Radio</dt><dd>The whole way</dd>
+        </dl>
+      </li>
+    </ul>
+    <div class="note">
+      <p><strong>Good to know:</strong> NASA shows where the tubes lie only as a picture, not as exact positions. So each stop is the place where the rover parked when it dropped a tube. The tube should be within a few metres. The app says this clearly, and the tablet counts the tubes as the crew picks them up.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it helps the astronauts</h2>
+    <ul class="helps">
+      <li><b>Shows the safest path</b><span>It avoids slopes that are too steep to walk in a spacesuit.</span></li>
+      <li><b>Warns about danger</b><span>Loose sand, big rocks, and places with no radio contact.</span></li>
+      <li><b>Shows what you will see</b><span>Real rover photos of each stop, so nothing is a surprise.</span></li>
+      <li><b>Keeps track of time</b><span>It says when to turn back, so the crew always gets home safely.</span></li>
+      <li><b>Works without internet</b><span>Messages from Earth take up to 22 minutes, so everything is stored on the devices.</span></li>
+      <li><b>Keeps a record</b><span>Photos, notes and samples are pinned to the exact spot on the map.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where the information comes from</h2>
+    <p>The challenge gives five NASA sources. We use all of them:</p>
+    <ul class="sources">
+      <li><span class="tag">1</span><span><strong>Mars Trek:</strong> photos of Mars taken from space, and the shape of the ground in 3D.</span></li>
+      <li><span class="tag">2</span><span><strong>USGS rock maps:</strong> which kinds of rock are where.</span></li>
+      <li><span class="tag">3</span><span><strong>Perseverance rover photos:</strong> pictures taken on the ground at eye level.</span></li>
+      <li><span class="tag">4</span><span><strong>Curiosity route map:</strong> an example of how to draw a clear route.</span></li>
+      <li><span class="tag">5</span><span><strong>NASA Worldview:</strong> ideas for an easy-to-use screen. It shows Earth, not Mars.</span></li>
+    </ul>
+    <div class="checks">
+      <h3>Extra information, only if it is safe to use</h3>
+      <p>We added two kinds of extra information: Mars weather measured by Perseverance, and sun activity (solar storms) from NOAA. We use extra information only if it passes all five checks:</p>
+      <ul>
+        <li>It has no link to China.</li>
+        <li>We have permission to use it.</li>
+        <li>It comes from an official source, and we have checked it.</li>
+        <li>It is good quality, with known detail and dates.</li>
+        <li>It is real, measured data, not made up.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>What we are careful about</h2>
+    <ul class="watch">
+      <li><b>Most space photos are too blurry for walking</b><span>Only one set of NASA photos is sharp enough to see rocks about one metre wide. We use it for the path.</span></li>
+      <li><b>The safety information is not in the official list</b><span>The five sources have no weather or solar storm data, so we added it as checked extra information.</span></li>
+      <li><b>There is no internet on Mars</b><span>Everything the walk needs is packed onto the devices before the walk starts.</span></li>
+      <li><b>Two rovers, two places</b><span>The two rovers work in craters about 3,750 km apart. We picked the one with the most photos we can use.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where we are now</h2>
+    <ol class="progress">
+      <li class="done">Plan<small>Done</small></li>
+      <li class="done">Build<small>Done</small></li>
+      <li class="done">Test<small>Done</small></li>
+      <li class="next">Present<small>Next</small></li>
+    </ol>
+    <p>We built the most important parts first. All four parts are now done:</p>
+    <ol class="order">
+      <li>The planning screen with the map, the stops, the photos and the safe path.</li>
+      <li>The tablet view, the walk preview, and weather warnings.</li>
+      <li>The helmet display, the walk replay and the report.</li>
+      <li>The second walk, to collect the rover's sample tubes at Three Forks.</li>
+    </ol>
+    <p>We tried both walks from start to finish in the app and fixed the problems we found. Next comes a short demo video and the final write-up for the challenge.</p>
+  </section>
+
+  <footer>
+    <p>Baramger · summary · updated 14 November 2026 with the second walk.</p>
+    <p>Want more detail? Read the <a href="https://claude.ai/artifact/FDf9w5X5CbCYmXsFyEt9CP" target="_blank" rel="noopener">full report</a> or the <a href="https://claude.ai/artifact/Une7u3e8Cp9bAWHpNzCHTS" target="_blank" rel="noopener">user story</a> (these links work only for people the pages are shared with).</p>
+  </footer>
+</div>
