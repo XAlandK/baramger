@@ -11,6 +11,7 @@ from __future__ import annotations
 import colorsys
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -135,6 +136,55 @@ def _has_geopandas() -> bool:
         return True
     except ImportError:
         return False
+
+
+def clean_label(text: str) -> str:
+    """A label as the map prints it, as a plain name.
+
+    Large names are printed with spaces between the letters: 'J  E  Z  E  R  O' is 'Jezero' and
+    'N   I   L   I      P   L   A   N   U   M' is 'Nili Planum' (the longer gap is the word break).
+    """
+    text = re.sub(r"</?[A-Za-z]{1,6}>", "", text)  # ArcGIS format tags such as <ITA>...</ITA>
+    lines = [line for line in text.splitlines() if line.strip()]
+    if len(lines) > 1:  # a name stacked on two lines: a line break is a word break
+        return " ".join(clean_label(line) for line in lines)
+    parts = re.split(r"(\s+)", text.strip())
+    letters, gaps = parts[0::2], parts[1::2]
+    # three or more single letters: a spaced-out name ("A B" could also be two one-letter words)
+    if len(letters) >= 3 and all(len(x) == 1 for x in letters):
+        usual = sorted(len(g) for g in gaps)[len(gaps) // 2]  # the usual gap between two letters
+        spelled = letters[0]
+        for gap, letter in zip(gaps, letters[1:]):
+            # a word break is a clearly longer gap (half as long again, or more); a gap that is only
+            # a little uneven stays inside the word
+            spelled += (" " if len(gap) >= 1.5 * usual else "") + letter
+        return " ".join(word.capitalize() for word in spelled.split(" "))
+    return " ".join(text.split())
+
+
+def place_names(gdb: Path) -> list[dict]:
+    """Official place names, read from the labels USGS printed on SIM 3464 (layer 'Nomenclature', R2).
+
+    The position is the middle of the printed label, which the map maker put on or beside the
+    feature: good enough to name the place from far away, not a surveyed centre.
+    """
+    import shapely
+    meta, _, geometry, field_data = pyogrio.raw.read(gdb, layer="Nomenclature")[:4]
+    crs = meta["crs"]
+    src_crs = CRS.from_wkt(crs) if crs.startswith(("PROJCS", "PROJCRS")) else CRS.from_user_input(crs)
+    to_ll = Transformer.from_crs(src_crs, GEOG_MARS, always_xy=True)
+    fields = list(meta["fields"])
+    texts, sizes = field_data[fields.index("TextString")], field_data[fields.index("FontSize")]
+    out = []
+    for geom, text, size in zip(shapely.from_wkb(geometry), texts, sizes):
+        if geom is None or not isinstance(text, str) or not text.strip():  # an empty label is not a name
+            continue
+        c = geom.centroid
+        lon, lat = to_ll.transform(c.x, c.y)
+        out.append({"name": clean_label(text), "position": {"lon": round(float(lon), 5), "lat": round(float(lat), 5)},
+                    # the map prints the names of large features in large letters
+                    "rank": "major" if float(size) >= 20 else "minor", "sourceId": "R2-usgs-pgm"})
+    return sorted(out, key=lambda n: (n["rank"] != "major", n["name"]))
 
 
 def _read_raw(gdb: Path, bbox_src) -> tuple[list, list[dict]]:

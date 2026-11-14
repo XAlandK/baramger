@@ -262,14 +262,23 @@ def sun_activity(raw: Path, now: datetime) -> dict:
     start = (now - timedelta(days=30)).strftime("%Y-%m-%d")
     end = now.strftime("%Y-%m-%d")
     donki = {"status": "unreachable"}
+    donki_files: list[tuple[str, Path]] = []
     key = os.environ.get("NASA_API_KEY", "DEMO_KEY")
     for url in (DONKI_KAUAI.format(kind="SEP", start=start, end=end),
                 DONKI_API.format(kind="SEP", start=start, end=end, key=key)):
         try:
-            data = json.loads(_get(url, timeout=40) or b"[]")
+            body = _get(url, timeout=40)
+            data = json.loads(body or b"[]")  # DONKI sends an empty body when there is no event
+            shown = url.replace(key, "<key>") if key in url else url  # never write the key into a package
             donki = {"status": "ok", "sep_events_30d": len(data),
                      "latest_sep": max((d.get("eventTime", "") for d in data), default=None),
-                     "url": url.replace(key, "<key>") if key in url else url}
+                     "url": shown}
+            # keep the answer as it was sent, so the package can record it like every other
+            # download (URL, time, sha256). It is NASA's, so it goes beside the other NASA files.
+            kept = raw.parent / "nasa" / "donki_sep_30d.json"
+            kept.parent.mkdir(parents=True, exist_ok=True)
+            kept.write_bytes(body)
+            donki_files = [(shown, kept)]
             break
         except Exception as e:
             donki = {"status": "unreachable", "error": str(e)[:160]}
@@ -300,7 +309,7 @@ def sun_activity(raw: Path, now: datetime) -> dict:
         "flare_window": [flares[0]["time_tag"], flares[-1]["time_tag"]] if flares else None,
         "where_measured": "GOES satellites near Earth (1 AU). Mars is about 1.5 AU from the Sun and often on another side, so storms seen here may or may not reach Mars.",
     }
-    out["files"] = [(NOAA_FLARES, raw / "noaa_xray_flares_7d.json"), (NOAA_PROTONS, raw / "noaa_protons_3d.json")]
+    out["files"] = [(NOAA_FLARES, raw / "noaa_xray_flares_7d.json"), (NOAA_PROTONS, raw / "noaa_protons_3d.json")] + donki_files
     return out
 
 

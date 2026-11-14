@@ -15,6 +15,15 @@ def log(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def source_of(url: str) -> str:
+    """Which source a conditions download belongs to, for the package's list of downloads."""
+    if "swpc.noaa.gov" in url:
+        return "S7-noaa-swpc"
+    if "/DONKI/" in url:
+        return "S3-nasa-donki"
+    return "S4-m20-meda-weather"
+
+
 def write_index() -> None:
     """data/package/index.json lists the zones that have a built package (the app's zone switcher)."""
     zones = []
@@ -26,7 +35,10 @@ def write_index() -> None:
                           "title": pkg["title"], "description": z.description,
                           "stops": len(pkg["stops"]), "generatedAt": pkg["provenance"]["generatedAt"]})
     zones.sort(key=lambda x: x["code"])
-    (C.PACKAGES / "index.json").write_text(json.dumps({"zones": zones, "default": "z2" if any(z["key"] == "z2" for z in zones) else zones[0]["key"]}, indent=1))
+    index = {"zones": zones, "default": "z2" if any(z["key"] == "z2" for z in zones) else zones[0]["key"],
+             # the crater all zones lie in: where the app's whole-crater view looks
+             "crater": dict(C.CRATER, source="R1-mars-trek")}
+    (C.PACKAGES / "index.json").write_text(json.dumps(index, indent=1))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -100,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
     g2 = tr["grid2m"]
     geo = geology.build(out, gdb, zone.aoi, raster_rect=tuple(tr["overlay_rect"]), raster_size=(g2["width"], g2["height"]))
     log(f"  {geo['features']} areas, {len(geo['units'])} rock types")
+    names = geology.place_names(gdb)
+    log(f"  place names printed on the map: {', '.join(n['name'] for n in names)}")
     inputs.append({"sourceId": "R2-usgs-pgm", "layerId": "geology-sim3464",
                    "url": "https://pubs.usgs.gov/sim/3464/sim3464_database.zip", "retrievedAt": stamp,
                    "sha256": package.sha256(C.RAW / "usgs" / "sim3464_database.zip")})
@@ -132,12 +146,11 @@ def main(argv: list[str] | None = None) -> int:
     sw = cond["space"]
     log(f"  sun: flares 7 d {sw['noaa']['flares_7d']}, protons >=10 MeV {sw['noaa']['protons_10mev_latest_pfu']} pfu; DONKI {sw['donki']['status']}")
     for url, path in cond["files"]:
-        sid = "S7-noaa-swpc" if "swpc.noaa.gov" in url else "S4-m20-meda-weather"
-        inputs.append({"sourceId": sid, "url": url, "retrievedAt": stamp, "sha256": package.sha256(path)})
+        inputs.append({"sourceId": source_of(url), "url": url, "retrievedAt": stamp, "sha256": package.sha256(path)})
 
     # 6. package + checks
     log("Package: mission-package.json")
-    res = package.build(out, tr, ph, geo, tl, inputs, walk_label, cond, zone)
+    res = package.build(out, tr, ph, geo, tl, inputs, walk_label, cond, zone, names)
     log(f"  {res['layers']} layers, {res['stops']} stops, {res['photos']} photos, {res['hazards']} no-go areas, "
         f"{res['roverWaypoints']} rover points")
     if res["errors"]:

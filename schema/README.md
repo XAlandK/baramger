@@ -20,6 +20,8 @@ erDiagram
   MissionPackage ||--o{ Hazard : hazards
   MissionPackage ||--o{ PovImage : povImages
   MissionPackage ||--o{ RoverWaypoint : roverWaypoints
+  MissionPackage ||--o{ PlaceName : placeNames
+  PlaceName }o--|| DataSource : sourceId
   MissionPackage ||--o{ Assumption : assumptions
   Layer }o--|| DataSource : sourceId
   Layer }o--o{ Layer : derivedFrom
@@ -49,11 +51,12 @@ erDiagram
 
 ## Rules a later validator script must check (JSON Schema can't)
 
-1. Every `layer.sourceId` exists in `sources`.
+1. Every `sourceId` (layers, photos, rover points, place names) exists in `sources`.
 2. Every `derivedFrom`, `stopIds`, `hazardIds`, `povImageIds`, `objectiveIds`, `evidence.layerId` points to an existing ID.
 3. Layers cover **≥ 3 distinct `dataKind`s** other than `derived`.
 4. Every derived layer traces back (recursively) to at least one `R*` source.
 5. Each of R1–R5 is **actually used** by at least one layer, image, or a documented design/UX role.
 6. Any `S*` source is allowed only if decision D2 = yes.
 7. Route legs connect stops in `stopIds` order, and `totals` equal the sum of the legs.
-8. All positions lie inside `site.aoi`, and the AOI lies inside the HiRISE DEM coverage.
+8. All stop, base, site-centre, route, hazard and rover positions lie inside `site.aoi`, and the AOI lies inside the HiRISE DEM coverage. Place names may lie outside it: they label the whole crater.
+9. No place name is listed twice.

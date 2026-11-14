@@ -44,7 +44,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:fo
 
 /* map chips */
 .map-chip { position: absolute; background: rgba(12, 18, 22, 0.82); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; backdrop-filter: blur(6px); }
-#map-title { top: 14px; left: 14px; display: grid; max-width: calc(100% - var(--panel-cover) - 28px); }
+/* #map-area is the part of the map that the panel does not cover. Along its top: the map title on
+   the left and the scale card. On a map at least 560 px wide the card is in the top right corner,
+   below the place of the "Panel" button and of the hint row: no walk zone and no place name lies
+   there in the whole-crater view. On a narrower map it sits under the title; there it would lie
+   over a walk zone in the whole-crater view when the map is short too, so the whole-planet screen
+   then has no card. */
+#map-area { position: absolute; inset: 0 var(--panel-cover) 0 0; pointer-events: none; container-type: size; }
+#map-corner { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+:where(#map-corner) > .map-chip { position: static; pointer-events: auto; }
+#map-title { display: grid; max-width: 100%; }
 #map-title .eyebrow { margin: 0; }
 #map-title strong { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.15; }
 .chip-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
@@ -62,6 +71,23 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:fo
 .readout:empty { display: none; }
 .readout.flash { color: var(--care); border-color: var(--care); }
 body[data-screen="globe"] .readout:not(.flash) { display: none; }
+
+/* The scale card: a scale bar and a drawing at the same scale (scale.ts). Its three rows have
+   fixed sizes (the same numbers as FIG_W and FIG_H there), so it never changes size. It needs a
+   map at least 196 px wide. */
+#scale { width: 168px; padding: 8px 12px 7px; display: grid; gap: 4px; pointer-events: none; } /* the map under it stays usable */
+.sc-fig { height: 56px; width: 144px; overflow: hidden; display: flex; align-items: flex-end; gap: 10px; color: #dfe8ec; }
+.sc-fig svg { display: block; flex: none; fill: currentColor; }
+.sc-fig svg.dim { opacity: 0.6; align-self: center; }
+.sc-times { align-self: center; font-family: var(--font-mono); font-size: 15px; font-weight: 500; white-space: nowrap; } /* 500: the heaviest mono face the app loads */
+.sc-bar { height: 14px; display: flex; align-items: center; gap: 8px; }
+.sc-line { flex: none; height: 7px; border: 1.5px solid var(--fg); border-top: 0; }
+.sc-bar b { font-family: var(--font-mono); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.sc-cap { height: 16px; font-size: 11.5px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@container (min-width: 560px) { #scale { position: absolute; top: 46px; right: 0; } } /* 560 = NARROW_MAP_W in layout.ts */
+@container (max-width: 195px) { #scale { display: none; } }
+@container (width < 560px) and (height < 600px) { body[data-screen="globe"] #scale { display: none; } } /* NARROW_MAP_W, SHORT_MAP_H in layout.ts */
+body.hud-on #scale { opacity: 0; pointer-events: none; } /* the helmet view looks along the ground: no single scale */
 
 #compare-handle { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--fg); cursor: ew-resize; touch-action: none; z-index: 5; }
 #compare-handle span { position: absolute; top: 50%; font-size: 11px; font-weight: 600; background: rgba(12,18,22,.85); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
@@ -132,6 +158,8 @@ p { margin: 0; }
 .swatch.photo { width: 16px; height: 16px; margin-top: 3px; border-radius: 3px; background: linear-gradient(135deg, #a77a5a, #6b4c38); }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .geo { white-space: nowrap; }
+.base-style { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.base-style .seg button { padding: 5px 10px; font-size: 12.5px; }
 .compare { display: flex; gap: 8px; align-items: center; font-size: 12.5px; }
 .compare input { accent-color: var(--accent); }
 .compare small { color: var(--muted); }

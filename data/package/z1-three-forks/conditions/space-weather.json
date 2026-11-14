@@ -1,9 +1,9 @@
 {
  "title": "Sun activity",
- "retrieved_utc": "2026-11-14T13:11:12Z",
+ "retrieved_utc": "2026-11-14T17:02:27Z",
  "noaa": {
   "flares_7d": {
-   "C": 106,
+   "C": 98,
    "M": 6,
    "X": 0
   },
@@ -33,17 +33,19 @@
    "class": "M1.7",
    "max_time": "2026-11-11T21:21:00Z"
   },
-  "protons_10mev_latest_pfu": 0.224,
-  "protons_10mev_latest_time": "2026-11-14T13:00:00Z",
+  "protons_10mev_latest_pfu": 0.213,
+  "protons_10mev_latest_time": "2026-11-14T16:55:00Z",
   "protons_10mev_max_3d_pfu": 0.386,
   "flare_window": [
-   "2026-11-07T13:27:00Z",
+   "2026-11-07T17:11:00Z",
    "2026-11-14T06:02:00Z"
   ],
   "where_measured": "GOES satellites near Earth (1 AU). Mars is about 1.5 AU from the Sun and often on another side, so storms seen here may or may not reach Mars."
  },
  "donki": {
-  "status": "unreachable",
-  "error": "HTTP Error 429: Too Many Requests"
+  "status": "ok",
+  "sep_events_30d": 0,
+  "latest_sep": null,
+  "url": "https://api.nasa.gov/DONKI/SEP?startDate=2026-10-15&endDate=2026-11-14&api_key=<key>"
  }
 }

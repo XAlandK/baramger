@@ -6,7 +6,8 @@ import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { type HeightGrid, type LonLat, bilinear, inside } from "./grid";
 import type { Leg } from "./plan";
-import { needsShaping, planetFitAltitude, widenFactor } from "./layout";
+import { CRATER_VIEW_MAX_M, NARROW_MAP_W, namesVisible, needsShaping, photoLayerAlpha, planetFitAltitude, widenFactor } from "./layout";
+import { BASE_STYLES, type BaseStyle } from "./basemap";
 
 export const MARS = new Cesium.Ellipsoid(3_396_190, 3_396_190, 3_396_190);
 const OCCLUDER = new Cesium.Ellipsoid(3_387_190, 3_387_190, 3_387_190);
@@ -143,6 +144,12 @@ class MarkerLayer {
     this.labels.removeAll();
   }
 
+  /** Show or hide the whole layer. */
+  setShown(show: boolean): void {
+    if (this.dots.show !== show) this.dots.show = show;
+    if (this.labels.show !== show) this.labels.show = show;
+  }
+
   /** range = camera distances (m) between which the marker is shown. */
   dot(position: Cesium.Cartesian3, img: { key: string; canvas: HTMLCanvasElement }, size: number, id?: unknown, range?: [number, number]): Cesium.Billboard {
     const b = this.dots.add({
@@ -255,8 +262,10 @@ export class MapView {
   private placeLayer!: MarkerLayer;
   private placeHits: Hit[] = [];
   private zoneLayer!: MarkerLayer;
+  private nameLayer!: MarkerLayer;
   private zoneHits: Hit[] = [];
   private zoneCenter: Cesium.Cartesian3 | null = null;
+  private nameCenter: Cesium.Cartesian3 | null = null; // the middle of the official place names
   private noteLayer!: MarkerLayer;
   private crewLayer!: MarkerLayer;
   private routeEntities: Cesium.Entity[] = [];
@@ -298,6 +307,7 @@ export class MapView {
     this.pinLayer = new MarkerLayer(scene);
     this.noteLayer = new MarkerLayer(scene);
     this.crewLayer = new MarkerLayer(scene);
+    this.nameLayer = new MarkerLayer(scene); // under the markers: a name never hides a stop or a zone
     this.placeLayer = new MarkerLayer(scene);
     this.zoneLayer = new MarkerLayer(scene);
     scene.globe.baseColor = Cesium.Color.fromCssColorString("#5b3f2e");
@@ -320,11 +330,30 @@ export class MapView {
     };
     window.addEventListener("resize", again);
     // Any camera move by hand ends the "fitted whole-planet view" (see showPlanet).
-    for (const ev of ["pointerdown", "wheel"]) scene.canvas.addEventListener(ev, () => { this.home = null; }, { passive: true });
+    for (const ev of ["pointerdown", "wheel"]) scene.canvas.addEventListener(ev, () => { this.home = null; this.craterFit = null; }, { passive: true });
     document.addEventListener("visibilitychange", again);
     window.addEventListener("focus", again);
     window.addEventListener("pageshow", again);
     window.setInterval(again, 1500);
+    // The official place names show at crater scale only: by the camera's height above the ground
+    // (see namesVisible), and not from so far that the crater has its own marker, which already
+    // carries the name (a tilted or far-away camera can be low and still far from the crater).
+    scene.preRender.addEventListener(() => {
+      const at = scene.camera.positionCartographic;
+      const ground = this.heightAt(Cesium.Math.toDegrees(at.longitude), Cesium.Math.toDegrees(at.latitude));
+      const anchor = this.zoneCenter ?? this.nameCenter;
+      const distance = anchor ? Cesium.Cartesian3.distance(scene.camera.positionWC, anchor) : 0;
+      this.nameLayer.setShown(namesVisible(this.cameraHeightKm() * 1000 - ground, distance));
+    });
+    // The photo maps fade in while the camera comes down to the crater (see photoLayerAlpha).
+    scene.preRender.addEventListener(() => {
+      const km = this.cameraHeightKm();
+      this.photoLayers.forEach((layer, i) => {
+        const alpha = photoLayerAlpha(km, i);
+        if (layer.alpha !== alpha) layer.alpha = alpha;
+        if (layer.show !== alpha > 0) layer.show = alpha > 0; // a hidden layer loads no tiles
+      });
+    });
     // Zone outlines are plain lines (no built-in display range): show them only from mid distance.
     scene.preRender.addEventListener(() => {
       if (!this.zoneCenter) return;
@@ -367,7 +396,27 @@ export class MapView {
     });
   }
 
-  addTiles(urlTemplate: string, minLevel: number, maxLevel: number, rect: number[] | undefined, credit: string, alpha = 1): Cesium.ImageryLayer {
+  /** The whole-planet base maps, by look (see basemap.ts). Only one look is shown at a time. */
+  private readonly baseLayers: Record<BaseStyle, Cesium.ImageryLayer[]> = { heights: [], colour: [] };
+  /** The grey photo maps (CTX, HiRISE) on the base map, lowest first. They show only from near (see photoLayerAlpha). */
+  private readonly photoLayers: Cesium.ImageryLayer[] = [];
+
+  /** The looks this mission package has tiles for. */
+  baseStyles(): BaseStyle[] {
+    return BASE_STYLES.filter((s) => this.baseLayers[s].length > 0);
+  }
+
+  /** Show one look of the whole-planet map and hide the other (a hidden layer loads no tiles). */
+  setBaseStyle(style: BaseStyle): void {
+    for (const s of BASE_STYLES) for (const layer of this.baseLayers[s]) layer.show = s === style;
+    this.redraw();
+  }
+
+  /**
+   * Add a tiled map from the mission package. `role` says what it is: one of the two whole-planet
+   * looks, a photo map that lies on them, or (null) an overlay the caller switches on and off.
+   */
+  addTiles(urlTemplate: string, minLevel: number, maxLevel: number, rect: number[] | undefined, credit: string, alpha = 1, role: BaseStyle | "photo" | null = null): Cesium.ImageryLayer {
     const provider = new Cesium.UrlTemplateImageryProvider({
       url: urlTemplate,
       tilingScheme: this.tiling,
@@ -378,6 +427,8 @@ export class MapView {
     });
     const layer = this.viewer.imageryLayers.addImageryProvider(provider);
     layer.alpha = alpha;
+    if (role === "photo") this.photoLayers.push(layer);
+    else if (role) this.baseLayers[role].push(layer);
     return layer;
   }
 
@@ -458,9 +509,11 @@ export class MapView {
   private home: LonLat | null = null;
   private homeSize = "";
   private homeAt: Cesium.Cartesian3 | null = null; // where the fitted view put the camera
+  /** The whole-crater view while the camera still shows it: the map size it was framed for, where it put the camera, and how to frame it again. */
+  private craterFit: { size: string; at: Cesium.Cartesian3; again: () => void } | null = null;
 
   private narrowMap(): boolean {
-    return this.lens().w < 460;
+    return this.lens().w < NARROW_MAP_W;
   }
 
   /** The map's size on screen and the camera's angle across its larger side. */
@@ -493,6 +546,7 @@ export class MapView {
     this.viewer.camera.cancelFlight();
     this.viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, altitudeM ?? this.planetAltitude(), MARS) });
     this.home = altitudeM === undefined ? center : null;
+    this.craterFit = null;
     this.homeSize = this.sizeKey();
     this.homeAt = Cesium.Cartesian3.clone(this.viewer.camera.positionWC);
     this.redraw();
@@ -500,6 +554,7 @@ export class MapView {
 
   flyToPlanet(center: LonLat, duration = 3): void {
     this.home = null;
+    this.craterFit = null;
     this.viewer.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, this.planetAltitude(), MARS),
       duration,
@@ -520,6 +575,11 @@ export class MapView {
     // the flight: if the camera is no longer where the fitted view put it, the crew moved it.
     if (this.home && (!this.homeAt || !Cesium.Cartesian3.equalsEpsilon(this.viewer.camera.positionWC, this.homeAt, 0, 1))) this.home = null;
     if (this.home && this.homeSize !== this.sizeKey()) this.showPlanet(this.home);
+    // The same for the whole-crater view: it is framed for the map's size, so it is made again
+    // when the size changes (the panel slides in, the window is resized), until the crew moves the camera.
+    const fit = this.craterFit;
+    if (fit && !Cesium.Cartesian3.equalsEpsilon(this.viewer.camera.positionWC, fit.at, 0, 1)) this.craterFit = null;
+    else if (fit && fit.size !== this.sizeKey()) fit.again();
     if (this.zoneArgs && this.zonesStacked !== this.narrowMap()) this.setZones(...this.zoneArgs);
   }
 
@@ -528,11 +588,35 @@ export class MapView {
     return `${w}x${h}`;
   }
 
-  /** A view of the whole crater, where each walk zone has its own marker (so it stays below ZONE_SPLIT_M). */
-  flyToCrater(center: LonLat, duration = 3): void {
+  /**
+   * A view of the whole crater, where each walk zone has its own marker: the camera stays below
+   * CRATER_VIEW_MAX_M, which is below ZONE_SPLIT_M. See craterView() for the point and the height.
+   */
+  flyToCrater(center: LonLat, heightM?: number, duration = 3, again?: () => void): void {
     this.home = null;
-    const height = Math.min(ZONE_SPLIT_M * 0.9, 62_000 * this.widen());
-    this.viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat, height, MARS), duration });
+    this.craterFit = null;
+    const height = Math.min(CRATER_VIEW_MAX_M, ZONE_SPLIT_M * 0.9, heightM ?? 62_000 * this.widen());
+    const destination = Cesium.Cartesian3.fromDegrees(center.lon, center.lat, height, MARS);
+    // `again` frames the view once more for a new map size: the view stays fitted (see refit) until
+    // the crew moves the camera. The size is the one this view was framed for, also when the map
+    // changes size during the flight: refit() then frames it again on arrival.
+    const framedFor = this.sizeKey();
+    const arrived = () => {
+      if (again) this.craterFit = { size: framedFor, at: Cesium.Cartesian3.clone(this.viewer.camera.positionWC), again };
+    };
+    if (duration <= 0) {
+      this.viewer.camera.cancelFlight();
+      this.viewer.camera.setView({ destination });
+      arrived();
+      this.redraw();
+      return;
+    }
+    this.viewer.camera.flyTo({ destination, duration, complete: arrived });
+  }
+
+  /** The map's size on screen (CSS pixels) and the camera's angle across its larger side. */
+  viewSize(): { w: number; h: number; fov: number } {
+    return this.lens();
   }
 
   /** Camera height above the reference sphere, in km. */
@@ -542,6 +626,7 @@ export class MapView {
 
   flyToSite(center: LonLat, duration = 4): void {
     this.home = null;
+    this.craterFit = null;
     const h = this.heightAt(center.lon, center.lat);
     const f = this.widen();
     this.viewer.camera.flyTo({
@@ -553,6 +638,7 @@ export class MapView {
 
   flyToPoint(p: LonLat): void {
     this.home = null;
+    this.craterFit = null;
     const h = this.heightAt(p.lon, p.lat);
     const f = this.widen();
     this.viewer.camera.flyTo({
@@ -626,6 +712,33 @@ export class MapView {
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
         pixelOffset: new Cesium.Cartesian2(14, 0),
         distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, nameRange),
+      });
+    }
+    this.redraw();
+  }
+
+  /**
+   * Official place names (USGS map, R2) as plain lettering, without a marker. They show at crater
+   * scale only (by camera height, see namesVisible). A small feature gets its name just above it,
+   * so the name does not cover the feature.
+   */
+  setNames(names: (LonLat & { name: string; major: boolean })[]): void {
+    this.nameLayer.clear();
+    this.nameCenter = names.length
+      ? this.pos({ lon: names.reduce((a, n) => a + n.lon, 0) / names.length, lat: names.reduce((a, n) => a + n.lat, 0) / names.length }, 0)
+      : null;
+    for (const n of names) {
+      this.nameLayer.label(this.pos(n, 40), {
+        text: n.major ? n.name.toUpperCase() : n.name,
+        font: n.major ? "600 15px Inter, system-ui, sans-serif" : "italic 500 13px Inter, system-ui, sans-serif",
+        showBackground: false,
+        fillColor: Cesium.Color.fromCssColorString("#F4ECDF"),
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        outlineColor: Cesium.Color.fromCssColorString("#0C1216"),
+        outlineWidth: 3,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        verticalOrigin: n.major ? Cesium.VerticalOrigin.CENTER : Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: n.major ? Cesium.Cartesian2.ZERO : new Cesium.Cartesian2(0, -7),
       });
     }
     this.redraw();
@@ -872,6 +985,7 @@ export class MapView {
   /** Camera behind and above the walkers, looking along their direction (walk-through). */
   droneView(p: LonLat & { h: number }, headingDeg: number, back = 120, up = 55): void {
     this.home = null;
+    this.craterFit = null;
     if (this.smoothHeading === null) this.smoothHeading = headingDeg;
     const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
     this.smoothHeading = (this.smoothHeading + diff * 0.08 + 360) % 360;
@@ -894,6 +1008,7 @@ export class MapView {
   /** Eye-level camera for the helmet view: about 1.8 m above the ground, looking where the crew walks. */
   firstPerson(p: LonLat & { h: number }, headingDeg: number): void {
     this.home = null;
+    this.craterFit = null;
     if (this.smoothHeading === null) this.smoothHeading = headingDeg;
     const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
     this.smoothHeading = (this.smoothHeading + diff * 0.15 + 360) % 360;
@@ -908,12 +1023,36 @@ export class MapView {
   /** Camera looking down on the walkers, north up (tablet map). */
   topView(p: LonLat & { h: number }, height = 380): void {
     this.home = null;
+    this.craterFit = null;
     const f = this.widen();
     this.viewer.camera.setView({
       destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat - 0.0012 * f, p.h + height * f, MARS),
       orientation: { heading: 0, pitch: Cesium.Math.toRadians(-72), roll: 0 },
     });
     this.redraw();
+  }
+
+  /**
+   * The map's scale at a screen position (CSS pixels from the map's top left corner): metres of
+   * ground per pixel, measured from side to side. Null where the view shows no ground there
+   * (the sky, or ground whose tiles are not loaded yet).
+   */
+  metersPerPixel(x: number, y: number, span = 40): number | null {
+    const scene = this.viewer.scene;
+    const ground = (px: number) => {
+      const ray = this.viewer.camera.getPickRay(new Cesium.Cartesian2(px, y));
+      return ray ? scene.globe.pick(ray, scene) : undefined;
+    };
+    const a = ground(x - span / 2);
+    const b = ground(x + span / 2);
+    if (!a || !b) return null;
+    const d = Cesium.Cartesian3.distance(a, b);
+    return d > 0 && Number.isFinite(d) ? d / span : null;
+  }
+
+  /** Call `cb` after every frame the map draws (it draws only when something changed). */
+  onRender(cb: () => void): void {
+    this.viewer.scene.postRender.addEventListener(cb);
   }
 
   pickLonLat(pos: Cesium.Cartesian2): LonLat | null {

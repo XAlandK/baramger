@@ -38,8 +38,8 @@ Hard project rule: the product must be built on the five resources listed in `Th
 
 | Resource | Used for |
 |---|---|
-| R1 | HiRISE/CTX imagery + DEMs, THEMIS/TES thermal & spectral, global geology tiles, traverse |
-| R2 | SIM 3464 Jezero geologic units, SIM 3292 context |
+| R1 | HiRISE/CTX imagery + DEMs, THEMIS/TES thermal & spectral, global geology tiles, traverse, the two whole-planet maps (MOLA height colours, Viking colour mosaic), the Jezero record of Trek's name layer (crater centre and width) |
+| R2 | SIM 3464 Jezero geologic units and the ten place names printed on it, SIM 3292 context |
 | R3 | Annotated route-map visual style |
 | R4 | Layer picker, timeline, compare-view UX patterns |
 | R5 | Ground "what you will see" photos at each stop |

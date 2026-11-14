@@ -49,6 +49,13 @@ export async function tour() {
     await sleep(200);
   }
   check("globe panel");
+  // the two looks of the whole-planet map (height colours, natural colour), when the package has both
+  const look = B.state.baseStyle; // the tour puts the crew's own choice back afterwards
+  for (const b of [...document.querySelectorAll("#panel [data-base]")]) {
+    await click(`#panel [data-base="${b.dataset.base}"]`);
+    check(`globe panel, Mars colours: ${b.dataset.base}`);
+  }
+  if ($(`#panel [data-base="${look}"]`)) await click(`#panel [data-base="${look}"]`);
   B.enterZone(location.hash.replace("#", "") || "z2");
   await sleep(300);
 
@@ -69,6 +76,10 @@ export async function tour() {
   }
   await click('#popup [data-dtab="checks"]');
   check("data pop-up: checks");
+  while ($('#popup .pager button[data-dir="1"]:not(:disabled)')) {
+    await click('#popup .pager button[data-dir="1"]', 50);
+    check("data pop-up: checks, next page");
+  }
   await click('#popup [data-dtab="values"]');
   check("data pop-up: values");
   while ($('#popup .pager button[data-dir="1"]:not(:disabled)')) {

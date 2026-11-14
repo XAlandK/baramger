@@ -33,6 +33,36 @@ TREK_TILE_ROOT = "https://trek.nasa.gov/tiles/Mars/EQ"
 USGS_TRN_DEM_URL = ("https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/"
                     f"{TREK_DEM_LABEL}.tif")
 
+# Whole-planet base maps (two looks; the app lets the crew switch between them):
+#   MOLA   = colours show height (the app's first look; blue is low ground, not water)
+#   VIKING = natural colour, approximate: Mars Trek's own default base map. Its producer's record
+#            (USGS Astrogeology, "Mars Viking Colorized Global Mosaic 232m", published 2009-02-02, public
+#            domain) says NASA Ames blended the Viking colour mosaic over the grey MDIM 2.1 mosaic, as an
+#            "artistically colorized" map. So never call it true colour: say natural colour, approximate.
+TREK_MOLA_LABEL = "Mars_MGS_MOLA_ClrShade_merge_global_463m"
+TREK_VIKING_LABEL = "Mars_Viking_MDIM21_ClrMosaic_global_232m"   # WMTS levels 0-7, jpg (checked 2026-11-14)
+VIKING_PRODUCER_PAGE = "https://astrogeology.usgs.gov/search/map/mars_viking_colorized_global_mosaic_232m"
+# Both base maps are cached for the whole planet up to level 3, and up to level 7 around Jezero.
+REGION_BBOX = (70.0, 12.0, 85.0, 25.0)
+# The controlled Jezero CTX photo mosaic and its full extent on Mars Trek (WMTS capabilities, checked
+# 2026-11-14). It covers only the western 40% of the crater: the delta and both walk zones.
+TREK_CTX_LABEL = "JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0"
+CTX_MOSAIC_BBOX = (77.1604655, 18.2110274, 77.6991776, 18.7211945)
+# A wider CTX mosaic on Mars Trek, titled "MRO CTX, Jezero Mosaic, Preliminary" (lon 75.15..78.87,
+# lat 15.91..19.45). It covers the whole crater, but it lies about 80 m south (and 20-30 m west) of the
+# controlled mosaic, is darker, and shows seams between image strips: context only, drawn under the
+# controlled mosaic.
+TREK_CTX_WIDE_LABEL = "Jezero_CTX_BlockAdj_dd"
+# Jezero crater as Mars Trek's own name layer gives it (R1; the IAU name was adopted in 2007). Read on
+# 2026-11-14 from https://trek.nasa.gov/mars/trekarcgis/rest/services/combinedNom/MapServer/0/query
+# with where=clean_name='Jezero': FID 186, center_lat 18.4082, center_lon 77.68734927, diameter 47.5212.
+CRATER = {"name": "Jezero", "lon": 77.68734927, "lat": 18.4082, "diameter_km": 47.52}
+# The box of the wide crater photo map: the crater with about 14 km around it. The app keeps its
+# whole-crater view inside this box when the map's shape allows it (craterView in app/src/layout.ts);
+# on a very wide or a tall map the view is larger, and the planet map shows at its edges.
+# At level 7, the lowest level cached, this box has four tiles (CesiumJS advises four or fewer).
+CRATER_VIEW_BBOX = (76.95, 17.78, 78.39, 19.04)
+
 
 @dataclass(frozen=True)
 class TileLayer:
@@ -45,6 +75,20 @@ class TileLayer:
     data_kind: str
     resolution_m: float | None
     attribution: str
+    notes: tuple[str, ...] = ()     # extra caveats written into the package
+
+
+# Mars Trek gives no credit line for this product; this one follows the producer's record (see above).
+VIKING_CREDIT = "NASA Ames and USGS Astrogeology Science Center (Viking Orbiter colourised mosaic, MDIM 2.1), via Mars Trek"
+VIKING_NOTES = (
+    "Natural colour, approximate: a colourised mosaic. NASA Ames blended the Viking orbiters' colour mosaic "
+    "(photos from 1976-1980) over the grey MDIM 2.1 mosaic. USGS published the result in 2009. "
+    f"Producer's record: {VIKING_PRODUCER_PAGE}",
+    "Level 7 is the finest level Mars Trek serves (about 326 m per pixel; the mosaic itself is 232 m). "
+    "It is cached around Jezero, and level 3 for the rest of the planet. Far-away context only.",
+    "The mosaic shows joins between Viking photos in places (for example about 250 km north of Jezero). "
+    "They are in the source data.",
+)
 
 
 # ---------------------------------------------------------------- stops (real rover positions, S1)
@@ -89,14 +133,35 @@ class Zone:
 
 
 def tile_layers(zone: Zone) -> tuple[TileLayer, ...]:
+    """Map tiles cached in a mission package, in drawing order (first = bottom)."""
     return (
-        TileLayer("mola", "Mars_MGS_MOLA_ClrShade_merge_global_463m", "jpg", (0, 3), None,
+        TileLayer("mola", TREK_MOLA_LABEL, "jpg", (0, 3), None,
                   "MOLA colour shaded relief (global)", "topographic", 463,
                   "NASA/JPL/GSFC MOLA, via Mars Trek"),
-        TileLayer("mola-region", "Mars_MGS_MOLA_ClrShade_merge_global_463m", "jpg", (4, 7), (70.0, 12.0, 85.0, 25.0),
+        TileLayer("mola-region", TREK_MOLA_LABEL, "jpg", (4, 7), REGION_BBOX,
                   "MOLA colour shaded relief (region)", "topographic", 463,
                   "NASA/JPL/GSFC MOLA, via Mars Trek"),
-        TileLayer("ctx", "JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0", "png", (8, 13), zone.context,
+        TileLayer("viking", TREK_VIKING_LABEL, "jpg", (0, 3), None,
+                  "Viking colour mosaic (global, natural colour)", "optical", 232,
+                  VIKING_CREDIT, VIKING_NOTES),
+        TileLayer("viking-region", TREK_VIKING_LABEL, "jpg", (4, 7), REGION_BBOX,
+                  "Viking colour mosaic (region, natural colour)", "optical", 232,
+                  VIKING_CREDIT, VIKING_NOTES),
+        TileLayer("ctx-wide", TREK_CTX_WIDE_LABEL, "png", (7, 10), CRATER_VIEW_BBOX,
+                  "CTX photo mosaic, Jezero crater and around it (preliminary)", "optical", 6,
+                  "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek",
+                  ("Mars Trek calls this mosaic preliminary. It lies about 80 m south of the controlled CTX mosaic "
+                   "(measured on three tiles) and shows seams between image strips: far-away context only, not for positions.",
+                   "Cached to level 10 (about 40 m per pixel) for the crater and about 14 km around it. "
+                   "A very wide or a tall window shows more than that: the planet map is at its edges then.",
+                   "The mosaic has one gap of about 3 km2 just south-west of the crater rim (near 77.38 E, 17.98 N). "
+                   "The planet map shows through there. The gap is in the source data.")),
+        TileLayer("ctx-crater", TREK_CTX_LABEL, "png", (8, 11), CTX_MOSAIC_BBOX,
+                  "CTX photo mosaic, west side of Jezero crater (controlled)", "optical", 6,
+                  "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek",
+                  ("Cached to level 11 (about 20 m per pixel) for the whole controlled mosaic. It covers the western 40% "
+                   "of Jezero crater (the delta and both walk zones); the 6 m detail is cached only around the walk zone.",)),
+        TileLayer("ctx", TREK_CTX_LABEL, "png", (8, 13), zone.context,
                   "CTX photo mosaic, 6 m", "optical", 6,
                   "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek"),
         TileLayer("hirise", "JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd", "png", (13, 17), zone.aoi,
@@ -214,6 +279,9 @@ ASSUMPTIONS = (
      "reference": "NASA JSC ICES-2026-127 (2026): 50 lbm (22.7 kg) of tools and samples per astronaut assumed in Mars suit sizing"},
     {"id": "A21", "statement": "Most load one astronaut may carry; more is too heavy and the plan cannot be approved", "value": 30, "unit": "kg",
      "status": "to_verify", "reference": "Starting value chosen for Baroler; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"},
+    # Scale card: the map draws a person next to its scale bar (the spacecraft sizes are NASA's, source S8).
+    {"id": "A22", "statement": "Height of the person drawn in the map's scale card (a person in a suit)", "value": 1.8, "unit": "m",
+     "status": "to_verify", "reference": "A round value, the same as the suit antenna height (A8). A drawing for scale, not a measurement"},
 )
 
 COMFORT_SLOPE_DEG = 15.0

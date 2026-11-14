@@ -390,6 +390,19 @@
       "additionalProperties": false
     },
 
+    "PlaceName": {
+      "description": "An official place name to label the map. The position is where the source prints the label (on or beside the feature), not a surveyed centre.",
+      "type": "object",
+      "required": ["name", "position", "sourceId"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "position": { "$ref": "#/$defs/Position" },
+        "rank": { "enum": ["major", "minor"], "description": "major = a large feature: the source prints its name in large letters." },
+        "sourceId": { "$ref": "#/$defs/SourceId" }
+      },
+      "additionalProperties": false
+    },
+
     "PovImage": {
       "description": "A Perseverance ground photo shown as 'what you will see'. Always from R5.",
       "type": "object",
@@ -541,6 +554,7 @@
         "hazards": { "type": "array", "items": { "$ref": "#/$defs/Hazard" } },
         "povImages": { "type": "array", "items": { "$ref": "#/$defs/PovImage" } },
         "roverWaypoints": { "type": "array", "items": { "$ref": "#/$defs/RoverWaypoint" } },
+        "placeNames": { "type": "array", "items": { "$ref": "#/$defs/PlaceName" } },
         "assumptions": { "type": "array", "items": { "$ref": "#/$defs/Assumption" } },
         "provenance": { "$ref": "#/$defs/Provenance" }
       },

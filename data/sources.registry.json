@@ -42,6 +42,11 @@
           "type": "download",
           "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif",
           "notes": "Same HiRISE DEM product, hosted by its producer (USGS Astrogeology, Mars 2020 TRN release). Supports HTTP range reads, so only the walk area is read. Checked 2026-11-14: 1,839,545,409 bytes, eqc sphere R=3396190."
+        },
+        {
+          "type": "json_api",
+          "url": "https://trek.nasa.gov/mars/trekarcgis/rest/services/combinedNom/MapServer/0/query?where=clean_name='Jezero'&outFields=*&f=json",
+          "notes": "Mars Trek's own name layer (a copy of the IAU names, frozen in 2015). Read on 2026-11-14 for one record: Jezero, FID 186, center_lat 18.4082, center_lon 77.68734927, diameter 47.5212 km. Used for the whole-crater view (crater in data/package/index.json)."
         }
       ],
       "license": "NASA data, generally public domain",
@@ -54,7 +59,9 @@
       "caveats": [
         "Perseverance traverse layer created 2024-07-03; ends near sol 1219.",
         "HiRISE Jezero mosaic ~9.8 GB, DEM ~1.8 GB.",
-        "Trek's whole-file DEM download was very slow (down to ~30 KB/s) and cannot resume; use the USGS copy for windows."
+        "Trek's whole-file DEM download was very slow (down to ~30 KB/s) and cannot resume; use the USGS copy for windows.",
+        "Mars Trek gives no credit line and no use terms for the Viking colour mosaic or the Jezero CTX mosaics (its metadata records are placeholders or missing). The credits used follow the producers' records.",
+        "Whole-planet colour: only the Viking mosaic (levels 0-7). Its producer (USGS Astrogeology) calls it colourised, so the app labels it natural colour, approximate."
       ]
     },
     {
@@ -85,11 +92,12 @@
       "credit": "Sun, V.Z., and Stack, K.M., 2020, USGS SIM 3464, https://doi.org/10.3133/sim3464",
       "verified": {
         "date": "2026-11-14",
-        "status": "partial",
-        "notes": "Pages reachable. GIS zip contents (shapefile/geodatabase) not opened yet."
+        "status": "ok",
+        "notes": "SIM 3464 GIS database downloaded and opened (Nili.gdb, Mars Transverse Mercator on the Mars 2000 sphere). Two layers are read: GeoUnits_v1 (rock types) and Nomenclature (the ten place names printed on the map)."
       },
       "caveats": [
-        "1:75,000 is unit-level context, not boulder-level hazard data."
+        "1:75,000 is unit-level context, not boulder-level hazard data.",
+        "Place names: the app shows the ten names printed on SIM 3464, each where the map prints its label (good from far away, not a surveyed centre)."
       ]
     },
     {
@@ -278,12 +286,12 @@
       "credit": "NASA CCMC DONKI",
       "verified": {
         "date": "2026-11-14",
-        "status": "failed",
-        "notes": "kauai host timed out from this network; api.nasa.gov DEMO_KEY rate-limited (retry-after ~13 h). Pipeline tries both each run; set NASA_API_KEY (free sign-up) to use it."
+        "status": "partial",
+        "notes": "api.nasa.gov answered on 2026-11-14 (17:02 UTC) with the DEMO_KEY: 0 solar particle events in the last 30 days. Earlier the same day it was rate-limited (HTTP 429) and the kauai host timed out. The pipeline tries both each run; set NASA_API_KEY (free sign-up) for steady access."
       },
       "caveats": [
         "Extra source under D2: C1 NASA (US), C2 public, C3/C4 official, C5 observed events; model forecasts (WSA-ENLIL) would be simulations and are not used.",
-        "Not in the package until it can be reached."
+        "In a package only when it answers at build time (it did on 2026-11-14, 17:02 UTC). The app then drops its note that DONKI could not be reached; the sun-activity values shown are still NOAA's (S7)."
       ]
     },
     {
@@ -351,6 +359,49 @@
       "caveats": [
         "Extra source under D2. Passed C1-C5: NOAA (US), public domain, official operational products, measured by GOES satellites.",
         "Measured near Earth (1 AU), not at Mars."
+      ]
+    },
+    {
+      "id": "S8-nasa-fact-pages",
+      "name": "NASA fact pages: sizes of the rover and spacecraft in the map's scale card",
+      "provider": "NASA; NASA / JPL-Caltech",
+      "homepage": "https://science.nasa.gov/mission/mars-2020-perseverance/rover-components/",
+      "role": "design_reference",
+      "inResourceList": false,
+      "bodyCovered": "multiple",
+      "access": [
+        {
+          "type": "web_portal",
+          "url": "https://science.nasa.gov/mission/mars-2020-perseverance/rover-components/",
+          "notes": "Perseverance rover, Tech Specs: length 10 feet (3 meters), width 9 feet (2.7 meters), height 7 feet (2.2 meters)."
+        },
+        {
+          "type": "static_media",
+          "url": "https://www.jpl.nasa.gov/news/press_kits/mro-launch.pdf",
+          "notes": "Mars Reconnaissance Orbiter Launch Press Kit (August 2005), Quick Facts (printed page 6; page 8 of the PDF file): height 6.5 meters with the dish antenna, width 13.6 meters with the solar panels."
+        },
+        {
+          "type": "web_portal",
+          "url": "https://www.nasa.gov/reference/the-space-shuttle/",
+          "notes": "Shuttle Basics: orbiter length 122 feet, wingspan 78 feet (37.2 m and 23.8 m)."
+        },
+        {
+          "type": "web_portal",
+          "url": "https://www.nasa.gov/international-space-station/space-station-facts-and-figures/",
+          "notes": "The space station is 356 feet (109 meters) end-to-end; solar array length 239 feet (73 meters)."
+        }
+      ],
+      "license": "NASA content (NASA media usage guidelines); only the published sizes are used",
+      "credit": "NASA (Space Shuttle, International Space Station) and NASA/JPL-Caltech (Perseverance, Mars Reconnaissance Orbiter): published sizes",
+      "verified": {
+        "date": "2026-11-14",
+        "status": "ok",
+        "notes": "All four pages answered 200 on 2026-11-14 and the sizes were read from them."
+      },
+      "caveats": [
+        "Extra source under D2. Passed C1-C5: NASA pages on nasa.gov hosts, no China link (the space station partners are the USA, Russia, Europe, Japan and Canada); NASA content; official published figures; real engineering sizes.",
+        "Used only for the scale card on the map. The drawings are simple silhouettes made for this app and are drawn to scale; they are not map data.",
+        "The person in the scale card (1.8 m) does not come from this source: it is assumption A22."
       ]
     }
   ],
@@ -429,7 +480,10 @@
         "urlTemplate": "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
         "sizeBytes": 36269402
       },
-      "attribution": "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek"
+      "attribution": "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek",
+      "caveats": [
+        "Covers the western 40% of Jezero crater (the delta and both walk zones), not the whole crater."
+      ]
     },
     {
       "id": "jez-ctx-dem-20m",
@@ -605,6 +659,94 @@
       "attribution": "NASA/JPL-Caltech, via Mars Trek",
       "caveats": [
         "Stale: created 2024-07-03, ends near sol 1219."
+      ]
+    },
+    {
+      "id": "mola-colour-hillshade-463m",
+      "title": "MGS MOLA, Global Color Hillshade",
+      "sourceId": "R1-mars-trek",
+      "dataKind": "topographic",
+      "mission": "Mars Global Surveyor",
+      "instrument": "MOLA",
+      "productId": "Mars_MGS_MOLA_ClrShade_merge_global_463m",
+      "resolution_m": 463,
+      "coverage": [
+        -180,
+        -90,
+        180,
+        90
+      ],
+      "access": {
+        "type": "wmts",
+        "urlTemplate": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg",
+        "format": "image/jpeg",
+        "sizeBytes": 3185511061
+      },
+      "values": {
+        "meaning": "colour = height (blue is low ground, not water), with hill shading",
+        "unit": "qualitative"
+      },
+      "attribution": "NASA/JPL/GSFC MOLA, via Mars Trek",
+      "caveats": [
+        "Whole-planet look 'Height colours' in the app. WMTS levels 0-7 (level 7 is about 326 m per pixel)."
+      ]
+    },
+    {
+      "id": "viking-colour-mosaic-232m",
+      "title": "Viking VIS, Global Color Mosaic",
+      "sourceId": "R1-mars-trek",
+      "dataKind": "optical",
+      "mission": "Viking Orbiter 1 and 2",
+      "instrument": "VIS (Visual Imaging Subsystem)",
+      "productId": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
+      "resolution_m": 232,
+      "coverage": [
+        -180,
+        -90,
+        180,
+        90
+      ],
+      "access": {
+        "type": "wmts",
+        "urlTemplate": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg",
+        "format": "image/jpeg",
+        "sizeBytes": 12740936469
+      },
+      "attribution": "NASA Ames and USGS Astrogeology Science Center (Viking Orbiter colourised mosaic, MDIM 2.1), via Mars Trek",
+      "caveats": [
+        "Whole-planet look 'Natural colour' in the app, an option next to the height colours. The colours are approximate: never label it true colour.",
+        "Producer's record (USGS Astrogeology, 'Mars Viking Colorized Global Mosaic 232m', published 2009-02-02, public domain, no use constraints): NASA Ames warped the Viking colour mosaic and blended it over the grey MDIM 2.1 mosaic. https://astrogeology.usgs.gov/search/map/mars_viking_colorized_global_mosaic_232m",
+        "Mars Trek serves WMTS levels 0-7 only: level 7 is about 326 m per pixel, coarser than the mosaic's own 232 m. MDIM 2.1 positions are good to about one pixel (200 m).",
+        "It is Mars Trek's own default base map. Mars Trek gives no credit line for it; the credit follows the producer's record."
+      ]
+    },
+    {
+      "id": "jez-ctx-wide-preliminary",
+      "title": "MRO CTX, Jezero Mosaic, Preliminary",
+      "sourceId": "R1-mars-trek",
+      "dataKind": "optical",
+      "mission": "Mars Reconnaissance Orbiter",
+      "instrument": "CTX",
+      "productId": "Jezero_CTX_BlockAdj_dd",
+      "resolution_m": 6,
+      "coverage": [
+        75.1537692,
+        15.9058484,
+        78.8717121,
+        19.4453003
+      ],
+      "access": {
+        "type": "wmts",
+        "urlTemplate": "https://trek.nasa.gov/tiles/Mars/EQ/Jezero_CTX_BlockAdj_dd/1.0.0/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png",
+        "format": "image/png",
+        "sizeBytes": 1614751404
+      },
+      "attribution": "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek",
+      "caveats": [
+        "Covers the whole of Jezero crater and the land around it. Mars Trek's own title says preliminary, and Trek has no metadata record for it.",
+        "It lies about 80 m south of the controlled CTX mosaic (measured on three tiles) and shows seams between image strips: far-away context only, never for positions.",
+        "The mosaic has one gap of about 3 km2 just south-west of the crater rim (near 77.38 E, 17.98 N); the planet map shows through there. The gap is in the source data.",
+        "The mission packages cache it for the crater and about 14 km around it (levels 7-10). A very wide or a tall window shows more than that box."
       ]
     }
   ]

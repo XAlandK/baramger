@@ -19,7 +19,9 @@ import {
 } from "./walk";
 import { hudHtml, relativeBearing } from "./hud";
 import { mins } from "./format";
-import { PANEL_W, cleanStopName, uiLayout } from "./layout";
+import { PANEL_W, cleanStopName, craterView, uiLayout } from "./layout";
+import { BASE_TEXT, DEFAULT_BASE, type BaseStyle, baseStyleOf, startBaseStyle } from "./basemap";
+import { PERSON_HEIGHT_M, type ScaleCard, scaleCard, scaleHtml } from "./scale";
 import { morph } from "./morph";
 import { playIntro } from "./intro";
 import { DEFAULT_LOAD, type LoadModel, addPickup, factorText, heaviest, kgText, timeFactor } from "./load";
@@ -41,6 +43,7 @@ interface ZoneInfo {
 let PKG = "";
 let zones: ZoneInfo[] = [];
 let zone: ZoneInfo;
+let crater: unknown = null; // the crater the zones lie in (zone list; see craterView)
 
 // ------------------------------------------------------------------ types and state
 interface StopState extends LonLat {
@@ -86,7 +89,7 @@ interface SpaceWeather {
     protons_10mev_latest_pfu: number | null;
     where_measured: string;
   };
-  donki: { status: string };
+  donki: { status: string; sep_events_30d?: number };
 }
 
 type Mode = "plan" | "preview" | "walk" | "replay";
@@ -104,6 +107,7 @@ const state = {
   checkSel: null as string | null, // the safety check whose details are shown
   pages: {} as Record<string, number>, // page of each paged list
   showPlaces: true,
+  baseStyle: DEFAULT_BASE as BaseStyle, // the look of the whole-planet map: height colours or natural colour
   photoSet: [] as string[], // photos the lightbox can step through
   mode: "plan" as Mode,
   stops: [] as StopState[],
@@ -185,6 +189,15 @@ const session = {
   },
   remove(key: string): void {
     try { sessionStorage.removeItem(key); } catch { /* storage is blocked */ }
+  },
+};
+/** Choices that should survive a reload (the look of the map). Blocked storage only means the choice is not kept. */
+const prefs = {
+  get(key: string): string | null {
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  set(key: string, value: string): void {
+    try { localStorage.setItem(key, value); } catch { /* storage is blocked */ }
   },
 };
 /** "1 stop", "2 stops". */
@@ -441,6 +454,21 @@ function photoStrip(ids: string[], key: string, compact = false): string {
       : `<p class="muted tiny">Real photos taken by the Perseverance rover at this spot. ${esc(pics[0].credit)}. Click a photo to enlarge it.</p>`}</div>`;
 }
 
+/**
+ * The switch between the two looks of the whole-planet map. Empty when the package has only one look.
+ * It is on the whole-planet screen only: inside a walk zone the photo maps cover the whole view,
+ * so the switch would change nothing there.
+ */
+function baseSwitch(): string {
+  const looks = map.baseStyles();
+  if (looks.length < 2) return "";
+  return `
+    <div class="base-style" title="${esc(BASE_TEXT[state.baseStyle].note)}">
+      <span>Mars colours <small class="src">R1</small></span>
+      <div class="seg" role="group" aria-label="Mars colours">${looks.map((s) => `<button type="button" data-base="${s}" class="${state.baseStyle === s ? "on" : ""}" aria-pressed="${state.baseStyle === s}">${BASE_TEXT[s].label}</button>`).join("")}</div>
+    </div>`;
+}
+
 function layerRow(key: OverlayKey | "rover", title: string, legend: string, source: string): string {
   return `
     <label class="layer">
@@ -499,7 +527,8 @@ function globePanel(): string {
       <button type="button" id="globe-jezero" class="secondary">Fly to Jezero crater</button>
       <button type="button" id="globe-home" class="secondary">Whole planet</button>
     </div>
-    <p class="muted small">The whole-planet map is the MOLA height map (colours show height, about 5 km detail at this zoom). The sharp photo maps are only inside the walk zones.</p>
+    ${baseSwitch()}
+    <p class="muted small">${esc(BASE_TEXT[state.baseStyle].note)} Inside Jezero crater the grey CTX photo map takes over, and the walk zones have sharp photos (about 30 cm per pixel).</p>
     <button type="button" class="linkish" id="intro-replay">Play the launch animation again</button>
   </div>`;
 }
@@ -883,15 +912,28 @@ function dataPopup(tab: DataTab): string {
       </table>
       ${nav}`;
   } else if (tab === "checks") {
+    const items: [string, string][] = [["slope", `<b>Slope check.</b> ${esc(slopeCheck)}`]];
+    if (geo?.caveats?.[0]) items.push(["rock", `<b>Rock map.</b> ${esc(geo.caveats[0])}`]);
+    if (weather) items.push(["weather", `<b>Weather.</b> Measured by Perseverance's MEDA station, sols ${weather.sols[0]}–${weather.sols[weather.sols.length - 1]} (${esc(weather.date_range ?? "")}): reference values, not a forecast. Sunrise and sunset are computed with the Mars24 equations, within ${weather.daylight.check.max_diff_min ?? "?"} min of the rover's own times.`]);
+    if (space) {
+      const events = space.donki.sep_events_30d;
+      const donki = space.donki.status !== "ok" ? " NASA DONKI could not be reached."
+        : events === undefined ? ""
+        : ` NASA DONKI lists ${events === 0 ? "no solar particle event" : count(events, "solar particle event")} in the 30 days before.`;
+      items.push(["sun", `<b>Sun activity.</b> ${esc(space.noaa.where_measured)} NOAA GOES, retrieved ${esc(conditions()?.dataDate ?? "")}.${donki}`]);
+    }
+    items.push(["load", `<b>Carried load.</b> A model, not a measurement: walking time grows with the mass each astronaut moves (body + suit + load).`]);
+    if (pkg.placeNames?.length) items.push(["names", `<b>Place names.</b> ${pkg.placeNames.length} official names (Jezero, Belva, Neretva Vallis…) stand where the USGS map prints them: good from far away, not exact. Bright Angel, Cheyava Falls and Three Forks are the Perseverance team's own informal names.`]);
+    items.push(["scale", `<b>Scale card.</b> Drawings at the map's scale in the middle of the view (a tilted view has no single scale). Real sizes from NASA: Perseverance rover 3 m, MRO orbiter 13.6 m, Space Shuttle orbiter 37 m, space station 109 m. The person (${Number(personHeightM.toFixed(1))} m) is a round value.`]);
+    // the wide crater photo map is a preliminary mosaic: its limit is in the package, and the crew reads positions on it
+    const wide = pkg.layers.find((l) => l.id === "tiles-ctx-wide")?.caveats?.find((c) => /preliminary/i.test(c));
+    if (wide) items.push(["crater", `<b>Crater photo map.</b> ${esc(wide)}`]);
+    items.push(["planet", `<b>Whole-planet map.</b> Two looks from Mars Trek: MOLA height colours and the Viking colour mosaic (a colourised mosaic, so its colours are approximate). Both are kept at about 330 m per pixel around Jezero and about 5 km per pixel for the rest of the planet: far-away context. The walk zones have photos at about 30 cm per pixel (from the 25 cm HiRISE mosaic).`]);
+    // on a narrow window every line wraps to many lines: fewer lines on a page
+    const { slice, nav } = paged("checks", items, window.innerWidth < 620 ? 4 : 10);
     body = `
-      <ul class="plainlist">
-        <li><b>Slope check.</b> ${esc(slopeCheck)}</li>
-        ${geo?.caveats?.[0] ? `<li><b>Rock map.</b> ${esc(geo.caveats[0])}</li>` : ""}
-        ${weather ? `<li><b>Weather.</b> Measured by Perseverance's MEDA station, sols ${weather.sols[0]}–${weather.sols[weather.sols.length - 1]} (${esc(weather.date_range ?? "")}): reference values, not a forecast. Sunrise and sunset are computed with the Mars24 equations, within ${weather.daylight.check.max_diff_min ?? "?"} min of the rover's own times.</li>` : ""}
-        ${space ? `<li><b>Sun activity.</b> ${esc(space.noaa.where_measured)} NOAA GOES, retrieved ${esc(conditions()?.dataDate ?? "")}.${space.donki.status !== "ok" ? " NASA DONKI could not be reached." : ""}</li>` : ""}
-        <li><b>Carried load.</b> A model, not a measurement: walking time grows with the mass each astronaut moves (body + suit + load).</li>
-        <li><b>Whole-planet map.</b> MOLA height map, about 5 km detail when zoomed out. Only the walk zones have sharp photo maps.</li>
-      </ul>`;
+      <ul class="plainlist">${slice.map(([key, html]) => `<li data-key="${key}">${html}</li>`).join("")}</ul>
+      ${nav}`;
   } else {
     const list = pkg.assumptions.filter((a) => a.status === "to_verify");
     const { slice, nav } = paged("values", list, 7);
@@ -1827,13 +1869,18 @@ function onUiClick(ev: Event): void {
     else closePopup();
     return;
   }
-  const el = t.closest("[data-place-open],[data-place-add],[data-open],[data-move],[data-remove],[data-photo],[data-mode],[data-pvspeed],[data-wspeed],[data-rpspeed],[data-jump],[data-view],[data-idea],[data-tab],[data-wtab],[data-rtab],[data-dtab],[data-page],[data-check],[data-zone],button") as HTMLElement | null;
+  const el = t.closest("[data-place-open],[data-place-add],[data-open],[data-move],[data-remove],[data-photo],[data-mode],[data-pvspeed],[data-wspeed],[data-rpspeed],[data-jump],[data-view],[data-idea],[data-tab],[data-wtab],[data-rtab],[data-dtab],[data-page],[data-check],[data-zone],[data-base],button") as HTMLElement | null;
   // closest() also looks above the panel (up to <body>): only elements inside the panel or pop-up count
   if (!el || !(ev.currentTarget as Element).contains(el)) return;
   const w = walkUi.w;
   if (el.dataset.placeOpen) {
     state.popup = { kind: "place", id: el.dataset.placeOpen };
     renderPopup();
+  } else if (el.dataset.base) {
+    state.baseStyle = el.dataset.base as BaseStyle;
+    prefs.set("baroler.base", state.baseStyle); // remembered for the next visit
+    map.setBaseStyle(state.baseStyle);
+    renderPanel();
   } else if (el.dataset.placeAdd) {
     if (state.mode !== "plan") return; // stops change only on the plan screen
     const ps = pkg.stops.find((x) => x.id === el.dataset.placeAdd);
@@ -1856,6 +1903,8 @@ function onUiClick(ev: Event): void {
     replay.tab = el.dataset.rtab === "table" ? "table" : "events";
     renderPanel();
   } else if (el.dataset.dtab) {
+    // opened from the panel, the pop-up starts on the first page of its lists
+    if (state.popup?.kind !== "data") for (const key of ["sources", "checks", "values"]) state.pages[key] = 0;
     state.popup = { kind: "data", tab: el.dataset.dtab as DataTab };
     renderPopup();
   } else if (el.dataset.page) {
@@ -1949,8 +1998,8 @@ function onUiClick(ev: Event): void {
       if (ps) map.flyToPoint({ lon: ps.position.lon, lat: ps.position.lat });
       break;
     }
-    case "globe-jezero": map.flyToCrater(craterCenter()); break;
-    case "globe-home": map.flyToPlanet(craterCenter()); break;
+    case "globe-jezero": flyToCrater(); break;
+    case "globe-home": map.flyToPlanet(zonesMiddle()); break;
     case "intro-replay":
       session.remove("baroler.intro");
       void runIntro(Promise.resolve());
@@ -2294,8 +2343,9 @@ async function loadPackage(): Promise<void> {
   const text = $("#loading-text");
   const idx = await fetch("/package/index.json");
   if (!idx.ok) throw new Error("No mission packages yet. Run the pipeline first: cd pipeline && uv run baroler-build --zone z2");
-  const index = (await idx.json()) as { zones: ZoneInfo[]; default: string };
+  const index = (await idx.json()) as { zones: ZoneInfo[]; default: string; crater?: unknown };
   zones = index.zones;
+  crater = index.crater ?? null;
   const want = location.hash.replace("#", "");
   zone = zones.find((z) => z.key === want) ?? zones.find((z) => z.key === index.default) ?? zones[0];
   PKG = `/package/${zone.path}`;
@@ -2315,6 +2365,7 @@ async function loadPackage(): Promise<void> {
   baseAntenna = pkg.site.base.antennaHeight_m ?? assumption(pkg, "A7", 3);
   suitAntenna = assumption(pkg, "A8", 1.8);
   maxRadioGap = assumption(pkg, "A9", 15);
+  personHeightM = assumption(pkg, "A22", PERSON_HEIGHT_M); // the person drawn in the scale card
   loadModel = {
     bodyKg: assumption(pkg, "A15", DEFAULT_LOAD.bodyKg),
     suitKg: assumption(pkg, "A16", DEFAULT_LOAD.suitKg),
@@ -2362,13 +2413,25 @@ async function loadPackage(): Promise<void> {
   map = new MapView($("#map"), walk, ctx);
   const tileLayers = pkg.layers.filter((l) => l.access.urlTemplate && l.id.startsWith("tiles-") && l.id !== "tiles-themis-night");
   for (const l of tileLayers) {
-    const layer = map.addTiles(`${PKG}${l.access.urlTemplate}`, l.access.minLevel ?? 0, l.access.maxLevel ?? 0, l.coverage, l.attribution);
+    const layer = map.addTiles(`${PKG}${l.access.urlTemplate}`, l.access.minLevel ?? 0, l.access.maxLevel ?? 0, l.coverage, l.attribution, 1, baseStyleOf(l.id) ?? "photo");
     if (l.id.startsWith("tiles-mola")) {
       // MOLA's height colours are only far-away context here: tone them down so they don't compete with the photos.
       layer.saturation = 0.3;
       layer.brightness = 0.85;
     }
+    if (l.id === "tiles-ctx-wide") {
+      // The preliminary wide mosaic is darker and harder than the controlled mosaic that lies on
+      // it, which would show as a bright square in the crater. These values give both the same
+      // mean and spread of grey (measured on the level 9-10 tiles where they overlap).
+      layer.brightness = 1.34;
+      layer.contrast = 0.62;
+    }
   }
+  // official place names printed on the USGS map (R2): lettering for the whole-crater view
+  map.setNames((pkg.placeNames ?? []).map((n) => ({ name: n.name, lon: n.position.lon, lat: n.position.lat, major: n.rank === "major" })));
+  // the whole-planet map has two looks; start with the one the crew chose last time
+  state.baseStyle = startBaseStyle(prefs.get("baroler.base"), map.baseStyles());
+  map.setBaseStyle(state.baseStyle);
   const themis = pkg.layers.find((l) => l.id === "tiles-themis-night");
   if (themis?.access.urlTemplate) {
     const layer = map.addTiles(`${PKG}${themis.access.urlTemplate}`, themis.access.minLevel ?? 0, themis.access.maxLevel ?? 0, themis.coverage, themis.attribution, 0.75);
@@ -2389,10 +2452,24 @@ async function loadPackage(): Promise<void> {
 let zonePins: ZonePin[] = [];
 let intro: { skip(): void; step(dt: number): void; phase(): string } | null = null;
 
-/** The middle of the walk zones: where the planet views look. */
-function craterCenter(): LonLat {
+/** The middle of the walk zones: where the planet views look, and where the crater's marker sits. */
+function zonesMiddle(): LonLat {
   if (!zonePins.length) return pkg.site.center;
   return { lon: zonePins.reduce((a, z) => a + z.lon, 0) / zonePins.length, lat: zonePins.reduce((a, z) => a + z.lat, 0) / zonePins.length };
+}
+
+/**
+ * Fly to the whole-crater view: the whole crater when the map allows it, with every zone and its name in view.
+ * The view is framed for the map's size, so the map frames it again (without a flight) when its size changes.
+ */
+function flyToCrater(duration = 3): void {
+  const { w, h, fov } = map.viewSize();
+  const view = craterView(crater, zonePins, w, h, fov, {
+    photoBox: pkg.layers.find((l) => l.id === "tiles-ctx-wide")?.coverage, // stay inside the wide photo map when the crater still fits
+    groundM: zonePins.length ? zonePins.reduce((a, z) => a + z.elevM, 0) / zonePins.length : 0,
+  });
+  if (view) map.flyToCrater({ lon: view.lon, lat: view.lat }, view.heightM, duration, () => flyToCrater(0));
+  else map.flyToCrater(zonesMiddle(), undefined, duration); // an older zone list without the crater
 }
 
 /** Every zone is highlighted on the planet. The other zones' places come from their own mission packages. */
@@ -2407,7 +2484,7 @@ async function loadZonePins(): Promise<void> {
     }
   }
   zonePins = out;
-  const c = craterCenter();
+  const c = zonesMiddle();
   map.setZones(out, out.length
     ? { ...c, label: `${pkg.site.region} · ${out.length} walk zone${out.length === 1 ? "" : "s"}`, elevM: out.reduce((a, z) => a + z.elevM, 0) / out.length }
     : null);
@@ -2439,7 +2516,7 @@ function toGlobe(): void {
   positionHandle();
   renderHud();
   renderPanel();
-  map.flyToPlanet(craterCenter());
+  map.flyToPlanet(zonesMiddle());
 }
 
 const INTRO_FAR_M = 220_000_000; // from here Mars is a small disc in the eyepiece
@@ -2459,14 +2536,14 @@ function runIntro(ready: Promise<void>): Promise<void> {
       ready,
       facts: { distanceMkm: lt.distanceMkm, lightMin: lt.oneWayMin },
       // 0 = Mars is a small disc far away, 1 = the whole planet fits the map ("in front of Mars")
-      setZoom: (k) => map.showPlanet(craterCenter(), INTRO_FAR_M * Math.pow(map.planetAltitude() / INTRO_FAR_M, k)),
+      setZoom: (k) => map.showPlanet(zonesMiddle(), INTRO_FAR_M * Math.pow(map.planetAltitude() / INTRO_FAR_M, k)),
       setMapFilter: (css) => { $("#map").style.filter = css; },
       arrive: showApp,
       done: () => {
         session.set("baroler.intro", "seen");
         $("#map").style.filter = "";
         intro = null;
-        map.showPlanet(craterCenter());
+        map.showPlanet(zonesMiddle());
         showApp(); // after "Skip intro" the panel slides in now; the planet stays fitted (see slide)
         resolve();
       },
@@ -2511,6 +2588,52 @@ function refitFor(ms: number): void {
   window.setTimeout(() => map?.refit(), ms + 60); // also when the browser has paused animation frames
 }
 
+// ------------------------------------------------------------------ scale card
+let scaleShown = "";
+let scaleCardShown: ScaleCard | null = null; // the card on screen: its bar and drawing stay while they fit
+let scaleAt = 0;
+let scaleTimer = 0;
+let personHeightM = PERSON_HEIGHT_M; // A22 of the mission package
+
+/** The scale card on the map: a bar and a drawing at the map's scale in the middle of the view. */
+function updateScale(): void {
+  scaleAt = performance.now();
+  const el = $("#scale");
+  const area = $("#map-area").getBoundingClientRect(); // the part of the map the panel does not cover
+  const canvas = map.viewer.scene.canvas.getBoundingClientRect();
+  const mpp = area.width > 0 && area.height > 0
+    ? map.metersPerPixel(area.left - canvas.left + area.width / 2, area.top - canvas.top + area.height / 2)
+    : null;
+  const card = mpp ? scaleCard(mpp, { prev: scaleCardShown, personM: personHeightM }) : null;
+  scaleCardShown = card;
+  const html = card ? scaleHtml(card) : "";
+  if (html === scaleShown) return; // nothing changed: touch nothing
+  scaleShown = html;
+  el.hidden = !card;
+  if (!card) return;
+  el.setAttribute("aria-label", `Map scale. ${card.about}`); // the card takes no pointer, so it has no tooltip
+  morph(el, html);
+}
+
+/** Runs a few times a second at most, and once more after the last frame (the map draws only when it changes). */
+function scheduleScale(): void {
+  const wait = 150 - (performance.now() - scaleAt);
+  if (wait <= 0) updateScale();
+  else if (!scaleTimer) {
+    scaleTimer = window.setTimeout(() => {
+      scaleTimer = 0;
+      updateScale();
+    }, wait);
+  }
+}
+
+/** Is this element on screen (not hidden, not faded out)? */
+function shown(el: Element | null): el is HTMLElement {
+  if (!(el instanceof HTMLElement) || el.hidden) return false;
+  const s = getComputedStyle(el);
+  return s.display !== "none" && s.visibility !== "hidden" && s.opacity !== "0";
+}
+
 /** For tests: anything whose content does not fit its box (it would need scrolling). */
 function overflowReport(): string[] {
   const out: string[] = [];
@@ -2523,6 +2646,32 @@ function overflowReport(): string[] {
   check(document.querySelector(".pop-card"), "pop-up");
   check(document.querySelector(".pop-body"), "pop-up body");
   check(document.querySelector(".lb-inner"), "photo viewer");
+  // the scale card on the map: its rows must fit, it stays inside the map, and it covers no other chip
+  const scale = $("#scale");
+  if (shown(scale) && shown($("#map-area"))) {
+    check(scale.querySelector(".sc-fig"), "scale card drawings");
+    check(scale.querySelector(".sc-cap"), "scale card caption");
+    // the bar's length and the drawings must stay inside the card's content box (a grid row grows with its content, so compare with the card)
+    const box = scale.getBoundingClientRect();
+    const style = getComputedStyle(scale);
+    const right = box.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+    const label = scale.querySelector(".sc-bar b");
+    if (label && label.getBoundingClientRect().right > right + 0.5) out.push("scale card: the bar row is wider than the card");
+    const fig = scale.querySelector(".sc-fig");
+    for (const drawing of fig ? [...fig.children] : []) {
+      const d = drawing.getBoundingClientRect();
+      if (d.right > right + 0.5 || d.top < fig!.getBoundingClientRect().top - 0.5) out.push("scale card: a drawing sticks out of its row");
+    }
+    const r = scale.getBoundingClientRect();
+    const area = $("#map-area").getBoundingClientRect();
+    if (r.left < area.left - 0.5 || r.right > area.right + 0.5 || r.top < area.top - 0.5 || r.bottom > area.bottom + 0.5) out.push("scale card: not inside the map");
+    for (const id of ["map-title", "readout", "globe-hint", "add-hint", "size-hint", "panel-show"]) {
+      const other = document.getElementById(id);
+      if (!shown(other)) continue;
+      const q = other.getBoundingClientRect();
+      if (q.width > 0 && q.height > 0 && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom) out.push(`scale card: lies over #${id}`);
+    }
+  }
   return out;
 }
 
@@ -2532,6 +2681,7 @@ async function main(): Promise<void> {
     fitUi();
     positionHandle();
     if (walkUi.hud && !walkUi.hudFull) setHud(true);
+    if (state.popup) renderPopup(); // page sizes of the pop-up lists depend on the window's width
   });
   // Coming from the zone menu or a zone marker: skip the planet view and go straight into the zone.
   const enterSite = session.get("baroler.enter") === "site";
@@ -2595,14 +2745,15 @@ async function main(): Promise<void> {
     }
     if (state.view === "site" && !planning) return; // during a walk or replay the map only shows; zone markers do nothing
     const zoneKey = map.pickZoneKey(pos);
-    if (zoneKey === "crater") map.flyToCrater(craterCenter());
+    if (zoneKey === "crater") flyToCrater();
     else if (zoneKey) enterZone(zoneKey);
   });
   map.onMove((pos) => readout(map.pickLonLat(pos)));
-  map.showPlanet(craterCenter());
+  map.onRender(scheduleScale); // the scale card follows the camera
+  map.showPlanet(zonesMiddle());
   if (import.meta.env.DEV) {
     (window as unknown as { __baroler: unknown }).__baroler = {
-      map, state, preview, walkUi, replay, step, renderPanel, makeReport, enterZone, toGlobe, overflowReport,
+      map, state, preview, walkUi, replay, step, renderPanel, makeReport, enterZone, toGlobe, overflowReport, updateScale,
       get intro() { return intro; },
     };
   }

@@ -9,12 +9,17 @@
   <body>
     <div id="app">
       <div id="map" aria-label="3D map of Mars and the walk area"></div>
-      <div id="map-title" class="map-chip">
-        <span class="eyebrow" id="chip-eyebrow">Baroler</span>
-        <strong id="site-name">Loading…</strong>
-        <div class="chip-row">
-          <select id="zone-select" aria-label="Walk zone" hidden></select>
-          <button type="button" id="to-globe" class="chip-btn" hidden title="See the whole planet">Mars globe</button>
+      <div id="map-area">
+        <div id="map-corner">
+          <div id="map-title" class="map-chip">
+            <span class="eyebrow" id="chip-eyebrow">Baroler</span>
+            <strong id="site-name">Loading…</strong>
+            <div class="chip-row">
+              <select id="zone-select" aria-label="Walk zone" hidden></select>
+              <button type="button" id="to-globe" class="chip-btn" hidden title="See the whole planet">Mars globe</button>
+            </div>
+          </div>
+          <div id="scale" class="map-chip" role="group" aria-label="Map scale" hidden></div>
         </div>
       </div>
       <div id="add-hint" class="map-chip hint" hidden>Click the map to place the new stop. <button id="add-cancel" type="button">Cancel</button></div>

@@ -15,7 +15,8 @@ from .geology import OFFSET_NOTE, unit_at
 
 SCHEMA_VERSION = "0.1.0"
 USED_SOURCES = ("R1-mars-trek", "R2-usgs-pgm", "R3-curiosity-route-map", "R4-nasa-worldview",
-                "R5-perseverance-raw-images", "S1-m20-rover-waypoints", "S4-m20-meda-weather", "S7-noaa-swpc")
+                "R5-perseverance-raw-images", "S1-m20-rover-waypoints", "S4-m20-meda-weather", "S7-noaa-swpc",
+                "S8-nasa-fact-pages")
 
 
 def sha256(path: Path) -> str:
@@ -51,7 +52,8 @@ def _layers(terrain: dict, tiles: dict, walk_dem_label: str, geo_units: list[dic
                        "minLevel": t.levels[0], "maxLevel": t.levels[1],
                        "downloadUrl": f"{C.TREK_TILE_ROOT}/{t.label}/1.0.0/default/default028mm/{{z}}/{{y}}/{{x}}.{t.ext}"},
             "attribution": t.attribution,
-            "caveats": [f"Cached tiles: {tiles.get(t.key, {}).get('ok', 0) + tiles.get(t.key, {}).get('cached', 0)} of {tiles.get(t.key, {}).get('requested', 0)} requested"],
+            "caveats": [f"Cached tiles: {tiles.get(t.key, {}).get('ok', 0) + tiles.get(t.key, {}).get('cached', 0)} of {tiles.get(t.key, {}).get('requested', 0)} requested"]
+                       + list(t.notes),
         })
     g1, g2 = terrain["grid1m"], terrain["grid2m"]
     aoi = [g1["west"], g1["south"], g1["east"], g1["north"]]
@@ -127,8 +129,14 @@ def _check_refs(pkg: dict) -> list[str]:
         for ev in h["evidence"]:
             if ev["layerId"] not in lay:
                 errs.append(f"hazard {h['id']}: unknown layer {ev['layerId']}")
+    names = [n["name"] for n in pkg.get("placeNames", [])]
+    if len(names) != len(set(names)):
+        errs.append("place names: a name is listed twice")
+    for n in pkg.get("placeNames", []):
+        if n["sourceId"] not in src:
+            errs.append(f"place name {n['name']}: unknown source {n['sourceId']}")
     used = {l["sourceId"] for l in pkg["layers"]} | {p["sourceId"] for p in pkg["povImages"]} \
-        | {s["sourceId"] for s in pkg.get("roverWaypoints", [])}
+        | {s["sourceId"] for s in pkg.get("roverWaypoints", [])} | {n["sourceId"] for n in pkg.get("placeNames", [])}
     roles = {s["id"]: s["role"] for s in pkg["sources"]}
     for rid in ("R1-mars-trek", "R2-usgs-pgm", "R3-curiosity-route-map", "R4-nasa-worldview", "R5-perseverance-raw-images"):
         if rid not in used and roles.get(rid) == "primary_data":
@@ -159,7 +167,7 @@ def _condition_layers(cond: dict) -> list[dict]:
 
 
 def build(out_dir: Path, terrain: dict, photos: dict, geo: dict, tiles: dict, inputs: list[dict],
-          walk_dem_label: str, cond: dict, zone: C.Zone) -> dict:
+          walk_dem_label: str, cond: dict, zone: C.Zone, place_names: list[dict] | None = None) -> dict:
     registry = json.loads(C.REGISTRY.read_text())
     used = USED_SOURCES + (("S3-nasa-donki",) if cond["space"]["donki"]["status"] == "ok" else ())
     sources = [s for s in registry["sources"] if s["id"] in used]
@@ -237,6 +245,7 @@ def build(out_dir: Path, terrain: dict, photos: dict, geo: dict, tiles: dict, in
         "hazards": hazards,
         "povImages": povs,
         "roverWaypoints": rover_wps,
+        "placeNames": list(place_names or []),
         "assumptions": [dict(a) for a in sorted(C.ASSUMPTIONS + zone.extra_assumptions, key=lambda a: int(a["id"][1:]))],
         "provenance": {"generatedAt": now(), "generator": "baroler-pipeline 0.1.0", "inputs": inputs},
     }
