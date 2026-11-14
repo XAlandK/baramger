@@ -237,7 +237,7 @@ def build(out_dir: Path, terrain: dict, photos: dict, geo: dict, tiles: dict, in
         "hazards": hazards,
         "povImages": povs,
         "roverWaypoints": rover_wps,
-        "assumptions": [dict(a) for a in C.ASSUMPTIONS + zone.extra_assumptions],
+        "assumptions": [dict(a) for a in sorted(C.ASSUMPTIONS + zone.extra_assumptions, key=lambda a: int(a["id"][1:]))],
         "provenance": {"generatedAt": now(), "generator": "baroler-pipeline 0.1.0", "inputs": inputs},
     }
 

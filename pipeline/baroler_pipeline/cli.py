@@ -107,8 +107,10 @@ def main(argv: list[str] | None = None) -> int:
     # 4. map tiles
     layers = C.tile_layers(zone)
     if args.skip_tiles:
-        log("Tiles: skipped")
-        tl = {t.key: {"requested": 0} for t in layers}
+        log("Tiles: download skipped; counting the tiles already in the package")
+        tl = tiles.count_cached(out, layers)
+        for k, v in tl.items():
+            log(f"  {k}: {v}")
     else:
         log("Tiles: Mars Trek WMTS (R1)")
         tl = tiles.build(out, layers)

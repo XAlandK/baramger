@@ -317,7 +317,7 @@
    },
    "attribution": "NASA/JPL/GSFC MOLA, via Mars Trek",
    "caveats": [
-    "Cached tiles: 0 of 0 requested"
+    "Cached tiles: 170 of 170 requested"
    ]
   },
   {
@@ -344,7 +344,7 @@
    },
    "attribution": "NASA/JPL/GSFC MOLA, via Mars Trek",
    "caveats": [
-    "Cached tiles: 0 of 0 requested"
+    "Cached tiles: 171 of 171 requested"
    ]
   },
   {
@@ -371,7 +371,7 @@
    },
    "attribution": "NASA/JPL-Caltech/MSSS (CTX), via Mars Trek",
    "caveats": [
-    "Cached tiles: 0 of 0 requested"
+    "Cached tiles: 100 of 100 requested"
    ]
   },
   {
@@ -398,7 +398,7 @@
    },
    "attribution": "NASA/JPL-Caltech/University of Arizona (HiRISE), via Mars Trek",
    "caveats": [
-    "Cached tiles: 0 of 0 requested"
+    "Cached tiles: 620 of 620 requested"
    ]
   },
   {
@@ -425,7 +425,7 @@
    },
    "attribution": "NASA/JPL-Caltech/Arizona State University (THEMIS), via Mars Trek",
    "caveats": [
-    "Cached tiles: 0 of 0 requested"
+    "Cached tiles: 7 of 7 requested"
    ]
   },
   {
@@ -641,7 +641,7 @@
    "attribution": "NOAA Space Weather Prediction Center (GOES)",
    "caveats": [
     "GOES satellites near Earth (1 AU). Mars is about 1.5 AU from the Sun and often on another side, so storms seen here may or may not reach Mars.",
-    "Retrieved 2026-11-14T11:08:39Z.",
+    "Retrieved 2026-11-14T13:17:12Z.",
     "NASA DONKI (S3): unreachable at build time."
    ]
   }
@@ -21761,11 +21761,11 @@
   },
   {
    "id": "A3",
-   "statement": "Walking speed on flat ground in a suit",
+   "statement": "Walking speed on flat ground in a suit, carrying the standard kit (A17)",
    "value": 2.5,
    "unit": "km/h",
    "status": "to_verify",
-   "reference": "Speed on slopes scaled with Tobler's hiking function"
+   "reference": "Speed on slopes scaled with Tobler's hiking function. Carried load changes the time (A15-A21)"
   },
   {
    "id": "A4",
@@ -21834,278 +21834,334 @@
    "value": 24,
    "unit": "h",
    "status": "to_verify"
+  },
+  {
+   "id": "A15",
+   "statement": "Astronaut body mass (load model)",
+   "value": 82,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "NASA JSC, Mars Spacesuit Mass Requirements, ICES-2026-127 (2026), NTRS 20260005410: average male crew member 180 lbm (82 kg). A planning value, not a measurement"
+  },
+  {
+   "id": "A16",
+   "statement": "Mass of a Mars spacesuit with its life support",
+   "value": 104,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "NASA JSC ICES-2026-127 (2026): estimated maximum Mars suit mass 229 lbm (104 kg); today's Artemis xEMU is 376 lbm (170 kg). An estimate, not a measured suit"
+  },
+  {
+   "id": "A17",
+   "statement": "Standard kit each astronaut carries from the start (tools, camera, sample bags); walking speed A3 applies with this kit",
+   "value": 15,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "Starting value chosen for Baroler, below the 50 lbm (22.7 kg) of tools and samples in NASA's Mars suit sizing (ICES-2026-127)"
+  },
+  {
+   "id": "A18",
+   "statement": "Mass of one Mars 2020 sample tube with its sample",
+   "value": 0.08,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "JPL (21 Dec 2020): each empty tube weighs less than 57 g; about 20 g of sample added (estimate). https://www.jpl.nasa.gov/news/a-martian-roundtrip-nasas-perseverance-rover-sample-tubes/"
+  },
+  {
+   "id": "A19",
+   "statement": "Mass of one rock sample taken by the crew",
+   "value": 1.0,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "Starting value for a field-geology hand sample. For scale: Apollo returned 382 kg in 2,196 samples, about 0.17 kg each (NASA)"
+  },
+  {
+   "id": "A20",
+   "statement": "Carried load per astronaut above which to take care",
+   "value": 22.7,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "NASA JSC ICES-2026-127 (2026): 50 lbm (22.7 kg) of tools and samples per astronaut assumed in Mars suit sizing"
+  },
+  {
+   "id": "A21",
+   "statement": "Most load one astronaut may carry; more is too heavy and the plan cannot be approved",
+   "value": 30,
+   "unit": "kg",
+   "status": "to_verify",
+   "reference": "Starting value chosen for Baroler; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"
   }
  ],
  "provenance": {
-  "generatedAt": "2026-11-14T11:09:22Z",
+  "generatedAt": "2026-11-14T13:17:55Z",
   "generator": "baroler-pipeline 0.1.0",
   "inputs": [
    {
     "sourceId": "S1-m20-rover-waypoints",
     "url": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "bd143ee69241229926abd373e6305b8bbb326d6b5a7b4a8d6935262696f93dc4"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01159/ids/edr/browse/ncam/NLF_1159_0769834835_425ECM_N0523158NCAM03159_15_090J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "9840e7fd99b0bb6449702b951817fa2c69c7e4f6f923fc67bdbdf6c3ee67bc68"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01160/ids/edr/browse/ncam/NLG_1160_0769916636_909ECM_N0523158NCAM00526_00_2I4J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "daf99972d24775a62d5e6b0e77e5f1855d6aae256aca2adb590d740230f7f45b"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01160/ids/edr/browse/ncam/NLR_1160_0769916291_050ECM_N0523158NCAM00502_01_1I6J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "9fed426e26474e81c9937dfbc31275e82c9d5e7ad12a8f157635ebb6cd0dc783"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01161/ids/edr/browse/scam/LRF_1161_0770008417_229EBY_N0523158SCAM01161_0100I6J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "83b1f61b354897a0864dc15b7ca29a7d238e99279389b79be51d73fec8b3719b"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01210/ids/edr/browse/ncam/NLF_1210_0774362503_941ECM_N0560000NCAM02210_04_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "587a9beb8766a7d16f6fc83774695b940a1a2f7eace9d09aa499d70545c49f5b"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01210/ids/edr/browse/ncam/NLF_1210_0774361908_130ECM_N0560000NCAM03210_01_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "7bc105621df7b0b5ae6082dedc1335f4b45be5c4e48ec184f3a6e6a58b60341e"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01210/ids/edr/browse/ncam/NLF_1210_0774361764_066ECM_N0560000NCAM03210_04_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "04401d441744db1714d5b8fa197b51eb2c8f6a84cfd359c3efae68cac5b5473d"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01211/ids/edr/browse/shrlc/SIF_1211_0774481791_046EBY_N0560000SRLC08029_0000LMJ01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "b336a9f632ceeb23164574f51ca0c06fdf935d237387c6dcdff928fcc1f0e403"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01231/ids/edr/browse/ncam/NLF_1231_0776227672_972ECM_N0563438NCAM02231_01_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "762d9db15fc5f3384640fff0ddb7fa08dbc3d0bb4f41afe8549f8685868d06e9"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01231/ids/edr/browse/ncam/NLF_1231_0776227472_972ECM_N0563438NCAM02231_10_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "e69a1cd91bad9a4ccce1e945408bf7b16a789b21c38c824402263dadd0d4fa3f"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01231/ids/edr/browse/zcam/ZL7_1231_0776234476_035EBY_N0563438ZCAM01002_1100LMJ04_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "057ef6be65ccbc6d480b58efdedc22e06facf40eb9c1cbe398248628c4f4c157"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01232/ids/edr/browse/scam/LRF_1232_0776301178_551EBY_N0563438SCAM01232_0100I6J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "b6a4077a9733e4d716c465631f8970880d04d2f72d4cae1a68705d47dc323c42"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01254/ids/edr/browse/ncam/NLF_1254_0778269772_926ECM_N0590204NCAM12254_01_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "a7ed820b321a2ce95d5b1fe80e76b03696482341b05b779ae5c21cc0db10c7ff"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01254/ids/edr/browse/ncam/NLF_1254_0778269648_880ECM_N0590204NCAM12254_01_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "d065116d5b8083aa9eecd7faaa28417045b49eb290aa7337a2f05f53ffb1c5e3"
    },
    {
     "sourceId": "R5-perseverance-raw-images",
     "url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/01254/ids/edr/browse/ncam/NLF_1254_0778268185_851ECM_N0590204NCAM13254_04_195J01_800.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "5357219d28edb3bf34ce47a06a5d49e590c6842cbfd2c39334ba1384c9601f10"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "dem-walk-1m",
     "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "27ae5e61cf3ec54d72d2383781266c0abb0a6b65f78c18d3fbe1a37188cc1fda"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "dem-context-20m",
     "url": "https://trek.nasa.gov/mars/TrekWS/rest/cat/data/stream?label=JEZ_ctx_B_soc_008_DTM_MOLAtopography_DeltaGeoid_20m_Eqc_latTs0_lon0",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "46fb2e1e9f9c1fdd02939c2a96f3e173a8731bd146fbeb969b2060e0a3c8e97e"
    },
    {
     "sourceId": "R2-usgs-pgm",
     "layerId": "geology-sim3464",
     "url": "https://pubs.usgs.gov/sim/3464/sim3464_database.zip",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "a88bd53a5573743cc4a20036c10e585106d08a433ad2f34af269e9cea1529f87"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "tiles-mola",
     "url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z"
+    "retrievedAt": "2026-11-14T13:17:11Z"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "tiles-mola-region",
     "url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg",
-    "retrievedAt": "2026-11-14T11:08:37Z"
+    "retrievedAt": "2026-11-14T13:17:11Z"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "tiles-ctx",
     "url": "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0/default/default028mm/{z}/{y}/{x}.png",
-    "retrievedAt": "2026-11-14T11:08:37Z"
+    "retrievedAt": "2026-11-14T13:17:11Z"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "tiles-hirise",
     "url": "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0/default/default028mm/{z}/{y}/{x}.png",
-    "retrievedAt": "2026-11-14T11:08:37Z"
+    "retrievedAt": "2026-11-14T13:17:11Z"
    },
    {
     "sourceId": "R1-mars-trek",
     "layerId": "tiles-themis-night",
     "url": "https://trek.nasa.gov/tiles/Mars/EQ/THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018/1.0.0/default/default028mm/{z}/{y}/{x}.png",
-    "retrievedAt": "2026-11-14T11:08:37Z"
+    "retrievedAt": "2026-11-14T13:17:11Z"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1210/WE__1210___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "ddb1ca8d638a6329bd24c2a9ecf5e6c0dabedbae435532023575fbe21e4926cd"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1210/WE__1210___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "a0e07e4c9c3b1df1f68b2f53b04f9bdcb34b9b0b55749d3af421ae31dd8b9b67"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1211/WE__1211___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "af567c01ec4229412c48501799a13aceb3d236fb88fb924eccb88d42b6106a28"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1211/WE__1211___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "168755ce56e002388c5a5b348e92c05e6998dab268d3a23028719d7af4b6d737"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1212/WE__1212___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "6b8d48314ced717e3d61001db80d222e9c79d753864ef506fbecfb4c986c1f5d"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1212/WE__1212___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "d7f87ba411bebeea9427a985ed4539823c7d6a45b061e79899bf03e1caf0e903"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1213/WE__1213___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "47dd08c8aca76c4672677f161f413ed2581e67e1dc82ee196db75f1e9520229f"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1213/WE__1213___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "1e679df3656c196c5100c1ac24a385c35c320b9e74934f532a00cb628b592e92"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1214/WE__1214___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "85e6dcfc25e709cd56ee20db004f6ad853feb28b652e85c2037b415759d8508d"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1214/WE__1214___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "354f3a394d52d324aedaa03a65bdbcbf5418da68ea5a6be040ca142a184f34d3"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1215/WE__1215___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "474991587d7910ce5ab3dd1cc45e3706501463be6e0e353e6dfa4316397f85db"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1215/WE__1215___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "a4007aa868711d2af500ea6aa6330d86c118a2bd35329c9913475522e00bf41f"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1216/WE__1216___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "689021b52d31f9a97178bc9f644e6fbb868090c0ab4befd0837d82e469e9450c"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1216/WE__1216___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "40fa8d7ceb3525a3f44eeab32ad4983282d46154e774846c16b9e9fa699292fe"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1217/WE__1217___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "b3da1bdd6d60b8092714b358fe83597dce0ab00a43fe05cc0da9182a1ae1ae78"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1217/WE__1217___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "529ea35d73eea15caeee0f9731ce9b1d0781197b8d22f88bcd42c83997040725"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_1140_1259/sol_1218/WE__1218___________CAL_TIRS________________P02.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "d6f74f83a578ee13eb164e919f258ae8f19347a5d15b37a3cbef55fa8a25004e"
    },
    {
     "sourceId": "S4-m20-meda-weather",
     "url": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_derived_env/sol_1140_1259/sol_1218/WE__1218___________DER_PS__________________P01.CSV",
-    "retrievedAt": "2026-11-14T11:08:37Z",
+    "retrievedAt": "2026-11-14T13:17:11Z",
     "sha256": "5dd1f54d9467aca0248dd517a3929e8ffe943c9a09dae30cee597e91e5a2670b"
    },
    {
     "sourceId": "S7-noaa-swpc",
     "url": "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json",
-    "retrievedAt": "2026-11-14T11:08:37Z",
-    "sha256": "35dc3315024a686f6b588450bba0312fab080f7a0d486087de7e49c5dd4249d1"
+    "retrievedAt": "2026-11-14T13:17:11Z",
+    "sha256": "8c7dbeedeb0d99d3c3f3f1fc068a1470f200be82ad0067f1bd1c3e0749039f50"
    },
    {
     "sourceId": "S7-noaa-swpc",
     "url": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-3-day.json",
-    "retrievedAt": "2026-11-14T11:08:37Z",
-    "sha256": "00c3621359b58622b84683db348647ef6698024041d5d6cf565c7e8c54f29241"
+    "retrievedAt": "2026-11-14T13:17:11Z",
+    "sha256": "0d8eb44092dcf52d42dbb446d0f6725bcfe9365c90c11e0c06b2f7e5196c5843"
    }
   ]
  }

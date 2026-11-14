@@ -60,16 +60,35 @@ def _fetch(args) -> tuple[str, int]:
     return "ok", len(data)
 
 
+def jobs_for(out_dir: Path, layer: TileLayer) -> list[tuple[str, Path]]:
+    """Every tile a layer asks for: (Trek URL, path in the package)."""
+    jobs = []
+    for z in range(layer.levels[0], layer.levels[1] + 1):
+        cols, rows = tile_range(layer.bbox, z)
+        for x in cols:
+            for y in rows:
+                dest = out_dir / "tiles" / layer.key / str(z) / str(x) / f"{y}.{layer.ext}"
+                jobs.append((tile_url(layer, z, x, y), dest))
+    return jobs
+
+
+def count_cached(out_dir: Path, layers: tuple[TileLayer, ...]) -> dict:
+    """Summary like build(), without downloading: how many requested tiles are already on disk.
+
+    Used with --skip-tiles, so the package still records the true tile counts.
+    """
+    summary = {}
+    for layer in layers:
+        jobs = jobs_for(out_dir, layer)
+        have = sum(1 for _, dest in jobs if dest.exists() and dest.stat().st_size > 0)
+        summary[layer.key] = {"requested": len(jobs), "cached": have, **({"missing": len(jobs) - have} if have < len(jobs) else {})}
+    return summary
+
+
 def build(out_dir: Path, layers: tuple[TileLayer, ...], workers: int = 6) -> dict:
     summary = {}
     for layer in layers:
-        jobs = []
-        for z in range(layer.levels[0], layer.levels[1] + 1):
-            cols, rows = tile_range(layer.bbox, z)
-            for x in cols:
-                for y in rows:
-                    dest = out_dir / "tiles" / layer.key / str(z) / str(x) / f"{y}.{layer.ext}"
-                    jobs.append((tile_url(layer, z, x, y), dest))
+        jobs = jobs_for(out_dir, layer)
         counts: dict[str, int] = {}
         nbytes = 0
         with ThreadPoolExecutor(max_workers=workers) as ex:

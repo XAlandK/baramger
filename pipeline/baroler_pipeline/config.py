@@ -183,8 +183,8 @@ ZONES: dict[str, Zone] = {"z1": Z1, "z2": Z2}
 ASSUMPTIONS = (
     {"id": "A1", "statement": "Comfortable walking slope for a suited astronaut", "value": 15, "unit": "deg", "status": "to_verify"},
     {"id": "A2", "statement": "Maximum slope allowed on foot (steeper = no-go)", "value": 25, "unit": "deg", "status": "to_verify"},
-    {"id": "A3", "statement": "Walking speed on flat ground in a suit", "value": 2.5, "unit": "km/h", "status": "to_verify",
-     "reference": "Speed on slopes scaled with Tobler's hiking function"},
+    {"id": "A3", "statement": "Walking speed on flat ground in a suit, carrying the standard kit (A17)", "value": 2.5, "unit": "km/h", "status": "to_verify",
+     "reference": "Speed on slopes scaled with Tobler's hiking function. Carried load changes the time (A15-A21)"},
     {"id": "A4", "statement": "Walk (EVA) length", "value": 360, "unit": "min", "status": "to_verify"},
     {"id": "A5", "statement": "Time kept in reserve for the walk back", "value": 0.30, "unit": "fraction", "status": "to_verify"},
     {"id": "A6", "statement": "Habitat position chosen by the planner: flat ground with the best radio view of the walk; not a real landing site", "status": "accepted"},
@@ -196,6 +196,24 @@ ASSUMPTIONS = (
     {"id": "A12", "statement": "Postpone the walk if the 10 MeV proton level reaches this (NOAA S1 storm level, measured near Earth)",
      "value": 10, "unit": "pfu", "status": "to_verify"},
     {"id": "A13", "statement": "Take extra care for this long after an X-class solar flare", "value": 24, "unit": "h", "status": "to_verify"},
+    # Gear load (Part 2). Walking time is multiplied by (A15 + A16 + heaviest load) / (A15 + A16 + A17):
+    # time grows with the mass moved. Mass, not weight: on Mars a load weighs 0.38 of its Earth weight,
+    # but its mass (inertia) stays, and NASA's metabolic model scales with mass. Route paths do not change.
+    {"id": "A15", "statement": "Astronaut body mass (load model)", "value": 82, "unit": "kg", "status": "to_verify",
+     "reference": "NASA JSC, Mars Spacesuit Mass Requirements, ICES-2026-127 (2026), NTRS 20260005410: average male crew member 180 lbm (82 kg). A planning value, not a measurement"},
+    {"id": "A16", "statement": "Mass of a Mars spacesuit with its life support", "value": 104, "unit": "kg", "status": "to_verify",
+     "reference": "NASA JSC ICES-2026-127 (2026): estimated maximum Mars suit mass 229 lbm (104 kg); today's Artemis xEMU is 376 lbm (170 kg). An estimate, not a measured suit"},
+    {"id": "A17", "statement": "Standard kit each astronaut carries from the start (tools, camera, sample bags); walking speed A3 applies with this kit",
+     "value": 15, "unit": "kg", "status": "to_verify",
+     "reference": "Starting value chosen for Baroler, below the 50 lbm (22.7 kg) of tools and samples in NASA's Mars suit sizing (ICES-2026-127)"},
+    {"id": "A18", "statement": "Mass of one Mars 2020 sample tube with its sample", "value": 0.08, "unit": "kg", "status": "to_verify",
+     "reference": "JPL (21 Dec 2020): each empty tube weighs less than 57 g; about 20 g of sample added (estimate). https://www.jpl.nasa.gov/news/a-martian-roundtrip-nasas-perseverance-rover-sample-tubes/"},
+    {"id": "A19", "statement": "Mass of one rock sample taken by the crew", "value": 1.0, "unit": "kg", "status": "to_verify",
+     "reference": "Starting value for a field-geology hand sample. For scale: Apollo returned 382 kg in 2,196 samples, about 0.17 kg each (NASA)"},
+    {"id": "A20", "statement": "Carried load per astronaut above which to take care", "value": 22.7, "unit": "kg", "status": "to_verify",
+     "reference": "NASA JSC ICES-2026-127 (2026): 50 lbm (22.7 kg) of tools and samples per astronaut assumed in Mars suit sizing"},
+    {"id": "A21", "statement": "Most load one astronaut may carry; more is too heavy and the plan cannot be approved", "value": 30, "unit": "kg",
+     "status": "to_verify", "reference": "Starting value chosen for Baroler; to verify with suited load tests (NASA plans ARGOS tests with varied mass)"},
 )
 
 COMFORT_SLOPE_DEG = 15.0
