@@ -6,6 +6,8 @@
 // {startup: "ok" | problem, ms, errors}: the animation must end with the panel shown, without
 // any script error. (The tour itself skips the animation with ?nointro.) STARTUP_ONLY=1 stops after that check.
 // Headless: it never touches the Browser pane or your own Chrome profile.
+// TOUR_TIMEOUT_MS (default 240000) is the longest one window size may take; a busy machine needs more.
+// TOUR_PLAN_ONLY=1 runs only the plan screens (no walk-through, walk or replay): much quicker.
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -45,7 +47,7 @@ const send = (method, params = {}) => new Promise((resolve) => {
   waiting.set(n, resolve);
   ws.send(JSON.stringify({ id: n, method, params }));
 });
-const evaluate = async (expression, timeout = 240000) => {
+const evaluate = async (expression, timeout = Number(process.env.TOUR_TIMEOUT_MS ?? 240000)) => {
   const r = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true, timeout });
   if (r.result?.exceptionDetails) return { error: r.result.exceptionDetails.exception?.description ?? r.result.exceptionDetails.text };
   return r.result?.result?.value;
@@ -97,7 +99,7 @@ for (const size of sizes) {
   const out = await evaluate(`(async () => {
     const B = window.__baramger;
     const pump = setInterval(() => { try { B.map.viewer.render(); } catch {} }, 40);
-    try { const m = await import('/dev/ui-tour.js?v=' + Date.now()); return await m.tour(); }
+    try { const m = await import('/dev/ui-tour.js?v=' + Date.now()); return await m.tour({ planOnly: ${process.env.TOUR_PLAN_ONLY === "1"} }); }
     catch (e) { return { err: String(e) }; }
     finally { clearInterval(pump); }
   })()`);

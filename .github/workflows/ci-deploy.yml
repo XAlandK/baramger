@@ -1,7 +1,12 @@
 # CI/CD for Baramger.
 # - Every push and pull request: app type check + tests + build, and pipeline tests.
 # - Push to main (or a manual run on main): if the tests pass, deploy the app
-#   to Cloudflare (Workers static assets, config app/wrangler.jsonc).
+#   to Cloudflare (Workers static assets + the Worker script app/worker/index.ts,
+#   which answers POST /api/chat for the mission assistant; config app/wrangler.jsonc).
+#
+# The assistant's five AI keys are Worker secrets in the Cloudflare account
+# (`npx wrangler secret put GEMINI_API_KEY` etc.). They are not GitHub secrets, the
+# deploy keeps them, and the tests never need them (all providers are mocked).
 #
 # The deploy needs two repository secrets (GitHub > Settings > Secrets and variables > Actions):
 #   CLOUDFLARE_API_TOKEN   Cloudflare API token from the "Edit Cloudflare Workers" template
@@ -46,7 +51,11 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm test
-      - run: npm run build # tsc --noEmit + vite build
+      - run: npm run build # tsc --noEmit + vite build (also type-checks app/worker)
+      - name: Check that the Worker bundles (no upload, no account needed)
+        run: npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/worker"
+        env:
+          WRANGLER_SEND_METRICS: "false"
 
   pipeline:
     name: Pipeline (tests)

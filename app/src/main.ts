@@ -29,6 +29,7 @@ import { type WalkReport, buildReport, reportHtml, reportMapSvg } from "./report
 import { earthMarsLightTime } from "./lighttime";
 import { type CrewSpot, type PathPoint, crewSpots } from "./crew";
 import { PREVIEW_FACTORS, REPLAY_BUTTONS, REPLAY_TIMES, WALK_BUTTONS, WALK_TIMES, nextSpeed, perSecond, timesLabel } from "./speeds";
+import { EXAMPLES, LIMITS as ASK_LIMITS, MESSAGES as ASK_MESSAGES, type AskAnswer, type AskResponse, askAssistant, planContext } from "./ask";
 
 window.CESIUM_BASE_URL = CESIUM_BASE_URL;
 
@@ -62,11 +63,11 @@ interface StopState extends LonLat {
   lastWalk?: "visited" | "skipped";
 }
 
-type PlanTab = "goal" | "layers" | "stops" | "route" | "conditions" | "safety";
+type PlanTab = "goal" | "layers" | "stops" | "route" | "conditions" | "safety" | "ask";
 type WalkTab = "now" | "progress" | "notes";
 type DataTab = "sources" | "checks" | "values";
 /** Details open as pop-ups, so the panel never has to scroll. */
-type Popup = { kind: "stop" } | { kind: "place"; id: string } | { kind: "places"; ids: string[] } | { kind: "ideas" } | { kind: "legs" } | { kind: "alerts" } | { kind: "data"; tab: DataTab };
+type Popup = { kind: "stop" } | { kind: "place"; id: string } | { kind: "places"; ids: string[] } | { kind: "ideas" } | { kind: "legs" } | { kind: "alerts" } | { kind: "data"; tab: DataTab } | { kind: "ask"; idx: number; view: "answer" | "values" };
 
 interface Unit {
   symbol: string;
@@ -128,6 +129,21 @@ const state = {
   photo: null as string | null,
   nextId: 1,
   ideas: [] as FieldNote[],
+};
+
+/**
+ * The mission assistant (Ask tab). Questions and AI answers live only in this page's memory:
+ * they are never saved into a mission package or the browser's storage (rule C5).
+ */
+interface AskItem {
+  q: string;
+  res: AskResponse | null; // null while waiting
+}
+const askUi = {
+  items: [] as AskItem[],
+  idx: 0, // the question on screen (the newest after asking)
+  busy: false,
+  draft: "",
 };
 
 const preview = {
@@ -417,7 +433,7 @@ function modeTabs(): string {
   </header>`;
 }
 
-const PLAN_TABS: [PlanTab, string][] = [["goal", "Goal"], ["layers", "Layers"], ["stops", "Stops"], ["route", "Route"], ["conditions", "Weather"], ["safety", "Safety"]];
+const PLAN_TABS: [PlanTab, string][] = [["goal", "Goal"], ["layers", "Layers"], ["stops", "Stops"], ["route", "Route"], ["conditions", "Weather"], ["safety", "Safety"], ["ask", "Ask"]];
 
 function planTabs(): string {
   const p = state.plan;
@@ -502,6 +518,7 @@ function renderPanel(): void {
   else if (state.mode === "preview") html = modeTabs() + previewPanel();
   else html = modeTabs() + planTabs() + `<div class="p-body" id="p-body" data-key="plan-${state.tab}">${planBody()}</div>` + planFooter();
   morph($("#panel"), html);
+  markAskClip();
   renderChip();
   renderPopup();
   if (state.mode === "walk") renderHud(); // keep the helmet in step with the tablet (stay longer, skip, notes)
@@ -559,6 +576,7 @@ function planBody(): string {
     case "route": return routeTab();
     case "conditions": return conditionsTab();
     case "safety": return safetyTab();
+    case "ask": return askTab();
     default: return goalTab();
   }
 }
@@ -761,6 +779,162 @@ function planFooter(): string {
   </footer>`;
 }
 
+// ------------------------------------------------------------------ the mission assistant (Ask tab)
+const askOnline = () => navigator.onLine;
+const askCountText = () => `${askUi.draft.length} / ${ASK_LIMITS.questionChars} · no personal details, please`;
+const askReady = () => askOnline() && !askUi.busy && askUi.draft.trim().length > 0 && askUi.draft.length <= ASK_LIMITS.questionChars;
+
+/** What the assistant gets with each question: the crew's plan as Baramger computed it (no crew notes). */
+function askContext() {
+  const g = grid as RouteGrid | undefined; // loaded in the background: undefined until the zone is ready
+  let centre: LonLat | null = null;
+  try {
+    centre = map.centerLonLat();
+  } catch { /* the map is not drawn yet */ }
+  return planContext({
+    plan: state.plan,
+    planError: state.planError,
+    stops: state.stops.map((s) => ({ id: s.id, name: s.name, lon: s.lon, lat: s.lat, minutes: s.minutes, custom: s.custom })),
+    startClock: state.startClock,
+    crewSize: state.crewSize,
+    approved: !!state.approvedAt,
+    selectedId: state.selected,
+    mapCenter: centre && g && inside(g.meta, centre.lon, centre.lat) ? centre : null, // "here" only inside the walk area
+  });
+}
+
+async function sendAsk(text: string): Promise<void> {
+  const q = text.trim().slice(0, ASK_LIMITS.questionChars);
+  if (!q || askUi.busy || !askOnline()) return;
+  const history = askUi.items
+    .filter((i): i is AskItem & { res: AskAnswer } => !!i.res?.ok && i.res.kind !== "off_topic")
+    .slice(-ASK_LIMITS.historyTurns)
+    .map((i) => ({ q: i.q, a: i.res.text }));
+  const item: AskItem = { q, res: null };
+  askUi.items.push(item);
+  if (askUi.items.length > 20) askUi.items.shift(); // memory only, the last 20
+  askUi.idx = askUi.items.length - 1;
+  askUi.busy = true;
+  askUi.draft = "";
+  const box = document.querySelector<HTMLTextAreaElement>("#ask-q");
+  if (box) box.value = "";
+  renderPanel();
+  item.res = await askAssistant({ zone: zone.key, question: q, history, context: askContext() });
+  askUi.busy = false;
+  askUi.idx = askUi.items.indexOf(item);
+  if (state.mode === "plan" && state.view === "site") renderPanel();
+}
+
+/** Who wrote the answer, and who was tried first: one line. */
+function askByline(a: AskAnswer): { by: string; tried: string } {
+  return {
+    by: `Written by ${a.provider} · ${a.model}`,
+    tried: a.skipped.map((s) => `${s.provider}: ${s.why}`).join(" · "),
+  };
+}
+
+function askTab(): string {
+  const online = askOnline();
+  const n = askUi.items.length;
+  const item = askUi.items[askUi.idx];
+  const pager = n > 1
+    ? `<span class="pager"><button type="button" data-askpage="-1" ${askUi.idx === 0 ? "disabled" : ""} aria-label="Earlier question">‹</button><span>${askUi.idx + 1} / ${n}</span><button type="button" data-askpage="1" ${askUi.idx === n - 1 ? "disabled" : ""} aria-label="Later question">›</button></span>`
+    : "";
+  let card: string;
+  if (!item) {
+    card = `
+    <div class="ask-card intro" data-key="ask-intro">
+      <div class="ask-top"><span class="ai-tag">AI assistant</span></div>
+      <p class="small">Ask about this walk, this zone and its data. The assistant looks the answer up in the zone's mission package (the same data as the map) and your plan, and names its sources.</p>
+      <p class="tiny muted">It never decides what is safe: Baramger's safety checks do. Try one:</p>
+      <div class="ask-examples">${EXAMPLES.map((q) => `<button type="button" class="secondary" data-askq="${esc(q)}" ${online ? "" : "disabled"}>${esc(q)}</button>`).join("")}</div>
+    </div>`;
+  } else if (!item.res) {
+    card = `
+    <div class="ask-card" data-key="ask-${askUi.idx}">
+      <div class="ask-top"><span class="ai-tag">AI explanation</span><span class="ask-by muted one-line">Looking up the mission data…</span>${pager}</div>
+      <p class="ask-q one-line" title="${esc(item.q)}"><b>Q:</b> ${esc(item.q)}</p>
+      <div class="ask-a wait"><p class="muted">The assistant is reading the package and your plan. This takes a few seconds.</p></div>
+    </div>`;
+  } else if (!item.res.ok) {
+    card = `
+    <div class="ask-card" data-key="ask-${askUi.idx}">
+      <div class="ask-top"><span class="ai-tag off">No answer</span><span class="ask-by muted one-line"></span>${pager}</div>
+      <p class="ask-q one-line" title="${esc(item.q)}"><b>Q:</b> ${esc(item.q)}</p>
+      <div class="ask-a"><p class="error">${esc(item.res.message)}</p></div>
+      <div class="ask-foot"><button type="button" class="secondary small-btn" data-askq="${esc(item.q)}" ${online && !askUi.busy ? "" : "disabled"}>Ask again</button></div>
+    </div>`;
+  } else {
+    const a = item.res;
+    const { by, tried } = askByline(a);
+    card = `
+    <div class="ask-card" data-key="ask-${askUi.idx}">
+      <div class="ask-top"><span class="ai-tag" title="Written by an AI model from the data below. Not a measurement.">AI explanation</span><span class="ask-by muted one-line" title="${esc(by)}">${esc(a.provider)} · ${esc(a.model)}</span>${pager}</div>
+      ${a.skipped.length ? `<p class="ask-fb tiny muted one-line" title="${esc(tried)}">Tried first: ${esc(tried)}</p>` : ""}
+      <p class="ask-q one-line" title="${esc(item.q)}"><b>Q:</b> ${esc(item.q)}</p>
+      <div class="ask-a" id="ask-a">${a.text.split(/\n+/).map((t) => `<p>${esc(t)}</p>`).join("")}</div>
+      ${a.facts.length ? `<ul class="ask-facts">${a.facts.slice(0, 2).map((f) => `<li class="one-line" title="${esc(`${f.label}: ${f.value} (${f.ref})`)}"><span class="muted">${esc(f.label)}:</span> <b>${esc(f.value)}</b> <span class="src">${esc(f.ref)}</span></li>`).join("")}</ul>` : ""}
+      <div class="ask-foot">
+        <span class="ask-src one-line">${a.sources.length ? `<span class="tiny muted">Sources</span> ${a.sources.map((s) => `<span class="src" title="${esc(s.name)}">${esc(s.id)}</span>`).join(" ")}` : `<span class="tiny muted">No data sources: off topic</span>`}</span>
+        <button type="button" class="linkish" id="ask-more">${a.facts.length ? `Read all · ${a.facts.length} values` : "Read all"}</button>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="ask" data-key="ask">
+    ${online ? "" : `<p class="note">${esc(ASK_MESSAGES.offline)} Everything else in Baramger works offline.</p>`}
+    ${card}
+    <div class="ask-form">
+      <textarea id="ask-q" rows="2" maxlength="${ASK_LIMITS.questionChars}" placeholder="Ask about this walk, for example: Where do we lose radio contact?" aria-label="Your question to the assistant" ${online ? "" : "disabled"}>${esc(askUi.draft)}</textarea>
+      <div class="ask-row">
+        <small id="ask-count" class="tiny muted one-line">${esc(askCountText())}</small>
+        <button type="button" id="ask-send" class="primary" ${askReady() ? "" : "disabled"}>${askUi.busy ? "Asking…" : "Ask"}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/** A long answer that does not fit is faded at the bottom; "Read all" shows the whole of it. */
+function markAskClip(): void {
+  const el = document.querySelector("#ask-a");
+  if (el) el.classList.toggle("clipped", el.scrollHeight > el.clientHeight + 1);
+}
+
+/** The whole answer, or every value it looked up (two views, so neither needs to scroll). */
+function askPopup(idx: number, view: "answer" | "values"): string {
+  const item = askUi.items[idx];
+  if (!item?.res?.ok) return "";
+  const a = item.res;
+  const { by, tried } = askByline(a);
+  const narrow = window.innerWidth < 620;
+  let body: string;
+  if (view === "values") {
+    const { slice, nav } = paged("ask-facts", a.facts, narrow ? 3 : 4); // a check's detail can take several lines
+    body = `
+      <p class="tiny muted">Read by the assistant's tools from this zone's mission package and from your plan as Baramger computed it. These values are data, not AI text.</p>
+      <ul class="ask-facts full">${slice.map((f) => `<li data-key="${esc(f.label + f.value)}"><span class="muted">${esc(f.label)}:</span> <b>${esc(f.value)}</b> <span class="src">${esc(f.ref)}</span></li>`).join("") || `<li class="muted">No values: the question was not about the walk's data.</li>`}</ul>
+      ${nav}
+      ${a.sources.length ? `<p class="ask-src one-line"><span class="tiny muted">Sources</span> ${a.sources.map((s) => `<span class="src" title="${esc(s.name)}">${esc(s.id)}</span>`).join(" ")} <span class="tiny muted">(names: Data, credits and starting values)</span></p>` : ""}`;
+  } else {
+    body = `
+      <div class="ask-a full">${a.text.split(/\n+/).map((t) => `<p>${esc(t)}</p>`).join("")}</div>
+      ${a.sources.length ? `<p class="ask-src"><span class="tiny muted">Sources</span> ${a.sources.map((s) => `<span class="src" title="${esc(s.name)}">${esc(s.id)}</span>`).join(" ")}</p>` : ""}
+      <p class="tiny muted">Written by an AI model from the values in "Values". It can be wrong and is not saved anywhere; the Safety tab decides what is safe.</p>`;
+  }
+  return `
+  <div class="pop-card" role="dialog" aria-label="AI explanation" data-key="ask-pop-${idx}-${view}">
+    <button type="button" id="pop-close" class="icon-btn pop-close" aria-label="Close">✕</button>
+    <p class="eyebrow">AI explanation · not a measurement</p>
+    <p class="ask-pop-q">${esc(item.q)}</p>
+    <p class="muted tiny">${esc(by)}, in ${(a.ms / 1000).toFixed(1)} s.${tried ? ` Tried first: ${esc(tried)}.` : ""}</p>
+    <div class="seg ask-views" role="group" aria-label="Show">
+      <button type="button" data-askview="answer" class="${view === "answer" ? "on" : ""}" aria-pressed="${view === "answer"}">Answer</button>
+      <button type="button" data-askview="values" class="${view === "values" ? "on" : ""}" aria-pressed="${view === "values"}">Values (${a.facts.length})</button>
+    </div>
+    <div class="pop-body">${body}</div>
+  </div>`;
+}
+
 // ------------------------------------------------------------------ pop-ups
 function popupHtml(): string {
   const pop = state.popup;
@@ -771,6 +945,7 @@ function popupHtml(): string {
   if (pop.kind === "ideas") return ideasPopup();
   if (pop.kind === "legs") return legsPopup();
   if (pop.kind === "alerts") return alertsPopup();
+  if (pop.kind === "ask") return askPopup(pop.idx, pop.view);
   return dataPopup(pop.tab);
 }
 
@@ -2308,7 +2483,7 @@ function onUiClick(ev: Event): void {
     else closePopup();
     return;
   }
-  const el = t.closest("[data-place-open],[data-place-add],[data-open],[data-move],[data-remove],[data-photo],[data-mode],[data-pvspeed],[data-wspeed],[data-rpspeed],[data-jump],[data-view],[data-idea],[data-tab],[data-wtab],[data-rtab],[data-dtab],[data-page],[data-check],[data-zone],[data-base],button") as HTMLElement | null;
+  const el = t.closest("[data-place-open],[data-place-add],[data-open],[data-move],[data-remove],[data-photo],[data-mode],[data-pvspeed],[data-wspeed],[data-rpspeed],[data-jump],[data-view],[data-idea],[data-askq],[data-askpage],[data-askview],[data-tab],[data-wtab],[data-rtab],[data-dtab],[data-page],[data-check],[data-zone],[data-base],button") as HTMLElement | null;
   // closest() also looks above the panel (up to <body>): only elements inside the panel or pop-up count
   if (!el || !(ev.currentTarget as Element).contains(el)) return;
   const w = walkUi.w;
@@ -2331,6 +2506,15 @@ function onUiClick(ev: Event): void {
     if (state.popup?.kind === "place") state.popup = null; // the list stays open, with the place marked as added
     state.tab = "stops";
     refreshMap();
+    renderPanel();
+  } else if (el.dataset.askq) {
+    void sendAsk(el.dataset.askq);
+  } else if (el.dataset.askview && state.popup?.kind === "ask") {
+    state.popup = { ...state.popup, view: el.dataset.askview === "values" ? "values" : "answer" };
+    state.pages["ask-facts"] = 0;
+    renderPopup();
+  } else if (el.dataset.askpage) {
+    askUi.idx = Math.max(0, Math.min(askUi.items.length - 1, askUi.idx + Number(el.dataset.askpage)));
     renderPanel();
   } else if (el.dataset.tab) {
     state.tab = el.dataset.tab as PlanTab;
@@ -2407,6 +2591,14 @@ function onUiClick(ev: Event): void {
     const n = state.ideas.splice(Number(el.dataset.idea), 1)[0];
     if (n) addStopAt(n, n.text.length < 40 ? n.text : undefined);
   } else switch (el.id) {
+    case "ask-send":
+      void sendAsk(($("#ask-q") as HTMLTextAreaElement).value);
+      break;
+    case "ask-more":
+      state.pages["ask-facts"] = 0;
+      state.popup = { kind: "ask", idx: askUi.idx, view: "answer" };
+      renderPopup();
+      break;
     case "pop-close":
       if (state.popup?.kind === "stop") select(null);
       else closePopup();
@@ -2580,6 +2772,12 @@ function onUiInput(ev: Event): void {
     if (wasPlaying) renderPanel(); // the button must say "Play" again
   }
   if (t.id === "w-note") walkUi.noteDraft = t.value;
+  if (t.id === "ask-q") {
+    // only the counter and the button change while typing (no redraw)
+    askUi.draft = t.value;
+    $("#ask-count").textContent = askCountText();
+    ($("#ask-send") as HTMLButtonElement).disabled = !askReady();
+  }
   const s = state.stops.find((x) => x.id === state.selected);
   if (t.id === "stop-note" && s) s.crewNote = t.value;
   if (t.id === "stop-name" && s) renameStop(s, t.value);
@@ -2658,6 +2856,11 @@ function bindPanel(): void {
     el.addEventListener("change", onUiChange);
     el.addEventListener("keydown", (ev) => {
       const field = ev.target as HTMLElement;
+      if (ev.key === "Enter" && !ev.shiftKey && field.id === "ask-q") {
+        ev.preventDefault(); // Enter asks; Shift+Enter is a new line
+        void sendAsk((field as HTMLTextAreaElement).value);
+        return;
+      }
       if (ev.key === "Enter" && field.id === "stop-name") {
         (field as HTMLInputElement).blur(); // the name is already saved while typing; Enter just ends it
         return;
@@ -3153,6 +3356,8 @@ function overflowReport(): string[] {
   check(document.querySelector(".pop-card"), "pop-up");
   check(document.querySelector(".pop-body"), "pop-up body");
   check(document.querySelector(".lb-inner"), "photo viewer");
+  check(document.querySelector("#panel .subtabs"), "plan tabs"); // seven tabs in one row
+  for (const sel of [".ask-top", ".ask-foot", ".ask-row", ".ask-examples"]) check(document.querySelector(`#panel ${sel}`), `Ask tab ${sel}`);
   // the scale card on the map: its rows must fit, it stays inside the map, and it covers no other chip
   const scale = $("#scale");
   if (shown(scale) && shown($("#map-area"))) {
@@ -3215,6 +3420,8 @@ function overflowReport(): string[] {
 
 async function main(): Promise<void> {
   fitUi();
+  // the Ask tab says when there is no internet, and recovers by itself when it comes back
+  for (const ev of ["online", "offline"]) window.addEventListener(ev, () => { if (state.tab === "ask" && state.mode === "plan") renderPanel(); });
   window.addEventListener("resize", () => {
     fitUi();
     positionHandle();
@@ -3305,6 +3512,7 @@ async function main(): Promise<void> {
   if (import.meta.env.DEV) {
     (window as unknown as { __baramger: unknown }).__baramger = {
       map, state, preview, walkUi, replay, step, renderPanel, makeReport, enterZone, toGlobe, overflowReport, updateScale,
+      askUi, askContext, // the Ask tab: the tour puts sample answers in askUi.items to check the layout
       get intro() { return intro; },
     };
   }

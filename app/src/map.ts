@@ -1450,6 +1450,12 @@ export class MapView {
     this.viewer.scene.postRender.addEventListener(cb);
   }
 
+  /** The ground point in the middle of the map (null where the middle shows sky). The assistant reads it as "here". */
+  centerLonLat(): LonLat | null {
+    const { w, h } = this.viewSize();
+    return this.pickLonLat(new Cesium.Cartesian2(w / 2, h / 2));
+  }
+
   pickLonLat(pos: Cesium.Cartesian2): LonLat | null {
     const ray = this.viewer.camera.getPickRay(pos);
     if (!ray) return null;

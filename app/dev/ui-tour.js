@@ -7,6 +7,7 @@
 // How to use, with `npm run dev` running and the app open (add ?nointro to skip the animation):
 //   const { tour } = await import("/dev/ui-tour.js");
 //   await tour();            // -> { views: 74, bad: [] }   (bad must be empty)
+//   await tour({ planOnly: true });   // only the plan screens (quicker)
 // Run it for both zones (#z1 and #z2) and at several window sizes, for example
 // 1280x800, 1024x560, 800x725, 600x720 and 500x600.
 //
@@ -14,7 +15,7 @@
 // buttons with element.click(). It needs the tab to be in front: a background tab gets no
 // animation frames, so the map and the route flights would not run.
 
-export async function tour() {
+export async function tour({ planOnly = false } = {}) {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const $ = (s) => document.querySelector(s);
   const B = window.__baramger;
@@ -70,6 +71,82 @@ export async function tour() {
     }
     await click('#ctl [data-nudge="follow"]', 80);
   };
+  // ---- the Ask tab (mission assistant). Sample answers are put in by hand: no AI is called.
+  // The longest answer the Worker lets through (900 characters), the longest question (300), many values.
+  const askTour = async () => {
+    const A = B.askUi;
+    const keep = { items: A.items.slice(), idx: A.idx, busy: A.busy, draft: A.draft };
+    await tab("ask");
+    check("ask tab, examples");
+    const words = "The route bends north of the direct line because the straight path crosses about 40 m of ground steeper than 25 degrees, which the safety rules forbid on foot.";
+    const longText = `${words} ${words} ${words} ${words} ${words}`.slice(0, 900) + " …";
+    const answer = (over) => ({
+      ok: true, kind: "answer", text: longText, provider: "OpenRouter", model: "openai/gpt-oss-120b",
+      sources: [{ id: "R1", name: "JPL Mars Trek" }, { id: "R2", name: "USGS" }, { id: "S4", name: "MEDA" }, { id: "S7", name: "NOAA" }, { id: "PLAN", name: "Your plan" }],
+      facts: Array.from({ length: 14 }, (_, i) => ({ label: `Air at 14:00 (median, sols 1210–1218) ${i + 1}`, value: "−49 °C, and a long value that does not fit on one line", ref: i % 2 ? "S4" : "PLAN" })),
+      tools: ["get_plan", "get_terrain_at"], skipped: [{ provider: "Gemini (Google)", why: "busy (rate limit)" }, { provider: "Groq", why: "too slow (timeout)" }], ms: 6400, ...over,
+    });
+    const longQ = "Why does the route go around the ridge between the habitat and the Cheyava Falls rock instead of going straight, and how much longer is it? ".repeat(3).slice(0, 300);
+    A.items.length = 0;
+    A.items.push({ q: longQ, res: answer({}) }, { q: longQ, res: null });
+    A.idx = 1;
+    A.busy = true;
+    A.draft = "x".repeat(300);
+    B.renderPanel();
+    await sleep(40);
+    check("ask tab, waiting for an answer, longest question typed");
+    A.busy = false;
+    A.items[1].res = answer({});
+    B.renderPanel();
+    await sleep(40);
+    check("ask tab, longest answer after a fallback");
+    { // a tall window shows all of it; otherwise it must be faded, with "Read all"
+      const el = $("#ask-a");
+      if (el.scrollHeight > el.clientHeight + 1 && !el.classList.contains("clipped")) bad.push("ask tab: the longest answer is cut without the fade");
+    }
+    // about 110 words must fit without the fade
+    A.items[1].res = answer({ text: longText.slice(0, 640) });
+    B.renderPanel();
+    await sleep(40);
+    if ($("#ask-a.clipped")) bad.push(`ask tab: a 640-character answer does not fit (${$("#ask-a").clientHeight} px for ${$("#ask-a").scrollHeight} px)`);
+    A.items[1].res = answer({});
+    B.renderPanel();
+    await sleep(40);
+    await click("#ask-more");
+    check("ask pop-up, the longest answer");
+    await click('#popup [data-askview="values"]');
+    check("ask pop-up, values");
+    while ($('#popup .pager button[data-dir="1"]:not(:disabled)')) {
+      await click('#popup .pager button[data-dir="1"]', 50);
+      check("ask pop-up, next page of values");
+    }
+    await closePop();
+    await click('#panel [data-askpage="-1"]');
+    check("ask tab, earlier question");
+    A.items[1].res = { ok: false, error: "unavailable", message: "The assistant isn't available right now. Try again in a minute." };
+    A.idx = 1;
+    B.renderPanel();
+    await sleep(40);
+    check("ask tab, no answer");
+    A.items[1].res = answer({ kind: "off_topic", text: "I can only help with this walk, this walk zone and its mission data.", sources: [], facts: [], skipped: [] });
+    B.renderPanel();
+    await sleep(40);
+    check("ask tab, off topic");
+    // no internet: the tab says so, the field and buttons are off
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+    window.dispatchEvent(new Event("offline"));
+    await sleep(40);
+    check("ask tab, offline");
+    if (!$("#panel .ask .note") || !$("#ask-q").disabled) bad.push("ask tab: no offline message, or the field is still on");
+    delete navigator.onLine;
+    window.dispatchEvent(new Event("online"));
+    await sleep(40);
+    Object.assign(A, { busy: keep.busy, draft: keep.draft, idx: keep.idx });
+    A.items.length = 0;
+    A.items.push(...keep.items);
+    B.renderPanel();
+    await sleep(20);
+  };
   const until = async (test, ms = 15000) => {
     const t0 = Date.now();
     while (!test() && Date.now() - t0 < ms) await sleep(50);
@@ -95,7 +172,7 @@ export async function tour() {
   await sleep(300);
 
   // ---- plan: every tab and pop-up, before and after a route
-  for (const k of ["goal", "layers", "stops", "route", "conditions", "safety"]) {
+  for (const k of ["goal", "layers", "stops", "route", "conditions", "safety", "ask"]) {
     await tab(k);
     check(`plan tab ${k} (no route)`);
   }
@@ -142,12 +219,15 @@ export async function tour() {
     await sleep(30);
     check(`safety detail ${c.dataset.check}`);
   }
+  await askTour();
   await tab("conditions");
   check("weather tab with route");
   await tab("stops");
   check("stops tab with route");
   await tab("goal");
   check("goal tab with route");
+
+  if (planOnly) return { views: seen.length, bad }; // the plan screens only (a quicker check)
 
   // ---- walk-through
   await tab("route");
