@@ -37,6 +37,36 @@ export async function tour() {
     $("#pop-close")?.click();
     await sleep(40);
   };
+  // the control box on the map: open for the whole tour (every screen is checked with it open)
+  const press = async (kind) => {
+    const b = $(`#ctl [data-nudge="${kind}"]`);
+    if (!b || b.disabled) return;
+    b.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 7 }));
+    b.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 7 }));
+    await sleep(30);
+  };
+  const controls = async (name) => {
+    if ($("#ctl-toggle")?.getAttribute("aria-expanded") !== "true") await click("#ctl-toggle");
+    check(`${name} + controls`);
+    for (const k of ["forward", "in", "turnRight", "tiltUp"]) await press(k);
+    check(`${name} + controls, view moved`);
+    if ($("#ctl-follow")) {
+      const sel = $("#ctl-follow");
+      sel.value = String(sel.options.length - 1);
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      await sleep(60);
+      check(`${name} + controls, following ${sel.options[sel.options.length - 1].text}`);
+      sel.value = "0";
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      await sleep(40);
+    }
+    if ($('#ctl [data-ctlspeed="1"]:not(:disabled)')) {
+      await click('#ctl [data-ctlspeed="1"]', 40);
+      await click('#ctl [data-ctlspeed="-1"]', 40);
+      check(`${name} + controls, speed`);
+    }
+    await click('#ctl [data-nudge="follow"]', 80);
+  };
   const until = async (test, ms = 15000) => {
     const t0 = Date.now();
     while (!test() && Date.now() - t0 < ms) await sleep(50);
@@ -49,6 +79,7 @@ export async function tour() {
     await sleep(200);
   }
   check("globe panel");
+  await controls("globe");
   // the two looks of the whole-planet map (height colours, natural colour), when the package has both
   const look = B.state.baseStyle; // the tour puts the crew's own choice back afterwards
   for (const b of [...document.querySelectorAll("#panel [data-base]")]) {
@@ -118,6 +149,19 @@ export async function tour() {
   await tab("route");
   await click("#walkthrough", 300);
   check("walk-through start");
+  await controls("walk-through");
+  {
+    const slider = $("#ctl-time");
+    slider.value = String(Math.round(Number(slider.max) / 3));
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    slider.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(60);
+    if (Math.abs(B.preview.D - Number(slider.value)) > 1) bad.push("walk-through: the time slider did not move the crew");
+    check("walk-through, time slider moved");
+    slider.value = "0";
+    slider.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(40);
+  }
   for (let i = 0; i < 400 && B.preview.stopIdx < 0; i++) B.step(0.25);
   B.renderPanel();
   await sleep(80);
@@ -130,6 +174,20 @@ export async function tour() {
   await sleep(500); // the app ignores a click on the button that has just appeared (double-click guard)
   await click("#go-walk", 300);
   check("walk: now (walking)");
+  await controls("walk");
+  {
+    const before = B.walkUi.w.clockMin;
+    const slider = $("#ctl-time");
+    slider.value = String(Math.round(before + 3));
+    slider.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(60);
+    if (B.walkUi.w.clockMin < before + 2.9) bad.push("walk: the time slider did not run the walk forward");
+    slider.value = String(Math.round(before - 30));
+    slider.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(60);
+    if (B.walkUi.w.clockMin < before + 2.9) bad.push("walk: the time slider ran the walk back");
+    check("walk: time slider");
+  }
   await click('#panel [data-wtab="progress"]');
   check("walk: progress");
   await click('#panel [data-wtab="notes"]');
@@ -205,6 +263,7 @@ export async function tour() {
   await click("#modal-close");
   await click("#replay", 200);
   check("replay: what happened");
+  await controls("replay");
   while ($('#panel .pager button[data-dir="1"]:not(:disabled)')) {
     await click('#panel .pager button[data-dir="1"]', 40);
     check("replay: what happened, next page");
@@ -240,5 +299,6 @@ export async function tour() {
     }
     await closePop();
   }
+  if ($("#ctl-toggle")?.getAttribute("aria-expanded") === "true") await click("#ctl-toggle"); // closed again, as at the start
   return { views: seen.length, bad };
 }

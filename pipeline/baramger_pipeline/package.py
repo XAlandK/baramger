@@ -16,7 +16,7 @@ from .geology import OFFSET_NOTE, unit_at
 SCHEMA_VERSION = "0.1.0"
 USED_SOURCES = ("R1-mars-trek", "R2-usgs-pgm", "R3-curiosity-route-map", "R4-nasa-worldview",
                 "R5-perseverance-raw-images", "S1-m20-rover-waypoints", "S4-m20-meda-weather", "S7-noaa-swpc",
-                "S8-nasa-fact-pages")
+                "S8-nasa-fact-pages", "S9-nasa-3d-z2-spacesuit")
 
 
 def sha256(path: Path) -> str:

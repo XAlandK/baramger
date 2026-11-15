@@ -379,6 +379,41 @@
     "Used only for the scale card on the map. The drawings are simple silhouettes made for this app and are drawn to scale; they are not map data.",
     "The person in the scale card (1.8 m) does not come from this source: it is assumption A22."
    ]
+  },
+  {
+   "id": "S9-nasa-3d-z2-spacesuit",
+   "name": "NASA 3D Resources: Z2 Spacesuit 3D model (the crew figures in the walk, the walk-through and the replay)",
+   "provider": "NASA / Langley Research Center, Advanced Concepts Lab (model); NASA Science (3D Resources hub)",
+   "homepage": "https://science.nasa.gov/3d-resources/z2-spacesuit/",
+   "role": "design_reference",
+   "inResourceList": false,
+   "bodyCovered": "multiple",
+   "access": [
+    {
+     "type": "static_media",
+     "url": "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/model/z2-spacesuit/Z2%20Spacesuit.glb",
+     "notes": "glTF binary, 16,933,148 bytes, sha256 4199762c27f8e730030a7bf9f1a453c203457e84c33b36247c0237a74f9a0c2a, downloaded 2026-11-15 00:59 UTC into data/raw/nasa3d/ (git-ignored). 30,904 triangles, about 1.93 m tall, no skeleton and no animation."
+    },
+    {
+     "type": "web_portal",
+     "url": "https://science.nasa.gov/3d-resources/",
+     "notes": "The 3D Resources hub: 'All of these assets are free to download and use', with NASA's Brand & Usage and Images and Media Usage Guidelines. The GitHub mirror (github.com/nasa/NASA-3D-Resources) says the assets are 'free and without copyright'."
+    }
+   ],
+   "license": "NASA 3D Resources: free to download and use (NASA media usage guidelines); no endorsement by NASA implied",
+   "credit": "Z2 Spacesuit 3D model: NASA/LaRC/Advanced Concepts Lab, via NASA 3D Resources (cleaned copy)",
+   "verified": {
+    "date": "2026-11-15",
+    "status": "ok",
+    "notes": "The model page and the file answered 200 on 2026-11-15. The file was opened: one mesh 'Z2' (Draco-compressed), one material 'Baked', three pictures (colour, bump, specular), each as WebP plus a JPEG copy. The app ships a copy made by pipeline/baramger_pipeline/suit_model.py: app/public/models/z2-spacesuit.glb, 939,796 bytes, sha256 40ce0b338cbe1b373b4044e439c111cea85b7d677e79eccae034b5d3ebb298fd. Same mesh and material; without the JPEG copies; without the bump picture (strength 0 in NASA's file, but drawn by CesiumJS); and with the grime painted on the white fabric taken off the colour picture (seams, stripes, black parts, flag and patches kept), at the user's request (2026-11-15)."
+   },
+   "caveats": [
+    "Extra source under D2. C1: a NASA model from NASA Langley, served by NASA (assets.science.nasa.gov); no China link. C2: NASA says the 3D Resources are free to download and use. C3: opened and checked against its page (source, file size, date). C4: an official NASA product with a known date (page 15 Apr 2025, file 27 Feb 2025) and resolution (30,904 triangles, 4096-px pictures); how closely it matches the real Z2 suit is not documented. C5: a model of a real NASA prototype suit (made for walking on planets), not AI-made. It is a picture of the crew, not map data: nothing is measured or computed from it.",
+    "The figures are drawn at the model's own size (about 1.93 m). From the tablet's top view (camera about 380 m up) they are only a few pixels tall, so the round crew marker stays there.",
+    "The model cannot move its legs (no skeleton): the figures glide along the route and turn to face the way they go.",
+    "The suit carries small NASA and US flag patches, as the real one does. NASA's brand guidelines say the NASA insignia must not suggest that NASA endorses a product; at the size the app draws them they are a few pixels.",
+    "The app's copy changes NASA's colour picture (grime taken off) and leaves two of its pictures out; the mesh is NASA's."
+   ]
   }
  ],
  "layers": [
