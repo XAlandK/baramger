@@ -6,9 +6,9 @@
 
 <sub>Baramger · Marswalk planner</sub>
 
-First, two big stories: the NASA challenge and our app. Then seventeen easy answers about the Baramger map: the robot, the rocks, the crew, the house on Mars, the colours on the map and the safety checks.
+First, two big stories: the NASA challenge and our app. Then twenty easy answers about the Baramger map: the robot, the rocks, the crew, the house on Mars, the colours on the map and the safety checks.
 
-**2 big stories** · **17 questions** · **simple English** · **AI-made cartoons** · **real Mars photos**
+**2 big stories** · **20 questions** · **simple English** · **AI-made cartoons** · **real Mars photos**
 
 > 🖍️ **This is the GitHub copy.** GitHub can't show the cartoon page itself. For the full design and the **English | کوردی** button, download [`Baramger-Like-Im-Five.html`](../Baramger-Like-Im-Five.html) and open it in a web browser.
 
@@ -40,6 +40,9 @@ First, two big stories: the NASA challenge and our app. Then seventeen easy answ
 - **15** · [Radio contact](#radio)
 - **16** · [Sun activity](#sun)
 - **17** · [Rock types, with real photos](#rocks)
+- **18** · [The pink part of the rover's track](#pinktrack)
+- **19** · [Why is the Habitat far from the tubes?](#habitatfar)
+- **20** · [Did the challenge pick the Habitat's spot?](#habitatrules)
 
 ---
 
@@ -555,6 +558,8 @@ This is the clever part. The app looked for a spot with two things:
 
 At first, the app picked just the flattest spot. But from there, hills blocked the radio for most of the walk: for **79 of the 90 minutes**, nobody could talk to home. So now the app picks a place that is **flat enough AND can "see"** as much of the path as possible.
 
+Why is it so far from the tubes in zone Z1? See [question 19](#habitatfar).
+
 > 📝 **One honest note**
 >
 > **There is no real house on Mars yet.** No person has ever been there. The Habitat in your app is **pretend**, a plan for the future. The project marks its spot as a guess to check later (assumption **A6**).
@@ -814,6 +819,122 @@ The rover's photos show the ground near each stop. The borders on the rock map c
 > 📱 **In your app**
 >
 > Open the **Layers** tab and tick **"Rock types"**. Then point at the map: the line at the bottom of the map names the rock type under your mouse.
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="pinktrack"></a>
+
+## 18. Why keep the pink part of the rover's track?
+
+<p align="center"><img src="img/en-pinktrack.svg" width="300" alt="Cartoon treasure map: a yellow dashed track on one page, a torn edge marked sol 1177, and a pink dashed track that goes on to stop 2 at a spotted rock, then to stops 3 and 4 (Made with AI)"></p>
+
+**Because the treasure is on the pink part.** Without it, the rover's track would stop before it reaches Cheyava Falls.
+
+First, what is "pink"? In the app, the rover's whole track is one dashed white line ([question 1](#lines)). We made a picture that lays our track on top of NASA's own route map, and in that picture we drew the track in two colours:
+
+- ■ **Yellow:** sols 1116 to 1177, the same days as NASA's map. NASA made that map in June 2024 (NASA image PIA26334, "Perseverance's Path to 'Bright Angel'").
+- ■ **Pink:** from sol 1178 on, the days **after** NASA's map: the visit to Cheyava Falls, then the drive out.
+
+### A treasure hunt
+
+Imagine a treasure hunt. The treasure is the spotted rock, Cheyava Falls ([question 5](#cheyava)).
+
+- NASA's map (and our yellow part) shows how the robot got **close** to the treasure.
+- The pink part shows what came **next**: the robot drove a little north, came back, **found the treasure** (sols 1210 to 1218, in July 2024), and then drove away past more rocks (sols 1231 and 1254).
+
+If we cut off the pink part, it is like tearing off the **last page** of a treasure map: the page with the X on it.
+
+### How the pink part helps with the challenge
+
+1. **The goal itself is there.** The challenge asks for "a route map that shows where the astronaut will travel to accomplish their scientific objectives". Stop 2, the Cheyava Falls rock, is only on the pink part.
+2. **Science along the way.** The challenge says people can "make connections", and it asks for "science along the way". Stops 3 and 4 are **different rocks**: "Jezero fan 2" and "Nili Planum 1", while Cheyava Falls is "Upper etched" (from the rock map, [question 17](#rocks)). The crew can compare them. That is the walk's second goal: "How do the rocks along the walk differ from Cheyava Falls?"
+3. **Photos, so you know what to expect.** The challenge asks for photos from Mars rovers "so the astronaut knows what to expect when they arrive". **11 of the 15 stop photos** in zone Z2 were taken on pink-part days. We find where each photo was taken by matching it to the rover's track on that day. No track, no place for the photo.
+4. **A well-explored place.** The challenge suggests a place a rover "has explored extensively". 35 of the 83 rover points in our zone are on the pink part.
+
+A bonus for safety: at its stops, the rover measured how tilted it was. We used those numbers (79 places, 33 of them on the pink part) to check our slope map ([question 12](#colours)).
+
+> 📝 **One honest note**
+>
+> **The challenge doesn't name a pink track.** It is our choice. It is simply how we meet the points above.
+>
+> **Pink is where the robot drove, not where the people walk.** The astronauts' path comes from the app's route finder, which keeps away from steep ground.
+>
+> **The short trip north (to sol 1182) has no stop.** It is on the map only because the rover really drove there.
+
+If the crew only wanted Cheyava Falls, stops 3 and 4 could be left out. But then the walk would do less comparing, and comparing is what the challenge says people are good at.
+
+> 📱 **In your app**
+>
+> The app draws the whole track as one dashed white line, not yellow and pink. Switch it on or off in the **Layers** tab: **"Perseverance path"**.
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="habitatfar"></a>
+
+## 19. Why is the Habitat so far from the tubes?
+
+<p align="center"><img src="img/en-habitatfar.svg" width="300" alt="Cartoon: three sample tubes inside a red dashed keep-away ring, a faint dashed house just outside it at 300 m with a green tick, and the real Habitat farther away at 527 m (Made with AI)"></p>
+
+**Two rules in our app put it there.** The first rule is a good idea. The second rule is a weak spot.
+
+In zone Z1 (Three Forks, [question 7](#threeforks)), the Habitat is **527 to 575 m** from the ten tubes. That is about five football fields in a row.
+
+### A tent in a field
+
+Imagine you go camping, and a treasure (the tubes) lies in the field.
+
+1. **Rule 1: "Don't put your tent on the treasure."** The Habitat must be at least **300 m** from every stop. A rocket that lands blows dust and little stones everywhere, like a giant leaf blower, and they could cover or hit the tubes. This really happened once: Apollo 12 landed near an old robot on the Moon (Surveyor 3), and the engine's blast sandblasted it.
+2. **Rule 2: "Pick the flattest spot where your walkie-talkie works everywhere."** The app looked for flat ground with a clear radio view of the whole walk ([question 15](#radio)). In Z1 it found **1,354 spots** with a perfect radio view. Then it picked the **flattest** one (0.8° tilt). It never asked: "Which one is closest?"
+
+So it is like a child who finds 1,354 good tent spots and picks the one with the smoothest grass, even though it is almost twice as far from the treasure.
+
+### The numbers
+
+- **Now:** the Habitat is 527 to 575 m from the tubes.
+- **Could be:** a spot only **300 m** away also has a perfect radio view. It is a tiny bit less flat (2.0° instead of 0.8°), but both count as level (5° or less).
+- **Saving:** about **230 m less walking each way**, so about 460 m less on every trip out and back. In a bulky spacesuit, every extra metre costs time and air.
+
+### Is zone Z2 the same?
+
+No. In zone Z2 (Bright Angel), no spot has a perfect radio view. The Habitat there (574 m from the nearest stop) has the best one: 90% of the walk. The closest allowed spot (about 300 m away) has only 80%. So in Z2, being farther away buys better radio. In Z1, the extra distance buys almost nothing.
+
+> 📝 **One honest note**
+>
+> **The 300 m rule is not written down anywhere** except in the app's code. It has no source and no assumption number yet. The project should list it as a guess to check later, like the Habitat's spot itself (assumption **A6**). We may also change the second rule, so the app picks the **closest** spot with a full radio view.
+
+How we checked: we ran the app's own choice again on the ground of Z1 and got the same spot (527 m), so the numbers match the app.
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="habitatrules"></a>
+
+## 20. Did the challenge pick the Habitat's spot?
+
+<p align="center"><img src="img/en-habitatrules.svg" width="300" alt="Cartoon: a clipboard with five numbered rules: two green ticks, two purple stars for our own ideas, and one empty red box for the rule we forgot, with an astronaut next to it (Made with AI)"></p>
+
+**Only partly.** The challenge never asks us to pick a spot for a house. That idea is ours (assumption A6). But each rule we used fits the challenge in a different way.
+
+### The five rules, one by one
+
+1. **A good radio view of the walk: from the challenge.** The challenge says "NASA's first priority is always astronaut safety". If the crew can always talk to the Habitat, they are safer. This is the strongest reason.
+2. **Flat ground (5° or less): partly from the challenge.** The challenge says to avoid "significant obstacles". A house needs level ground, but the challenge was talking about the walking route, not the house.
+3. **At least 300 m from every stop: our own idea.** A sensible guess (rocket dust could hit the tubes), but it is not from the challenge or from any NASA source we wrote down.
+4. **Among equal spots, the flattest wins: our own idea.** This is the rule that pushed the Habitat to 527 m in zone Z1 ([question 19](#habitatfar)).
+5. **How far the crew must walk: left out, but the challenge asks for it.** The challenge wants the crew to "complete their mission quickly and safely", and it asks how "carrying scientific equipment" changes how well they can move. Both point to a **shorter walk**. Our app does not look at distance when it picks the spot.
+
+### Like I'm five
+
+The challenge said: "Keep the explorers safe, and let them finish quickly, even with their bags." We listened to "safe" (the radio). Then we added two house rules of our own: "not too close" and "smoothest grass". And we forgot "finish quickly".
+
+> 💡 **Where the data comes from**
+>
+> The map itself is challenge data: the ground heights come from a **HiRISE** height map, one of the Mars Trek maps (**R1**). Only the rules for choosing the spot are ours.
 
 <sub>[↑ all questions](#toc)</sub>
 
