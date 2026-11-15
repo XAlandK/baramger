@@ -88,6 +88,7 @@ export async function tour() {
   }
   if ($(`#panel [data-base="${look}"]`)) await click(`#panel [data-base="${look}"]`);
   B.enterZone(location.hash.replace("#", "") || "z2");
+  await until(() => B.state.view === "site", 60000); // the zone waits for its height grids (loaded in the background)
   await sleep(300);
 
   // ---- plan: every tab and pop-up, before and after a route

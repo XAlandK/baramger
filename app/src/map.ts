@@ -326,10 +326,17 @@ export class MapView {
   private readonly tiling = new Cesium.GeographicTilingScheme({ ellipsoid: MARS });
   private readonly ghosts = new Map<string, Cesium.Primitive[]>();
 
+  /**
+   * The zone's height grids (1 m walk area, 20 m around it) are large downloads. The map starts
+   * without them (the whole planet needs no zone heights): until `setGrids()`, the ground is a
+   * flat `groundGuess` (m) everywhere, which looks the same from far away.
+   */
+  private walk: HeightGrid | null = null;
+  private context: HeightGrid | null = null;
+
   constructor(
     container: HTMLElement,
-    private readonly walk: HeightGrid,
-    private readonly context: HeightGrid,
+    private readonly groundGuess = 0,
   ) {
     Cesium.Ellipsoid.default = MARS;
     this.viewer = new Cesium.Viewer(container, {
@@ -428,9 +435,23 @@ export class MapView {
 
   /** Heights: 1 m HiRISE grid in the walk area, 20 m CTX grid around it (edges clamped beyond). */
   heightAt(lon: number, lat: number): number {
+    if (!this.walk || !this.context) return this.groundGuess; // the zone's grids are still loading
     return inside(this.walk.meta, lon, lat)
       ? bilinear(this.walk.meta, this.walk.h, lon, lat)
       : bilinear(this.context.meta, this.context.h, lon, lat);
+  }
+
+  /** The zone's height grids have arrived: the terrain is made again from them. */
+  setGrids(walk: HeightGrid, context: HeightGrid): void {
+    this.walk = walk;
+    this.context = context;
+    this.viewer.scene.terrainProvider = this.makeTerrain();
+    this.redraw();
+  }
+
+  /** Are the zone's height grids in (for tests)? */
+  hasGrids(): boolean {
+    return !!this.walk && !!this.context;
   }
 
   private makeTerrain(): Cesium.CustomHeightmapTerrainProvider {
@@ -1277,7 +1298,7 @@ export class MapView {
 
   /** The ground's height under a place: the map's height grids near the zone, the drawn globe elsewhere. */
   private groundHeight(lon: number, lat: number): number {
-    if (inside(this.context.meta, lon, lat)) return this.heightAt(lon, lat);
+    if (this.context && inside(this.context.meta, lon, lat)) return this.heightAt(lon, lat);
     const h = this.viewer.scene.globe.getHeight(Cesium.Cartographic.fromDegrees(lon, lat, 0));
     return h ?? 0;
   }

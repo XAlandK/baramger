@@ -87,10 +87,32 @@ export async function loadBinary<T extends Float32Array | Uint8Array>(
   url: string,
   Kind: { new (b: ArrayBuffer): T },
   expected: number,
+  onBytes?: (bytes: number) => void,
 ): Promise<T> {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`Could not load ${url} (${r.status})`);
-  const a = new Kind(await r.arrayBuffer());
+  let buf: ArrayBuffer;
+  if (onBytes && r.body) {
+    // read it piece by piece, to show how much has arrived (bytes after decompression)
+    const reader = r.body.getReader();
+    const parts: Uint8Array[] = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value);
+      got += value.length;
+      onBytes(value.length);
+    }
+    const all = new Uint8Array(got);
+    let at = 0;
+    for (const part of parts) {
+      all.set(part, at);
+      at += part.length;
+    }
+    buf = all.buffer;
+  } else buf = await r.arrayBuffer();
+  const a = new Kind(buf);
   if (a.length !== expected) throw new Error(`${url}: expected ${expected} values, got ${a.length}`);
   return a;
 }

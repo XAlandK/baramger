@@ -2734,7 +2734,7 @@ function readout(p: LonLat | null): void {
   }
   const lat = `${Math.abs(p.lat).toFixed(5)}° ${p.lat >= 0 ? "N" : "S"}`;
   const lon = `${p.lon.toFixed(5)}° E`;
-  if (!inside(grid.meta, p.lon, p.lat)) {
+  if (!grid || !inside(grid.meta, p.lon, p.lat)) { // the zone's grids may still be loading
     r.textContent = `${lat}, ${lon}`;
     return;
   }
@@ -2784,40 +2784,30 @@ async function loadPackage(): Promise<void> {
   rockKg = assumption(pkg, "A19", rockKg);
   state.startLoads = [];
 
-  text.textContent = "Loading the terrain…";
-  const [m2, m1, mc] = await Promise.all([
-    loadGridMeta(`${PKG}route/grid.json`),
-    loadGridMeta(`${PKG}terrain/height_1m.json`),
-    loadGridMeta(`${PKG}terrain/height_ctx_20m.json`),
-  ]);
-  const n2 = m2.width * m2.height;
-  const [h2, s2, r2, h1, hc] = await Promise.all([
-    loadBinary(`${PKG}route/height_2m.f32`, Float32Array, n2),
-    loadBinary(`${PKG}route/slope_2m.u8`, Uint8Array, n2),
-    loadBinary(`${PKG}route/rough_2m.u8`, Uint8Array, n2),
-    loadBinary(`${PKG}terrain/height_1m.f32`, Float32Array, m1.width * m1.height),
-    loadBinary(`${PKG}terrain/height_ctx_20m.f32`, Float32Array, mc.width * mc.height),
-  ]);
-  grid = { meta: m2, h: h2, slope: s2, rough: r2 };
-  const walk: HeightGrid = { meta: m1, h: h1 };
-  const ctx: HeightGrid = { meta: mc, h: hc };
-
+  // The zone's height and route grids (about 14 MB) are not loaded here: the whole planet does
+  // not need them. They come in the background once Mars is drawn (loadZoneGrids), and entering
+  // the zone waits for them (zoneReady).
   text.textContent = "Loading the rock map and conditions…";
-  const gj = await (await fetch(`${PKG}geology/units.geojson`)).json();
+  const wl = pkg.layers.find((l) => l.id === "weather-meda");
+  const sl = pkg.layers.find((l) => l.id === "space-weather-noaa");
+  const json = async (url: string) => (await fetch(url)).json();
+  const [gj, weatherJson, spaceJson] = await Promise.all([
+    json(`${PKG}geology/units.geojson`),
+    wl?.access.packagePath ? json(`${PKG}${wl.access.packagePath}`) : Promise.resolve(null),
+    sl?.access.packagePath ? json(`${PKG}${sl.access.packagePath}`) : Promise.resolve(null),
+  ]);
   units = gj.features.map((f: { geometry: { type: string; coordinates: number[][][] | number[][][][] }; properties: { symbol: string; name: string } }) => ({
     symbol: f.properties.symbol,
     name: f.properties.name,
     rings: f.geometry.type === "Polygon" ? [(f.geometry.coordinates as number[][][])[0]] : (f.geometry.coordinates as number[][][][]).map((p) => p[0]),
   }));
-  const wl = pkg.layers.find((l) => l.id === "weather-meda");
-  const sl = pkg.layers.find((l) => l.id === "space-weather-noaa");
-  if (wl?.access.packagePath) weather = (await (await fetch(`${PKG}${wl.access.packagePath}`)).json()) as Weather;
-  if (sl?.access.packagePath) space = (await (await fetch(`${PKG}${sl.access.packagePath}`)).json()) as SpaceWeather;
+  weather = weatherJson as Weather | null;
+  space = spaceJson as SpaceWeather | null;
 
   state.stops = pkg.stops.map(stopFromPackage);
 
   text.textContent = "Starting the 3D map…";
-  map = new MapView($("#map"), walk, ctx);
+  map = new MapView($("#map"), pkg.site.base.position.elev_m ?? -2500); // the zone's grids come later (setGrids)
   const tileLayers = pkg.layers.filter((l) => l.access.urlTemplate && l.id.startsWith("tiles-") && l.id !== "tiles-themis-night");
   for (const l of tileLayers) {
     const layer = map.addTiles(`${PKG}${l.access.urlTemplate}`, l.access.minLevel ?? 0, l.access.maxLevel ?? 0, l.coverage, l.attribution, 1, baseStyleOf(l.id) ?? "photo");
@@ -2851,8 +2841,75 @@ async function loadPackage(): Promise<void> {
     map.addOverlay("slope", `${PKG}${slope.access.packagePath}`, slope.coverage!, slope.attribution, 0.85, state.show.slope),
     map.addOverlay("geology", `${PKG}${geology.access.packagePath}`, geology.coverage!, geology.attribution, 0.75, state.show.geology),
   ]);
-  drawRover();
-  refreshMap();
+}
+
+// ------------------------------------------------------------------ the zone's grids (large, loaded in the background)
+let gridsPromise: Promise<void> | null = null;
+let gridsDone = false;
+const gridsProgress = { got: 0, total: 0 };
+
+/** Start loading the zone's height and route grids (once). Everything in the zone needs them; the whole planet does not. */
+function loadZoneGrids(): Promise<void> {
+  gridsPromise ??= (async () => {
+    const [m2, m1, mc] = await Promise.all([
+      loadGridMeta(`${PKG}route/grid.json`),
+      loadGridMeta(`${PKG}terrain/height_1m.json`),
+      loadGridMeta(`${PKG}terrain/height_ctx_20m.json`),
+    ]);
+    const n2 = m2.width * m2.height;
+    gridsProgress.total = n2 * (4 + 1 + 1) + m1.width * m1.height * 4 + mc.width * mc.height * 4;
+    const tick = (bytes: number) => {
+      gridsProgress.got += bytes;
+      showGridsProgress();
+    };
+    const [h2, s2, r2, h1, hc] = await Promise.all([
+      loadBinary(`${PKG}route/height_2m.f32`, Float32Array, n2, tick),
+      loadBinary(`${PKG}route/slope_2m.u8`, Uint8Array, n2, tick),
+      loadBinary(`${PKG}route/rough_2m.u8`, Uint8Array, n2, tick),
+      loadBinary(`${PKG}terrain/height_1m.f32`, Float32Array, m1.width * m1.height, tick),
+      loadBinary(`${PKG}terrain/height_ctx_20m.f32`, Float32Array, mc.width * mc.height, tick),
+    ]);
+    grid = { meta: m2, h: h2, slope: s2, rough: r2 };
+    const walk: HeightGrid = { meta: m1, h: h1 };
+    const ctx: HeightGrid = { meta: mc, h: hc };
+    map.setGrids(walk, ctx);
+    gridsDone = true;
+    drawRover(); // drawn at real heights now
+    refreshMap();
+  })();
+  gridsPromise.catch(() => { gridsPromise = null; }); // a failed download can be tried again
+  return gridsPromise;
+}
+
+/** The loading screen's line while the zone's grids come in. */
+function showGridsProgress(): void {
+  const box = document.getElementById("loading");
+  const text = document.getElementById("loading-text");
+  if (!box || !text || box.hidden) return;
+  const mb = (n: number) => (n / 1e6).toFixed(1);
+  text.textContent = gridsProgress.total
+    ? `Loading the walk zone's terrain… ${mb(Math.min(gridsProgress.got, gridsProgress.total))} of ${mb(gridsProgress.total)} MB`
+    : "Loading the walk zone's terrain…";
+}
+
+/** Wait for the zone's grids before anything that needs them, with the loading screen and its progress line. */
+async function zoneReady(): Promise<boolean> {
+  if (gridsDone) return true;
+  const box = $("#loading");
+  box.classList.remove("done", "failed");
+  box.hidden = false;
+  showGridsProgress();
+  try {
+    await loadZoneGrids();
+    box.classList.add("done");
+    setTimeout(() => { if (box.classList.contains("done")) box.hidden = true; }, 600);
+    return true;
+  } catch (e) {
+    $("#loading-text").textContent = `Could not load the walk zone: ${(e as Error).message}. Check the connection and open the zone again.`;
+    box.classList.add("failed");
+    setTimeout(() => { box.classList.add("done"); setTimeout(() => (box.hidden = true), 600); }, 4000);
+    return false;
+  }
 }
 
 // ------------------------------------------------------------------ whole planet <-> walk zone
@@ -2905,12 +2962,19 @@ function enterZone(key: string): void {
     location.reload();
     return;
   }
-  state.view = "site";
-  map.setCompare(state.compare, state.split);
-  positionHandle();
-  renderPanel();
-  map.flyToSite(pkg.site.center, 3);
+  if (entering) return;
+  entering = true;
+  void zoneReady().then((ok) => {
+    entering = false;
+    if (!ok || state.view === "site") return;
+    state.view = "site";
+    map.setCompare(state.compare, state.split);
+    positionHandle();
+    renderPanel();
+    map.flyToSite(pkg.site.center, 3);
+  });
 }
+let entering = false;
 
 function toGlobe(): void {
   walkUi.playing = false;
@@ -3159,6 +3223,17 @@ async function main(): Promise<void> {
     }
   });
   document.title = `Baramger · ${zone.name}`;
+  if (enterSite) {
+    // going straight into the zone (zone menu, or #z1 in the address): it needs its grids first
+    showGridsProgress();
+    try {
+      await loadZoneGrids();
+    } catch (e) {
+      $("#loading-text").textContent = `Could not load the walk zone: ${(e as Error).message}`;
+      $("#loading").classList.add("failed");
+      throw e;
+    }
+  }
   state.view = enterSite ? "site" : "globe";
   bindPanel();
   bindCtl();
@@ -3204,6 +3279,7 @@ async function main(): Promise<void> {
   // telescope, and without it the loading screen would open on an empty, black map.
   await map.whenDrawn();
   mapReady();
+  void loadZoneGrids().catch(() => {}); // in the background, while the planet is shown (entering a zone waits for it)
   $("#loading").classList.add("done");
   setTimeout(() => ($("#loading").hidden = true), 700);
   if (enterSite) setTimeout(() => map.flyToSite(pkg.site.center), 500);
