@@ -112,7 +112,7 @@ export function playIntro(root: HTMLElement, hooks: IntroHooks): IntroControl {
         <h1>From Earth to Mars</h1>
         <p>Tonight Mars is ${km} million km away. Its light needs ${light} minutes to reach this telescope.</p>
       </div>
-      <p class="intro-note">This first picture is a drawing. The Mars you fly to is NASA map data.</p>
+      <p class="intro-note"><span class="ai-tag">Made with AI</span> This first picture is a drawing made with AI (Claude Code). The Mars you fly to is NASA map data.</p>
     </div>
     <div class="scope" hidden></div>
     <p class="scope-text" hidden></p>
