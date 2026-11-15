@@ -38,7 +38,8 @@ SYMBOLS = {s["id"]: s for s in soup.find_all("symbol")}
 _b = io.BytesIO()
 instancer.instantiateVariableFont(TTFont(font_path), {"wght": 700}).save(_b)
 BOLD = _b.getvalue()
-NOTE = ("<!-- Cartoon drawing from docs/Baramger-Like-Im-Five.html (not map data). Text font: a subset of "
+NOTE = ("<!-- Cartoon drawing from docs/Baramger-Like-Im-Five.html (not map data), made with an AI assistant "
+        "(Claude, by Anthropic) and marked \"Made with AI\". Text font: a subset of "
         "Playpen Sans Arabic, Copyright 2023 The Playpen Sans Project Authors "
         "(https://github.com/TypeTogether/Playpen-Sans), SIL Open Font License 1.1. -->")
 
@@ -253,7 +254,8 @@ def page(pane: Tag, ku: bool) -> str:
     for fp in foot.find_all("p"):
         L += [f"<sub>{inline(fp, ku).strip()}</sub>", ""]
     if not ku:
-        L += ["<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of "
+        L += ["<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page with an AI assistant (Claude, by Anthropic), "
+              "and carries a \"Made with AI\" mark. Text in the drawings uses a subset of "
               "Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 5, 6, 7 and 17; "
               "their credits are under each photo.</sub>", ""]
     if ku:

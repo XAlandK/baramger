@@ -138,6 +138,39 @@ The full source ledger, with what was checked and when, is in [`data/sources.reg
 
 NASA does not endorse this project.
 
+### Software, fonts, pictures and methods
+
+Everything else the project uses, with its license. Open-source code is used as published, through npm and PyPI.
+
+| Kind | What | License / credit |
+|---|---|---|
+| Map engine | [CesiumJS](https://cesium.com/platform/cesiumjs/) 1.146 | Apache-2.0, Cesium GS, Inc. |
+| App tools | [Vite](https://vite.dev/) 8, [TypeScript](https://www.typescriptlang.org/) 6, [Vitest](https://vitest.dev/) 5, [jsdom](https://github.com/jsdom/jsdom) 29 | MIT; TypeScript Apache-2.0 |
+| Optional deploy tool | [Wrangler](https://developers.cloudflare.com/workers/wrangler/) 4 (Cloudflare) | MIT or Apache-2.0 |
+| Data pipeline (Python 3.12) | [NumPy](https://numpy.org/), [SciPy](https://scipy.org/), [rasterio](https://rasterio.readthedocs.io/) with [GDAL](https://gdal.org/), [pyogrio](https://pyogrio.readthedocs.io/), [Shapely](https://shapely.readthedocs.io/) with GEOS, [pyproj](https://pyproj4.github.io/pyproj/) with PROJ, [Pillow](https://python-pillow.org/), [jsonschema](https://python-jsonschema.readthedocs.io/), [pytest](https://pytest.org/), [hatchling](https://hatch.pypa.io/), [uv](https://docs.astral.sh/uv/) | BSD-3-Clause, MIT, Apache-2.0, LGPL (GEOS) and HPND (Pillow), as each project publishes |
+| App fonts | Inter (Rasmus Andersson), Barlow Semi Condensed (Jeremy Tribby), IBM Plex Mono (IBM), through [Fontsource](https://fontsource.org/) | SIL Open Font License 1.1 |
+| Fonts of the "like I'm five" page | [Playpen Sans Arabic](https://github.com/TypeTogether/Playpen-Sans) (The Playpen Sans Project Authors) and [Vazirmatn](https://github.com/rastikerdar/vazirmatn) (Saber Rastikerdar), embedded as subsets | SIL Open Font License 1.1 |
+| Fonts of the other HTML pages | Inter, Barlow Semi Condensed, IBM Plex Mono, IBM Plex Sans, loaded from [Google Fonts](https://fonts.google.com/) | SIL Open Font License 1.1 |
+| Photos in the "like I'm five" page | Perseverance raw images (sols 653, 670, 1159, 1210) and [PIA26368](https://science.nasa.gov/resource/perseverance-finds-a-rock-with-leopard-spots/) ("leopard spots"); a HiRISE view via Mars Trek | NASA/JPL-Caltech; NASA/JPL-Caltech/ASU (Mastcam-Z); NASA/JPL-Caltech/University of Arizona (HiRISE) |
+| The leopard photo in that page | ["Leopard (Panthera pardus pardus) Kruger 2"](https://commons.wikimedia.org/wiki/File:Leopard_(Panthera_pardus_pardus)_Kruger_2.jpg), cropped twice (whole animal, fur close-up) | Charles J. Sharp, Sharp Photography, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons. Only an illustration, not map data |
+| Sunrise, sunset, Mars time | Mars24 Sunclock equations (Allison & McEwen 2000) | NASA Goddard Institute for Space Studies |
+| Earth–Mars signal delay | "Approximate Positions of the Major Planets" (E. M. Standish) | NASA/JPL Solar System Dynamics |
+| Walking speed on slopes | Tobler's hiking function (Tobler 1993), scaled to a suited astronaut's speed on flat ground (A3) | Published method |
+| Suit and body mass for the carried load | NASA JSC, "Mars Spacesuit Mass Requirements", ICES-2026-127 (NTRS 20260005410) | NASA planning values (A15–A21) |
+| Route search | A* search on the 2 m grid (Hart, Nilsson and Raphael 1968) | Published method |
+| Hosting and checks | [Vercel](https://vercel.com/) (the live site), [GitHub](https://github.com/) and GitHub Actions (tests on every push) | Services |
+| Tools used while building | [Claude Code](https://claude.com/claude-code) (Anthropic), see "Use of AI" below; MCP servers [`nasa`](https://www.npmjs.com/package/@programcomputer/nasa-mcp-server), `pds` (NASA PDS Registry API) and [`gdal-mcp`](https://pypi.org/project/gdal-mcp/) 1.1.3, used to look up and check data. Their answers were checked against the official sources | Tools, not shipped with the app |
+
+## Use of AI
+
+The NASA Space Apps rules ask every team to say where and how AI tools ("Super Intelligence", SI) were used. This is our answer.
+
+- **The tool.** We built Baramger with [Claude Code](https://claude.com/claude-code), an AI coding assistant made by Anthropic. No AI image or video generator was used.
+- **What the AI did.** It wrote most of the code (the web app, the Python data pipeline and their tests) and the project documents, following our requests, and it checked data sources against the project's rules. It also wrote the "like I'm five" page and its Kurdish (Sorani) translation, and drew every cartoon and diagram in this repository as SVG code. It cropped and resized the photos we chose.
+- **What the team did.** The team chose the challenge and made the project's decisions: the place (Jezero crater), the two walk zones, what to build and in which order, which extra data sources to allow, and the rules for that data. These decisions are recorded in [`docs/PLAN.md`](docs/PLAN.md) and [`CLAUDE.md`](CLAUDE.md). The team tested the app and asked for changes.
+- **No AI-made data.** Every map, measurement, rover position and photo comes from NASA, USGS or NOAA (sources above). The AI did not make up any data: values that are not measured are called starting values (A1–A22) and are listed on screen.
+- **How AI-made work is marked.** The pictures drawn with AI carry a visible **"Made with AI"** mark: the cartoons and diagrams in `docs/`, and the night sky at the start of the app. The app's small interface drawings (the outlines in the scale card, map markers and icons) were also drawn as code with AI; they are named here instead of each carrying a mark. Code and text written with AI are marked in their metadata: each commit made with the assistant names it in a `Co-Authored-By` line, and the HTML pages carry an `ai-assistance` meta tag.
+
 ## How it works
 
 1. **Pipeline** (`pipeline/`) builds one offline **mission package** per zone in `data/package/`: terrain grids, a 2 m routing grid with slope and roughness, no-go areas (steeper than 25°), rock types, map tiles, rover photos and positions, weather, daylight and sun activity. Every download is recorded with its URL and time, and with a sha256 where the file is kept (map tiles are listed per layer). The package is checked against [`schema/marswalk.schema.json`](schema/marswalk.schema.json).
@@ -178,7 +211,7 @@ docs/like-im-five/  GitHub copy of the "like I'm five" page (English + Sorani Ma
 CLAUDE.md    project brief for Claude Code
 ```
 
-More detail: [`docs/PLAN.md`](docs/PLAN.md) (analysis, decisions, findings), [`docs/Baramger-Report.html`](docs/Baramger-Report.html) (full report), [`docs/Baramger-Summary.html`](docs/Baramger-Summary.html) (short summary for everyone), and [`docs/Baramger-User-Scenario.html`](docs/Baramger-User-Scenario.html) (the story of two walks, told from the user's side).
+More detail: [`docs/PLAN.md`](docs/PLAN.md) (analysis, decisions, findings), [`docs/Baramger-Report.html`](docs/Baramger-Report.html) (full report), [`docs/Baramger-Summary.html`](docs/Baramger-Summary.html) (short summary for everyone), and [`docs/Baramger-User-Scenario.html`](docs/Baramger-User-Scenario.html) (the story of two walks, told from the user's side). These three pages were written on 14 November 2026, before the later rounds of work, so some screens and details in them are older than the app. The live app and this README show the current version.
 
 ## License
 

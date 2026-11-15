@@ -1,6 +1,6 @@
 <p align="center"><b>English</b> · <a href="README.ckb.md">کوردی</a></p>
 
-<p align="center"><img src="img/hero.svg" width="360" alt="Cartoon of a smiling Mars with its two little moons and a waving astronaut"></p>
+<p align="center"><img src="img/hero.svg" width="360" alt="Cartoon of a smiling Mars with its two little moons and a waving astronaut (Made with AI)"></p>
 
 # Mars, like I'm five
 
@@ -8,7 +8,7 @@
 
 First, two big stories: the NASA challenge and our app. Then seventeen easy answers about the Baramger map: the robot, the rocks, the crew, the house on Mars, the colours on the map and the safety checks.
 
-**2 big stories** · **17 questions** · **simple English** · **cartoon drawings** · **real Mars photos**
+**2 big stories** · **17 questions** · **simple English** · **AI-made cartoons** · **real Mars photos**
 
 > 🖍️ **This is the GitHub copy.** GitHub can't show the cartoon page itself. For the full design and the **English | کوردی** button, download [`Baramger-Like-Im-Five.html`](../Baramger-Like-Im-Five.html) and open it in a web browser.
 
@@ -47,7 +47,7 @@ First, two big stories: the NASA challenge and our app. Then seventeen easy answ
 
 ## A. What is the NASA challenge?
 
-<p align="center"><img src="img/en-challenge.svg" width="300" alt="Cartoon: four see-through map sheets stacked like stickers, labelled photo, rock, heat and height, with a walking path on the top sheet"></p>
+<p align="center"><img src="img/en-challenge.svg" width="300" alt="Cartoon: four see-through map sheets stacked like stickers, labelled photo, rock, heat and height, with a walking path on the top sheet (Made with AI)"></p>
 
 One day, people will walk on Mars. NASA asks: **"Can you make the map they will need?"**
 
@@ -105,7 +105,7 @@ NASA also gives five "helpers": places full of information.
 
 ## B. What is our app, Baramger?
 
-<p align="center"><img src="img/en-app.svg" width="300" alt="Cartoon: a tablet showing a Mars map with the house H, three numbered stops, a red steep hill, and a green path that goes around the hill"></p>
+<p align="center"><img src="img/en-app.svg" width="300" alt="Cartoon: a tablet showing a Mars map with the house H, three numbered stops, a red steep hill, and a green path that goes around the hill (Made with AI)"></p>
 
 **Baramger is a helper app for astronauts on Mars.**
 
@@ -184,7 +184,7 @@ From **real NASA data**, mostly the five helpers from [story A](#challenge): spa
 
 ## 1. What are those dashed white lines?
 
-<p align="center"><img src="img/en-lines.svg" width="300" alt="Cartoon: a white dashed track across brown ground, ending at a little rover"></p>
+<p align="center"><img src="img/en-lines.svg" width="300" alt="Cartoon: a white dashed track across brown ground, ending at a little rover (Made with AI)"></p>
 
 The dashed white line is **the path the Perseverance rover really drove**.
 
@@ -203,7 +203,7 @@ Think of it like footprints in the sand. The rover is a robot car on Mars. It dr
 
 ## 2. What is Perseverance?
 
-<p align="center"><img src="img/en-perseverance.svg" width="300" alt="Cartoon: a smiling six-wheeled rover saying beep"></p>
+<p align="center"><img src="img/en-perseverance.svg" width="300" alt="Cartoon: a smiling six-wheeled rover saying beep (Made with AI)"></p>
 
 **Perseverance is a robot car that NASA sent to Mars.**
 
@@ -232,7 +232,7 @@ Think of it like footprints in the sand. The rover is a robot car on Mars. It dr
 
 ## 3. A robot is already there. Why do we need this challenge?
 
-<p align="center"><img src="img/en-why.svg" width="300" alt="Cartoon: Earth sends a slow signal to a waiting rover, while an astronaut looks at a rock with a magnifying glass"></p>
+<p align="center"><img src="img/en-why.svg" width="300" alt="Cartoon: Earth sends a slow signal to a waiting rover, while an astronaut looks at a rock with a magnifying glass (Made with AI)"></p>
 
 The robot is great, but it is **slow**.
 
@@ -252,7 +252,7 @@ People are not robots. They need air to breathe, they get tired, they carry heav
 
 ## 4. What is meant by "crew" in the project?
 
-<p align="center"><img src="img/en-crew.svg" width="300" alt="Cartoon: two astronauts holding hands under a heart"></p>
+<p align="center"><img src="img/en-crew.svg" width="300" alt="Cartoon: two astronauts holding hands under a heart (Made with AI)"></p>
 
 **The crew is the team of astronauts going on the walk.**
 
@@ -268,7 +268,7 @@ They live in the **Habitat**, the "H" on the map. It is their little house on Ma
 
 ## 5. What is Cheyava Falls?
 
-<p align="center"><img src="img/en-cheyava.svg" width="300" alt="Cartoon: an arrowhead-shaped red rock with leopard spots, seen through a magnifying glass"></p>
+<p align="center"><img src="img/en-cheyava.svg" width="300" alt="Cartoon: an arrowhead-shaped red rock with leopard spots, seen through a magnifying glass (Made with AI)"></p>
 
 **Cheyava Falls is a special rock on Mars.**
 
@@ -318,7 +318,7 @@ A **leopard** is a big wild cat. It lives in Africa and Asia. Its yellow fur is 
 
 ## 6. What are the robot's little rock tubes?
 
-<p align="center"><img src="img/en-tubes.svg" width="300" alt="Cartoon: a jar with a shell inside, an equals sign, and a metal tube with a piece of rock inside"></p>
+<p align="center"><img src="img/en-tubes.svg" width="300" alt="Cartoon: a jar with a shell inside, an equals sign, and a metal tube with a piece of rock inside (Made with AI)"></p>
 
 ### The robot collects rocks, like you collect shells at the beach
 
@@ -362,7 +362,7 @@ So the plan is: **keep the rocks in the tubes now, and fly them to Earth one day
 
 ## 7. What is Three Forks?
 
-<p align="center"><img src="img/en-threeforks.svg" width="300" alt="Cartoon treasure map: ten little tubes in a zig-zag line joined by a dashed path"></p>
+<p align="center"><img src="img/en-threeforks.svg" width="300" alt="Cartoon treasure map: ten little tubes in a zig-zag line joined by a dashed path (Made with AI)"></p>
 
 **Three Forks is a place on Mars where the robot left a "treasure box" on the ground.**
 
@@ -406,7 +406,7 @@ The robot spread them apart so that if one spot has a problem (like dust coverin
 
 ## 8. What is Bright Angel?
 
-<p align="center"><img src="img/en-brightangel.svg" width="300" alt="Cartoon park map: a dry river valley, a corner of bright pale rocks with sparkles, and a sign saying Bright Angel"></p>
+<p align="center"><img src="img/en-brightangel.svg" width="300" alt="Cartoon park map: a dry river valley, a corner of bright pale rocks with sparkles, and a sign saying Bright Angel (Made with AI)"></p>
 
 **Bright Angel is a small area on Mars, inside the big Jezero crater.**
 
@@ -442,7 +442,7 @@ Think of a big park. Jezero crater is the **whole park**. Bright Angel is **one 
 
 ## 9. What is Jezero crater?
 
-<p align="center"><img src="img/en-jezero.svg" width="300" alt="Cartoon: a space rock flying toward a round crater that holds an old lake, with a river and a fan of mud"></p>
+<p align="center"><img src="img/en-jezero.svg" width="300" alt="Cartoon: a space rock flying toward a round crater that holds an old lake, with a river and a fan of mud (Made with AI)"></p>
 
 **Jezero crater is a giant round hole on Mars, shaped like a bowl.**
 
@@ -485,7 +485,7 @@ It is named after a small town on Earth, in a country called Bosnia and Herzegov
 
 ## 10. What is a sol?
 
-<p align="center"><img src="img/en-sol.svg" width="300" alt="Cartoon: the Sun shining on a smiling, spinning Mars, with a label saying one sol is about 24 hours 40 minutes"></p>
+<p align="center"><img src="img/en-sol.svg" width="300" alt="Cartoon: the Sun shining on a smiling, spinning Mars, with a label saying one sol is about 24 hours 40 minutes (Made with AI)"></p>
 
 **A sol is one day on Mars.**
 
@@ -527,7 +527,7 @@ So **"sol 1159"** means "the robot's **1159th day** on Mars". That is a bit more
 
 ## 11. What is the Habitat?
 
-<p align="center"><img src="img/en-habitat.svg" width="300" alt="Cartoon: a dome house with an H on the door and an antenna sending radio waves to an astronaut on a hill"></p>
+<p align="center"><img src="img/en-habitat.svg" width="300" alt="Cartoon: a dome house with an H on the door and an antenna sending radio waves to an astronaut on a hill (Made with AI)"></p>
 
 **The Habitat is the astronauts' house on Mars.** On your map, it is the circle with the letter **"H"**.
 
@@ -567,7 +567,7 @@ At first, the app picked just the flattest spot. But from there, hills blocked t
 
 ## 12. What are the red and yellow areas?
 
-<p align="center"><img src="img/en-colours.svg" width="300" alt="Cartoon: a traffic light next to a hill that is grey on flat ground, yellow where it gets steep and red where it is very steep"></p>
+<p align="center"><img src="img/en-colours.svg" width="300" alt="Cartoon: a traffic light next to a hill that is grey on flat ground, yellow where it gets steep and red where it is very steep (Made with AI)"></p>
 
 **They show where the ground is steep, like the side of a hill.** On your map, this layer is called **"Steep ground"**.
 
@@ -623,7 +623,7 @@ To make sure the map tells the truth, the project compared it with the **robot's
 
 ## 13. What does "Suggest order" do?
 
-<p align="center"><img src="img/en-order.svg" width="300" alt="Cartoon: a house with an H and four numbered stops joined by a short dashed loop, an astronaut walking on it, and a bird flying in a straight line"></p>
+<p align="center"><img src="img/en-order.svg" width="300" alt="Cartoon: a house with an H and four numbered stops joined by a short dashed loop, an astronaut walking on it, and a bird flying in a straight line (Made with AI)"></p>
 
 Imagine you live in a house, and you want to visit four friends today, then come back home.
 
@@ -652,7 +652,7 @@ And **you are still the boss**: if you don't like the order, you can move the st
 
 ## 14. What is "Time and reserve"?
 
-<p align="center"><img src="img/en-reserve.svg" width="300" alt="Cartoon: a time battery for the 6-hour walk, mostly green for walking, with a yellow part kept as the reserve"></p>
+<p align="center"><img src="img/en-reserve.svg" width="300" alt="Cartoon: a time battery for the 6-hour walk, mostly green for walking, with a yellow part kept as the reserve (Made with AI)"></p>
 
 **"Time and reserve" checks that the walk is not too long, and that some time is always left over.**
 
@@ -690,7 +690,7 @@ The app also tells the crew the **latest time to leave the last stop** and still
 
 ## 15. What is "Radio contact with the habitat"?
 
-<p align="center"><img src="img/en-radio.svg" width="300" alt="Cartoon: radio waves go in a straight line from the Habitat antenna to one astronaut, but a hill blocks them for a second astronaut behind it"></p>
+<p align="center"><img src="img/en-radio.svg" width="300" alt="Cartoon: radio waves go in a straight line from the Habitat antenna to one astronaut, but a hill blocks them for a second astronaut behind it (Made with AI)"></p>
 
 **It checks that the astronauts can always talk to the Habitat by radio.**
 
@@ -724,7 +724,7 @@ The Habitat was put on flat ground where it can "see" as much of the walk as pos
 
 ## 16. What is "Sun activity"?
 
-<p align="center"><img src="img/en-sun.svg" width="300" alt="Cartoon: the Sun throws tiny particles into space; a satellite near Earth counts them, and Mars is farther away"></p>
+<p align="center"><img src="img/en-sun.svg" width="300" alt="Cartoon: the Sun throws tiny particles into space; a satellite near Earth counts them, and Mars is farther away (Made with AI)"></p>
 
 **It checks if the Sun is having a storm.**
 
@@ -757,7 +757,7 @@ On Earth, our thick air and our planet's invisible magnetic shield stop most of 
 
 ## 17. What are the rock types?
 
-<p align="center"><img src="img/en-rocks.svg" width="300" alt="Cartoon: a map coloured in patches for different kinds of ground, with a magnifying glass looking at a rock"></p>
+<p align="center"><img src="img/en-rocks.svg" width="300" alt="Cartoon: a map coloured in patches for different kinds of ground, with a magnifying glass looking at a rock (Made with AI)"></p>
 
 **A rock-type map is like a colouring map of the ground.** Each colour shows a different kind of ground.
 
@@ -821,8 +821,8 @@ The rover's photos show the ground near each stop. The borders on the rock map c
 
 <p align="center"><img src="img/rover.svg" width="90" alt="rover"></p>
 
-<sub>**All drawings on this page are cartoons made for this report.** They are not photos and not map data. **The photos in answers 5, 6, 7 and 17 are real:** the leopard-spots photo (answer 5), the two sample-tube photos (answers 6 and 7) and four of the five in answer 17 are from the Perseverance rover (NASA/JPL-Caltech; the Mastcam-Z one is NASA/JPL-Caltech/ASU), and one is from the HiRISE camera in orbit (NASA/JPL-Caltech/University of Arizona, via Mars Trek). The leopard and its fur in answer 5 are one photo of a real leopard on Earth by Charles J. Sharp (CC BY-SA 4.0, via Wikimedia Commons), shown only to compare the spots: it is not NASA's and not map data.<br>The real data in the app comes from NASA, JPL, USGS and NOAA: Mars Trek (R1), the USGS geologic map SIM 3464 (R2), Perseverance raw images (R5), the rover positions (S1), NASA DONKI space weather (S3), the rover's weather station (S4) and NOAA GOES Sun data (S7).</sub>
+<sub>**All drawings on this page are cartoons made with an AI assistant (Claude, by Anthropic) for this report, and each one carries a small "Made with AI" mark.** They are not photos and not map data. The text and its Kurdish translation were also written with help from that AI assistant. **The photos in answers 5, 6, 7 and 17 are real:** the leopard-spots photo (answer 5), the two sample-tube photos (answers 6 and 7) and four of the five in answer 17 are from the Perseverance rover (NASA/JPL-Caltech; the Mastcam-Z one is NASA/JPL-Caltech/ASU), and one is from the HiRISE camera in orbit (NASA/JPL-Caltech/University of Arizona, via Mars Trek). The leopard and its fur in answer 5 are one photo of a real leopard on Earth by Charles J. Sharp (CC BY-SA 4.0, via Wikimedia Commons), shown only to compare the spots: it is not NASA's and not map data.<br>The real data in the app comes from NASA, JPL, USGS and NOAA: Mars Trek (R1), the USGS geologic map SIM 3464 (R2), Perseverance raw images (R5), the rover positions (S1), NASA DONKI space weather (S3), the rover's weather station (S4) and NOAA GOES Sun data (S7).</sub>
 
 <sub>Baramger · Marswalk planner · answers first written in chat on 14 and 15 November 2026.</sub>
 
-<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 5, 6, 7 and 17; their credits are under each photo.</sub>
+<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page with an AI assistant (Claude, by Anthropic), and carries a "Made with AI" mark. Text in the drawings uses a subset of Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 5, 6, 7 and 17; their credits are under each photo.</sub>

@@ -12,7 +12,7 @@
 - Review fixes, the gear-load feature (A15–A21) and **UI round 2** (2026-11-14): launch animation, whole-Mars globe with the zones marked, no-scroll screens (tabs, pop-ups, pages), place names that stay on the map, stops the crew can rename, and a walk screen where nothing flickers or moves. Details: `docs/PLAN.md` ("UI round 2").
 - **Map round 3** (2026-11-14): an optional natural-colour planet (Viking mosaic), a sharp photo map of the whole crater, ten official place names (from R2), and the scale card on the map. Details: `docs/PLAN.md` ("Map round 3"). Screenshots: `docs/screens/`.
 - **Round 4** (2026-11-15): 3D crew figures (NASA's Z2 Spacesuit model, extra source S9, real size, 1 to 4 astronauts), pole arrows on the whole-planet map, a "Controls" box on the map (view buttons; walk play, time, speed, follow A1–A4), the camera can come down to eye height (it was held at 25 m), and five more Like-I'm-Five answers with real photos. Details: `docs/PLAN.md` ("Round 4").
-Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baramger-Report.html` (the three HTML docs still describe the screens before UI round 2).
+Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baramger-Report.html` (the three HTML docs were written before UI round 2; a note at the top of each says so).
 
 ## How to run
 - Build a mission package: `cd pipeline && uv run baramger-build --zone z2` (or `--zone z1`).
@@ -30,6 +30,13 @@ Full analysis and plan: `docs/PLAN.md`. Human-readable report: `docs/Baramger-Re
 ## Working with the user
 - The user writes in **Kurdish (Sorani)** and has asked for replies in **simple, easy English**. Use Sorani only if they ask for it again. Keep code, file names, and project docs in **English** (hackathon deliverable).
 - When something is surprising, risky, or ambiguous, **flag it** clearly. Don't silently pick.
+
+## NASA Space Apps submission rules (2026, from "Judging & Awards" and the Project Submission Guide)
+- Deadline: **Sunday 15 November 2026, 11:59 p.m. local time** of the team's Local Event. Everything on the submission page and in linked materials must be **in English**.
+- Demo: at most **7 slides** (title and intro included) or a video of **30 seconds or less** (English subtitles if spoken in another language). Over the limit = not eligible for Global Judging. Slides must show the project, the user experience, how NASA data makes it work, the team name, the members and the challenge.
+- Links must be public with no login (the live site is https://baramger.vercel.app).
+- References must list **every** outside resource, including code, fonts and images: README "Software, fonts, pictures and methods". No copyrighted material without permission. Nothing showing persons under 18.
+- **AI use ("Super Intelligence"):** README "Use of AI" says what the AI did and what the team decided. AI must not be used to come up with the idea. AI-made **images need a visible watermark**: every drawing in `docs/` carries a "Made with AI" pill below it (`g.ai-mark`, the viewBox is made taller for it) and the docs pages have `<meta name="ai-assistance">`. **Add the mark to every new drawing.** AI-made code and text: say so in text and metadata (commit `Co-Authored-By` lines). AI-made content must not contain NASA logos, flags or mission identifiers.
 
 ## HARD RULE — use the five challenge resources
 Every feature must trace back to the resources in `TheChallenge.txt`. Source IDs:

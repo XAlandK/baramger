@@ -1,5 +1,6 @@
 <title>Baramger Marswalk Plan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="ai-assistance" content="Written with the help of Claude (Anthropic), an AI assistant: text, code and drawings. Drawings made with AI carry a visible Made with AI mark. Data and photos are from NASA, USGS and NOAA.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
@@ -240,6 +241,7 @@ footer p { max-width: none; }
     <header>
       <p class="eyebrow">NASA challenge · Interplanetary Survival Guide: Martian Map</p>
       <h1>Baramger: a Marswalk planner for Jezero crater</h1>
+    <p class="older-note" style="margin:12px 0 0;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--accent-soft);color:var(--fg);font-size:0.92rem;line-height:1.45"><b>Written on 14 November 2026</b>, before the later rounds of work. Some screens and details on this page are older than the app. The <a href="https://baramger.vercel.app">live app</a> and the project README show the current version.</p>
       <p class="lead">Baramger is a map that helps two astronauts plan a walk on Mars, stay safe on the way, and do real science at each stop. This page explains the challenge, checks every data source we were given, lists the problems we found, and sets out the plan. The app is now built and tested in two walk zones.</p>
       <dl class="facts">
         <div><dt>Site</dt><dd>Jezero crater<small>Zones Z2 and Z1</small></dd></div>
@@ -516,7 +518,7 @@ footer p { max-width: none; }
       <p class="section-kicker">Smallest detail each layer can show, on a log scale</p>
       <figure>
         <div class="fig-box">
-          <svg viewBox="0 0 720 326" role="img" aria-labelledby="scale-title scale-desc">
+          <svg viewBox="0 0 720 349.5" role="img" aria-labelledby="scale-title scale-desc">
             <title id="scale-title">Detail level of each map layer</title>
             <desc id="scale-desc">Dot chart on a log scale from 10 cm to 100 km. Only the HiRISE image (25 cm) and HiRISE terrain model (1 m) fall inside the walk-ready zone of 1 m or better.</desc>
             <rect class="band" x="200" y="30" width="83.3" height="240" rx="3"/>
@@ -571,7 +573,7 @@ footer p { max-width: none; }
               <text x="700" y="294">100 km</text>
             </g>
             <text x="450" y="318" font-size="12" text-anchor="middle" class="t-muted" style="fill: var(--muted)">Smallest visible detail (log scale)</text>
-          </svg>
+          <g class="ai-mark"><rect x="641.0" y="329.9" width="77.0" height="18.1" rx="9.1" fill="#FFFFFF" fill-opacity="0.92" stroke="#13202A" stroke-width="1" style="fill:#FFFFFF;fill-opacity:0.92;stroke:#13202A;stroke-width:1"/><text x="679.5" y="342.6" text-anchor="middle" font-size="11.0" font-weight="700" fill="#13202A" style="fill:#13202A;font-size:11.0px;font-weight:700;letter-spacing:0">Made with AI</text></g></svg>
         </div>
         <figcaption>For the two geologic maps, detail is estimated as 1 mm on the printed map (1:75,000 gives about 75 m; 1:20,000,000 gives about 20 km). TES is about 3 km per pixel. A boulder that could trip a suited astronaut is about 1 m across, so only the two HiRISE layers can show it.</figcaption>
       </figure>
@@ -589,7 +591,7 @@ footer p { max-width: none; }
       <h3>Where: Jezero crater</h3>
       <figure>
         <div class="fig-box">
-          <svg viewBox="0 0 720 300" role="img" aria-labelledby="map-title map-desc">
+          <svg viewBox="0 0 720 323.5" role="img" aria-labelledby="map-title map-desc">
             <title id="map-title">Jezero and Gale craters on Mars</title>
             <desc id="map-desc">Simple map from 60 to 150 degrees east and 15 south to 30 north. Jezero crater, where Perseverance works, is at 18.4 north 77.4 east. Gale crater, where Curiosity works, is at 4.6 south 137.4 east. They are about 3,750 km apart.</desc>
             <g class="grid">
@@ -612,7 +614,7 @@ footer p { max-width: none; }
             <circle class="site-b" cx="604.8" cy="219.9" r="8"/>
             <text x="590" y="244" font-size="14" font-weight="600" text-anchor="end">Gale crater</text>
             <text x="590" y="260" font-size="12" text-anchor="end" style="fill: var(--muted)">Curiosity · R3 route map · boxwork example</text>
-          </svg>
+          <g class="ai-mark"><rect x="641.0" y="303.9" width="77.0" height="18.1" rx="9.1" fill="#FFFFFF" fill-opacity="0.92" stroke="#13202A" stroke-width="1" style="fill:#FFFFFF;fill-opacity:0.92;stroke:#13202A;stroke-width:1"/><text x="679.5" y="316.6" text-anchor="middle" font-size="11.0" font-weight="700" fill="#13202A" style="fill:#13202A;font-size:11.0px;font-weight:700;letter-spacing:0">Made with AI</text></g></svg>
         </div>
         <figcaption>Simple equirectangular sketch, not to the exact scale of the planet's curve. Distance measured along the surface on the Mars sphere.</figcaption>
       </figure>
@@ -849,6 +851,7 @@ footer p { max-width: none; }
 
     <footer>
       <p>Baramger · plan and build report · data checked and app tested 14 November 2026. Images and data: NASA/JPL-Caltech, University of Arizona, MSSS, Arizona State University, USGS. NASA does not endorse this project.</p>
+      <p>Written with the help of an AI assistant (Claude, by Anthropic). Drawings made with AI carry a "Made with AI" mark.</p>
     </footer>
   </main>
 </div>

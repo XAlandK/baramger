@@ -2,7 +2,7 @@
 
 <p align="center"><a href="README.md">English</a> · <b>کوردی</b></p>
 
-<p align="center"><img src="img/hero.svg" width="360" alt="کارتۆنی Mars ـێکی پێکەنیناوی لەگەڵ دوو مانگە بچکۆلەکەی و astronaut ێک کە دەست ڕادەوەشێنێت"></p>
+<p align="center"><img src="img/hero.svg" width="360" alt="کارتۆنی Mars ـێکی پێکەنیناوی لەگەڵ دوو مانگە بچکۆلەکەی و astronaut ێک کە دەست ڕادەوەشێنێت (Made with AI)"></p>
 
 # <bdi>Mars</bdi>، بۆ منداڵی پێنج ساڵان
 
@@ -10,7 +10,7 @@
 
 سەرەتا، دوو چیرۆکی گەورە: ئاڵنگارییەکەی <bdi>NASA</bdi> و ئەپەکەمان. پاشان حەڤدە وەڵامی ئاسان دەربارەی نەخشەی بارامگەڕ: ڕۆبۆتەکە، بەردەکان، <bdi>crew</bdi>، ماڵەکەی سەر <bdi>Mars</bdi>، ڕەنگەکانی سەر نەخشەکە و پشکنینەکانی سەلامەتی.
 
-<b>2 چیرۆکی گەورە</b> · <b>17 پرسیار</b> · <b>کوردیی ئاسان</b> · <b>وێنەی کارتۆنی</b> · <b>وێنەی ڕاستەقینەی <bdi>Mars</bdi></b>
+<b>2 چیرۆکی گەورە</b> · <b>17 پرسیار</b> · <b>کوردیی ئاسان</b> · <b>کارتۆنی دروستکراو بە AI</b> · <b>وێنەی ڕاستەقینەی <bdi>Mars</bdi></b>
 
 وشە زانستییەکان و ناوەکانی ناو ئەپەکە بە ئینگلیزی ماونەتەوە، هەروەک لە ئەپەکەدا دەیانبینیت.
 
@@ -51,7 +51,7 @@
 
 ## A. ئاڵنگارییەکەی <bdi>NASA</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-challenge.svg" width="300" alt="کارتۆن: چوار پەڕەی نەخشەی ڕوون وەک ستیکەر لەسەر یەک دانراون، ناویان وێنە، بەرد، گەرمی و بەرزییە، و ڕێگایەکی پیاسە لەسەر پەڕەی سەرەوەیە"></p>
+<p align="center"><img src="img/ckb-challenge.svg" width="300" alt="کارتۆن: چوار پەڕەی نەخشەی ڕوون وەک ستیکەر لەسەر یەک دانراون، ناویان وێنە، بەرد، گەرمی و بەرزییە، و ڕێگایەکی پیاسە لەسەر پەڕەی سەرەوەیە (Made with AI)"></p>
 
 ڕۆژێک خەڵک لەسەر <bdi>Mars</bdi> پیاسە دەکەن. <bdi>NASA</bdi> دەپرسێت: <b>«دەتوانن ئەو نەخشەیە دروست بکەن کە پێویستیانە؟»</b>
 
@@ -109,7 +109,7 @@
 
 ## B. ئەپەکەمان (بارامگەڕ) چییە؟
 
-<p align="center"><img src="img/ckb-app.svg" width="300" alt="کارتۆن: تابلێتێک نەخشەیەکی Mars پیشان دەدات لەگەڵ ماڵی H، سێ وێستگەی ژمارەدار، گردێکی لێژی سوور، و ڕێگایەکی سەوز کە بە دەوری گردەکەدا دەسوڕێتەوە"></p>
+<p align="center"><img src="img/ckb-app.svg" width="300" alt="کارتۆن: تابلێتێک نەخشەیەکی Mars پیشان دەدات لەگەڵ ماڵی H، سێ وێستگەی ژمارەدار، گردێکی لێژی سوور، و ڕێگایەکی سەوز کە بە دەوری گردەکەدا دەسوڕێتەوە (Made with AI)"></p>
 
 <b>بارامگەڕ ئەپێکی یاریدەدەرە بۆ <bdi>astronaut</bdi>ەکان لەسەر <bdi>Mars</bdi>.</b>
 
@@ -188,7 +188,7 @@
 
 ## 1. ئەو هێڵە سپییە پچڕپچڕانە چین؟
 
-<p align="center"><img src="img/ckb-lines.svg" width="300" alt="کارتۆن: شوێنی تایەی سپیی پچڕپچڕ بەسەر زەوییەکی قاوەییدا، کە بە rover ێکی بچکۆلە کۆتایی دێت"></p>
+<p align="center"><img src="img/ckb-lines.svg" width="300" alt="کارتۆن: شوێنی تایەی سپیی پچڕپچڕ بەسەر زەوییەکی قاوەییدا، کە بە rover ێکی بچکۆلە کۆتایی دێت (Made with AI)"></p>
 
 هێڵە سپییە پچڕپچڕەکە <b>ئەو ڕێگایەیە کە <bdi>Perseverance rover</bdi> بە ڕاستی پێیدا ڕۆیشتووە</b>.
 
@@ -207,7 +207,7 @@
 
 ## 2. <bdi>Perseverance</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-perseverance.svg" width="300" alt="کارتۆن: rover ێکی شەش تایەی پێکەنیناوی کە دەڵێت بیپ"></p>
+<p align="center"><img src="img/ckb-perseverance.svg" width="300" alt="کارتۆن: rover ێکی شەش تایەی پێکەنیناوی کە دەڵێت بیپ (Made with AI)"></p>
 
 <b><bdi>Perseverance</bdi> ئۆتۆمبێلێکی ڕۆبۆتییە کە <bdi>NASA</bdi> ناردوویەتی بۆ <bdi>Mars</bdi>.</b>
 
@@ -236,7 +236,7 @@
 
 ## 3. ڕۆبۆتێک پێشتر لەوێیە. ئیتر بۆچی ئەم ئاڵنگارییە پێویستە؟
 
-<p align="center"><img src="img/ckb-why.svg" width="300" alt="کارتۆن: زەوی نامەیەکی هێواش بۆ rover ێکی چاوەڕوان دەنێرێت، و astronaut ێک بە زەرەبین سەیری بەردێک دەکات"></p>
+<p align="center"><img src="img/ckb-why.svg" width="300" alt="کارتۆن: زەوی نامەیەکی هێواش بۆ rover ێکی چاوەڕوان دەنێرێت، و astronaut ێک بە زەرەبین سەیری بەردێک دەکات (Made with AI)"></p>
 
 ڕۆبۆتەکە زۆر باشە، بەڵام <b>هێواشە</b>.
 
@@ -256,7 +256,7 @@
 
 ## 4. مەبەست لە <bdi>crew</bdi> لەم پرۆژەیەدا چییە؟
 
-<p align="center"><img src="img/ckb-crew.svg" width="300" alt="کارتۆن: دوو astronaut دەستی یەکتریان گرتووە و دڵێک لە سەروویانەوەیە"></p>
+<p align="center"><img src="img/ckb-crew.svg" width="300" alt="کارتۆن: دوو astronaut دەستی یەکتریان گرتووە و دڵێک لە سەروویانەوەیە (Made with AI)"></p>
 
 <b><bdi>crew</bdi> واتە تیمی ئەو <bdi>astronaut</bdi>انەی دەچن بۆ پیاسەکە.</b>
 
@@ -272,7 +272,7 @@
 
 ## 5. <bdi>Cheyava Falls</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-cheyava.svg" width="300" alt="کارتۆن: بەردێکی سووری وەک سەری تیر بە پەڵەی پڵنگئاسا، لە ژێر زەرەبینێکدا"></p>
+<p align="center"><img src="img/ckb-cheyava.svg" width="300" alt="کارتۆن: بەردێکی سووری وەک سەری تیر بە پەڵەی پڵنگئاسا، لە ژێر زەرەبینێکدا (Made with AI)"></p>
 
 <b><bdi>Cheyava Falls</bdi> بەردێکی تایبەتە لەسەر <bdi>Mars</bdi>.</b>
 
@@ -322,7 +322,7 @@
 
 ## 6. لوولە بەردییە بچکۆلەکانی ڕۆبۆتەکە چین؟
 
-<p align="center"><img src="img/ckb-tubes.svg" width="300" alt="کارتۆن: شووشەیەک سەدەفێکی تێدایە، نیشانەی یەکسان، و لوولەیەکی کانزایی پارچە بەردێکی تێدایە"></p>
+<p align="center"><img src="img/ckb-tubes.svg" width="300" alt="کارتۆن: شووشەیەک سەدەفێکی تێدایە، نیشانەی یەکسان، و لوولەیەکی کانزایی پارچە بەردێکی تێدایە (Made with AI)"></p>
 
 بە ئینگلیزی پێیان دەڵێن <b><bdi>sample tubes</bdi></b>.
 
@@ -368,7 +368,7 @@
 
 ## 7. <bdi>Three Forks</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-threeforks.svg" width="300" alt="کارتۆنی نەخشەی گەنجینە: دە لوولەی بچکۆلە لە هێڵێکی زیگزاگیدا کە بە ڕێگایەکی پچڕپچڕ بەیەکەوە بەستراون"></p>
+<p align="center"><img src="img/ckb-threeforks.svg" width="300" alt="کارتۆنی نەخشەی گەنجینە: دە لوولەی بچکۆلە لە هێڵێکی زیگزاگیدا کە بە ڕێگایەکی پچڕپچڕ بەیەکەوە بەستراون (Made with AI)"></p>
 
 <b><bdi>Three Forks</bdi> شوێنێکە لەسەر <bdi>Mars</bdi> کە ڕۆبۆتەکە «سندووقێکی گەنجینە»ی تێدا لەسەر زەوی جێهێشتووە.</b>
 
@@ -412,7 +412,7 @@
 
 ## 8. <bdi>Bright Angel</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-brightangel.svg" width="300" alt="کارتۆنی نەخشەی پارک: دۆڵێکی وشکی ڕووبار، گۆشەیەک بە بەردی کاڵ و درەوشاوە، و تابلۆیەک کە لەسەری نووسراوە Bright Angel"></p>
+<p align="center"><img src="img/ckb-brightangel.svg" width="300" alt="کارتۆنی نەخشەی پارک: دۆڵێکی وشکی ڕووبار، گۆشەیەک بە بەردی کاڵ و درەوشاوە، و تابلۆیەک کە لەسەری نووسراوە Bright Angel (Made with AI)"></p>
 
 <b><bdi>Bright Angel</bdi> ناوچەیەکی بچووکە لەسەر <bdi>Mars</bdi>، لەناو <bdi>Jezero crater</bdi>ی گەورەدا.</b>
 
@@ -448,7 +448,7 @@
 
 ## 9. <bdi>Jezero crater</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-jezero.svg" width="300" alt="کارتۆن: بەردێک لە بۆشایی ئاسمانەوە بەرەو چاڵێکی خڕ دێت کە دەریاچەیەکی کۆنی تێدایە، لەگەڵ ڕووبارێک و بادەوەشێنێکی قوڕ"></p>
+<p align="center"><img src="img/ckb-jezero.svg" width="300" alt="کارتۆن: بەردێک لە بۆشایی ئاسمانەوە بەرەو چاڵێکی خڕ دێت کە دەریاچەیەکی کۆنی تێدایە، لەگەڵ ڕووبارێک و بادەوەشێنێکی قوڕ (Made with AI)"></p>
 
 <b><bdi>Jezero crater</bdi> چاڵێکی خڕی زەبەلاحە لەسەر <bdi>Mars</bdi>، شێوەی وەک کاسە وایە.</b>
 
@@ -491,7 +491,7 @@
 
 ## 10. <bdi>sol</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-sol.svg" width="300" alt="کارتۆن: خۆر لە Mars ـێکی پێکەنیناوی دەدات کە بە دەوری خۆیدا دەسوڕێتەوە، و نووسراوە یەک sol نزیکەی 24 کاتژمێر و 40 خولەکە"></p>
+<p align="center"><img src="img/ckb-sol.svg" width="300" alt="کارتۆن: خۆر لە Mars ـێکی پێکەنیناوی دەدات کە بە دەوری خۆیدا دەسوڕێتەوە، و نووسراوە یەک sol نزیکەی 24 کاتژمێر و 40 خولەکە (Made with AI)"></p>
 
 <b><bdi>sol</bdi> واتە یەک ڕۆژ لەسەر <bdi>Mars</bdi>.</b>
 
@@ -533,7 +533,7 @@
 
 ## 11. <bdi>Habitat</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-habitat.svg" width="300" alt="کارتۆن: ماڵێکی گومبەزی کە H لەسەر دەرگاکەیەتی و ئەنتێنێک شەپۆلی ڕادیۆ بۆ astronaut ێک لەسەر گردێک دەنێرێت"></p>
+<p align="center"><img src="img/ckb-habitat.svg" width="300" alt="کارتۆن: ماڵێکی گومبەزی کە H لەسەر دەرگاکەیەتی و ئەنتێنێک شەپۆلی ڕادیۆ بۆ astronaut ێک لەسەر گردێک دەنێرێت (Made with AI)"></p>
 
 <b><bdi>Habitat</bdi> ماڵی <bdi>astronaut</bdi>ەکانە لەسەر <bdi>Mars</bdi>.</b> لەسەر نەخشەکەت، ئەو بازنەیەیە کە پیتی <b>«<bdi>H</bdi>»</b>ی تێدایە.
 
@@ -573,7 +573,7 @@
 
 ## 12. ناوچە سوور و زەردەکان چین؟
 
-<p align="center"><img src="img/ckb-colours.svg" width="300" alt="کارتۆن: گڵۆپی هاتوچۆ لە تەنیشت گردێک کە لەسەر زەویی تەخت خۆڵەمێشییە، لە شوێنی لێژ زەردە و لە شوێنی زۆر لێژ سوورە"></p>
+<p align="center"><img src="img/ckb-colours.svg" width="300" alt="کارتۆن: گڵۆپی هاتوچۆ لە تەنیشت گردێک کە لەسەر زەویی تەخت خۆڵەمێشییە، لە شوێنی لێژ زەردە و لە شوێنی زۆر لێژ سوورە (Made with AI)"></p>
 
 <b>پیشانی دەدەن زەوی لە کوێ لێژە، وەک لای گردێک.</b> لەسەر نەخشەکەت، ناوی ئەم <bdi>layer</bdi>ـە <b>«<bdi>Steep ground</bdi>»</b>ـە.
 
@@ -629,7 +629,7 @@
 
 ## 13. «<bdi>Suggest order</bdi>» چی دەکات؟
 
-<p align="center"><img src="img/ckb-order.svg" width="300" alt="کارتۆن: ماڵێک بە پیتی H و چوار وێستگەی ژمارەدار کە بە ئەڵقەیەکی کورتی پچڕپچڕ پێکەوە بەستراون، astronaut ێک بە سەریدا دەڕوات، و باڵندەیەک بە هێڵی ڕاست دەفڕێت"></p>
+<p align="center"><img src="img/ckb-order.svg" width="300" alt="کارتۆن: ماڵێک بە پیتی H و چوار وێستگەی ژمارەدار کە بە ئەڵقەیەکی کورتی پچڕپچڕ پێکەوە بەستراون، astronaut ێک بە سەریدا دەڕوات، و باڵندەیەک بە هێڵی ڕاست دەفڕێت (Made with AI)"></p>
 
 وا دابنێ لە ماڵێکدا دەژیت، و ئەمڕۆ دەتەوێت سەردانی چوار هاوڕێت بکەیت، پاشان بگەڕێیتەوە ماڵەوە.
 
@@ -658,7 +658,7 @@
 
 ## 14. «کات و یەدەگ» چییە؟
 
-<p align="center"><img src="img/ckb-reserve.svg" width="300" alt="کارتۆن: پاترییەکی کات بۆ پیاسەی 6 کاتژمێری، زۆربەی سەوزە بۆ پیاسە، و بەشێکی زەرد وەک یەدەگ هەڵگیراوە"></p>
+<p align="center"><img src="img/ckb-reserve.svg" width="300" alt="کارتۆن: پاترییەکی کات بۆ پیاسەی 6 کاتژمێری، زۆربەی سەوزە بۆ پیاسە، و بەشێکی زەرد وەک یەدەگ هەڵگیراوە (Made with AI)"></p>
 
 <b>«<bdi>Time and reserve</bdi>» دەپشکنێت کە پیاسەکە زۆر درێژ نەبێت، و هەمیشە هەندێک کات بمێنێتەوە.</b>
 
@@ -696,7 +696,7 @@
 
 ## 15. پەیوەندیی ڕادیۆیی لەگەڵ <bdi>Habitat</bdi> چییە؟
 
-<p align="center"><img src="img/ckb-radio.svg" width="300" alt="کارتۆن: شەپۆلی ڕادیۆ بە هێڵێکی ڕاست لە ئەنتێنی Habitat ەوە دەگاتە astronaut ێک، بەڵام گردێک ڕێگری لێ دەکات بۆ astronaut ێکی تر کە لە پشتییەوەیە"></p>
+<p align="center"><img src="img/ckb-radio.svg" width="300" alt="کارتۆن: شەپۆلی ڕادیۆ بە هێڵێکی ڕاست لە ئەنتێنی Habitat ەوە دەگاتە astronaut ێک، بەڵام گردێک ڕێگری لێ دەکات بۆ astronaut ێکی تر کە لە پشتییەوەیە (Made with AI)"></p>
 
 <b>«<bdi>Radio contact with the habitat</bdi>» دەپشکنێت کە <bdi>astronaut</bdi>ەکان هەمیشە بتوانن بە ڕادیۆ قسە لەگەڵ <bdi>Habitat</bdi> بکەن.</b>
 
@@ -730,7 +730,7 @@
 
 ## 16. «<bdi>Sun activity</bdi>» چییە؟
 
-<p align="center"><img src="img/ckb-sun.svg" width="300" alt="کارتۆن: خۆر پارچەی زۆر بچووک دەهاوێژێتە بۆشایی ئاسمان؛ مانگێکی دەستکرد لە نزیک زەوی دەیانژمێرێت، و Mars دوورترە"></p>
+<p align="center"><img src="img/ckb-sun.svg" width="300" alt="کارتۆن: خۆر پارچەی زۆر بچووک دەهاوێژێتە بۆشایی ئاسمان؛ مانگێکی دەستکرد لە نزیک زەوی دەیانژمێرێت، و Mars دوورترە (Made with AI)"></p>
 
 <b>دەپشکنێت ئایا خۆر زریانی هەیە.</b>
 
@@ -763,7 +763,7 @@
 
 ## 17. جۆرەکانی بەرد چین؟
 
-<p align="center"><img src="img/ckb-rocks.svg" width="300" alt="کارتۆن: نەخشەیەک کە بە پارچەی ڕەنگاوڕەنگ بۆ جۆرە جیاوازەکانی زەوی ڕەنگ کراوە، لەگەڵ زەرەبینێک کە سەیری بەردێک دەکات"></p>
+<p align="center"><img src="img/ckb-rocks.svg" width="300" alt="کارتۆن: نەخشەیەک کە بە پارچەی ڕەنگاوڕەنگ بۆ جۆرە جیاوازەکانی زەوی ڕەنگ کراوە، لەگەڵ زەرەبینێک کە سەیری بەردێک دەکات (Made with AI)"></p>
 
 <b>نەخشەی جۆری بەرد وەک نەخشەیەکی ڕەنگکردنی زەوی وایە.</b> هەر ڕەنگێک جۆرێکی جیاوازی زەوی پیشان دەدات.
 
@@ -827,7 +827,7 @@
 
 <p align="center"><img src="img/rover.svg" width="90" alt="rover"></p>
 
-<sub><b>هەموو وێنە کێشراوەکانی ئەم پەڕەیە کارتۆنن و بۆ ئەم ڕاپۆرتە کێشراون.</b> وێنەی ڕاستەقینە و داتای نەخشە نین. <b>وێنەکانی وەڵامەکانی 5 و 6 و 7 و 17 ڕاستەقینەن:</b> وێنەی پەڵە پڵنگئاساکان (وەڵامی 5)، دوو وێنەکەی لوولەکان (وەڵامی 6 و 7) و چوار لە پێنج وێنەکەی وەڵامی 17 هی ڕۆبۆتی <bdi>Perseverance</bdi>ن (<bdi>NASA/JPL-Caltech</bdi>؛ ئەوەی <bdi>Mastcam-Z</bdi> هی <bdi>NASA/JPL-Caltech/ASU</bdi>ـە)، و یەکێکیان هی کامێرای <bdi>HiRISE</bdi>ـە لە خولگەی دەوری <bdi>Mars</bdi>دا (<bdi>NASA/JPL-Caltech/University of Arizona</bdi>، <bdi>via Mars Trek</bdi>). پڵنگەکە و مووەکەی لە وەڵامی 5دا یەک وێنەی پڵنگێکی ڕاستەقینەی سەر زەوین، هی <bdi>Charles J. Sharp</bdi> (<bdi>CC BY-SA 4.0</bdi>، <bdi>via Wikimedia Commons</bdi>)، تەنها بۆ بەراوردکردنی پەڵەکان دانراون: هی <bdi>NASA</bdi> نین و داتای نەخشە نین.<br>داتا ڕاستەقینەکانی ناو ئەپەکە هی <bdi>NASA</bdi> و <bdi>JPL</bdi> و <bdi>USGS</bdi> و <bdi>NOAA</bdi>ن: <bdi>Mars Trek (R1)</bdi>، <bdi>USGS geologic map SIM 3464 (R2)</bdi>، <bdi>Perseverance raw images (R5)</bdi>، شوێنەکانی <bdi>rover</bdi> (<bdi>S1</bdi>)، کەشوهەوای بۆشایی ئاسمانی <bdi>NASA DONKI</bdi> (<bdi>S3</bdi>)، وێستگەی کەشوهەوای <bdi>rover</bdi> (<bdi>S4</bdi>) و داتای خۆری <bdi>NOAA GOES</bdi> (<bdi>S7</bdi>).</sub>
+<sub><b>هەموو وێنە کێشراوەکانی ئەم پەڕەیە کارتۆنن و بە یارمەتیی یاریدەدەرێکی AI (<bdi>Claude</bdi>، هی <bdi>Anthropic</bdi>) بۆ ئەم ڕاپۆرتە کێشراون، و هەر یەکەیان نیشانەیەکی بچووکی <bdi>Made with AI</bdi>ی لەسەرە.</b> وێنەی ڕاستەقینە و داتای نەخشە نین. دەقەکان و وەرگێڕانە کوردییەکەش بە یارمەتیی هەمان یاریدەدەری AI نووسراون. <b>وێنەکانی وەڵامەکانی 5 و 6 و 7 و 17 ڕاستەقینەن:</b> وێنەی پەڵە پڵنگئاساکان (وەڵامی 5)، دوو وێنەکەی لوولەکان (وەڵامی 6 و 7) و چوار لە پێنج وێنەکەی وەڵامی 17 هی ڕۆبۆتی <bdi>Perseverance</bdi>ن (<bdi>NASA/JPL-Caltech</bdi>؛ ئەوەی <bdi>Mastcam-Z</bdi> هی <bdi>NASA/JPL-Caltech/ASU</bdi>ـە)، و یەکێکیان هی کامێرای <bdi>HiRISE</bdi>ـە لە خولگەی دەوری <bdi>Mars</bdi>دا (<bdi>NASA/JPL-Caltech/University of Arizona</bdi>، <bdi>via Mars Trek</bdi>). پڵنگەکە و مووەکەی لە وەڵامی 5دا یەک وێنەی پڵنگێکی ڕاستەقینەی سەر زەوین، هی <bdi>Charles J. Sharp</bdi> (<bdi>CC BY-SA 4.0</bdi>، <bdi>via Wikimedia Commons</bdi>)، تەنها بۆ بەراوردکردنی پەڵەکان دانراون: هی <bdi>NASA</bdi> نین و داتای نەخشە نین.<br>داتا ڕاستەقینەکانی ناو ئەپەکە هی <bdi>NASA</bdi> و <bdi>JPL</bdi> و <bdi>USGS</bdi> و <bdi>NOAA</bdi>ن: <bdi>Mars Trek (R1)</bdi>، <bdi>USGS geologic map SIM 3464 (R2)</bdi>، <bdi>Perseverance raw images (R5)</bdi>، شوێنەکانی <bdi>rover</bdi> (<bdi>S1</bdi>)، کەشوهەوای بۆشایی ئاسمانی <bdi>NASA DONKI</bdi> (<bdi>S3</bdi>)، وێستگەی کەشوهەوای <bdi>rover</bdi> (<bdi>S4</bdi>) و داتای خۆری <bdi>NOAA GOES</bdi> (<bdi>S7</bdi>).</sub>
 
 <sub>فۆنتەکان: <bdi>Playpen Sans Arabic</bdi> و <bdi>Vazirmatn</bdi>، بە مۆڵەتی <bdi>SIL Open Font License 1.1</bdi>.</sub>
 
