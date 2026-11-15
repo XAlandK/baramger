@@ -2932,14 +2932,13 @@ const INTRO_FAR_M = 220_000_000; // from here Mars is a small disc in the eyepie
 function showApp(): void {
   if (!document.body.classList.contains("intro-on")) return;
   slide(() => document.body.classList.remove("intro-on"));
-  map.setPoles(state.view === "globe");
+  map?.setPoles(state.view === "globe"); // the animation starts before the map exists (main): never call it unguarded here
 }
 
 /** Launch animation: a telescope on Earth finds Mars, then the view flies to the planet. */
 function runIntro(ready: Promise<void>): Promise<void> {
   return new Promise((resolve) => {
-    document.body.classList.add("intro-on");
-    map.setPoles(false);
+    document.body.classList.add("intro-on"); // renderChip() keeps the pole arrows off while this is on
     const lt = earthMarsLightTime(new Date());
     intro = playIntro($("#intro"), {
       ready,

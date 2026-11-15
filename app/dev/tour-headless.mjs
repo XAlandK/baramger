@@ -2,6 +2,9 @@
 // Usage (dev server running on :5173, or set BARAMGER_URL=http://localhost:<port>/; macOS Chrome):
 //   node app/dev/tour-headless.mjs <empty profile folder> <z1|z2> 1280x800 1024x560 800x725 ...
 // It prints one line per window size: {size, zone, out: {views, bad}}; bad must be [].
+// First it loads the app once WITH the launch animation (as a visitor does) and prints
+// {startup: "ok" | problem, ms, errors}: the animation must end with the panel shown, without
+// any script error. (The tour itself skips the animation with ?nointro.) STARTUP_ONLY=1 stops after that check.
 // Headless: it never touches the Browser pane or your own Chrome profile.
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -28,8 +31,10 @@ const ws = new WebSocket(await target());
 await new Promise((r) => ws.addEventListener("open", r, { once: true }));
 let id = 0;
 const waiting = new Map();
+const pageErrors = [];
 ws.addEventListener("message", (ev) => {
   const msg = JSON.parse(ev.data);
+  if (msg.method === "Runtime.exceptionThrown") pageErrors.push(msg.params.exceptionDetails.exception?.description?.split("\n")[0] ?? msg.params.exceptionDetails.text);
   if (msg.id && waiting.has(msg.id)) {
     waiting.get(msg.id)(msg);
     waiting.delete(msg.id);
@@ -47,6 +52,35 @@ const evaluate = async (expression, timeout = 240000) => {
 };
 
 await send("Runtime.enable");
+const base = process.env.BARAMGER_URL ?? "http://localhost:5173/";
+{
+  // a visitor's first load: with the launch animation (skipped with the button after a few seconds)
+  const [w0, h0] = (sizes[0] ?? "1280x800").split("x").map(Number);
+  await send("Emulation.setDeviceMetricsOverride", { width: w0, height: h0, deviceScaleFactor: 1, mobile: false });
+  pageErrors.length = 0;
+  const t0 = Date.now();
+  await send("Page.navigate", { url: `${base}?h=${Date.now()}#${zone}` });
+  let state = "";
+  for (let i = 0; i < 120; i++) {
+    await sleep(500);
+    state = await evaluate(`(() => {
+      const b = document.body;
+      if (!b) return "no body";
+      if (b.classList.contains("intro-on")) {
+        if (performance.now() > 8000) document.querySelector("#intro button")?.click(); // "Skip intro"
+        return "animation";
+      }
+      return document.querySelector("#panel")?.children.length && !document.querySelector("#map-title").hidden ? "ok" : "no panel";
+    })()`).catch(() => "error");
+    if (state === "ok") break;
+  }
+  console.log(JSON.stringify({ startup: state, ms: Date.now() - t0, errors: [...pageErrors] }));
+}
+if (process.env.STARTUP_ONLY) {
+  ws.close();
+  chrome.kill();
+  process.exit(0);
+}
 const results = [];
 let n = 0;
 for (const size of sizes) {
