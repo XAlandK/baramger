@@ -9,11 +9,19 @@ import { fmtClock } from "./plan";
 export { LIMITS, MESSAGES };
 export type { AskAnswer, AskResponse, Fact, SourceRef } from "../worker/api";
 
+/** The Worker on Cloudflare (deployed 2026-11-15); it accepts calls from the live Vercel site (ALLOWED_ORIGINS). */
+export const WORKER_URL = "https://baramger.baramger-app.workers.dev/api/chat";
+
 /**
- * Where the assistant lives. Same site on Cloudflare: "/api/chat". The site on Vercel is built with
- * VITE_ASK_API set to the Cloudflare Worker's address (the Worker allows that origin).
+ * Where the assistant lives: VITE_ASK_API when the build sets it; the Worker's address on the live Vercel site;
+ * otherwise "/api/chat" on the same site (the Cloudflare copy, or `npm run dev` with its proxy to `wrangler dev`).
  */
-export const ASK_URL: string = (import.meta.env.VITE_ASK_API as string | undefined) || "/api/chat";
+export function askUrl(host: string, configured?: string): string {
+  if (configured) return configured;
+  return host === "baramger.vercel.app" ? WORKER_URL : "/api/chat";
+}
+
+export const ASK_URL: string = askUrl(typeof location === "undefined" ? "" : location.hostname, import.meta.env.VITE_ASK_API as string | undefined);
 
 export interface ContextStop {
   id: string;

@@ -120,7 +120,9 @@ npx wrangler secret put MISTRAL_API_KEY
 npx wrangler secret put CEREBRAS_API_KEY
 ```
 
-Any subset works: a provider without a key is skipped. **On Vercel**, set the environment variable `VITE_ASK_API` to the Worker's address plus `/api/chat` (for example `https://baramger.<your-subdomain>.workers.dev/api/chat`) and build again; the Worker accepts calls from `https://baramger.vercel.app` (`ALLOWED_ORIGINS` in `app/wrangler.jsonc`). The Cloudflare copy of the site needs nothing: it calls `/api/chat` on its own address.
+Any subset works: a provider without a key is skipped.
+
+**Where it runs (deployed 2026-11-15):** the Worker is at `https://baramger.baramger-app.workers.dev` (a full copy of the site is there too). The live site on Vercel calls it at that address (`WORKER_URL` in `app/src/ask.ts`; the build setting `VITE_ASK_API` overrides it), and the Worker accepts calls from `https://baramger.vercel.app` (`ALLOWED_ORIGINS` in `app/wrangler.jsonc`). Vercel preview addresses are not on that list, so the Ask tab there says the assistant isn't available. The GitHub workflow deploys the Worker only when the two Cloudflare secrets are set; until then, run `npm run deploy` from `app/` after changing the Worker.
 
 ## Rebuild a mission package (optional)
 

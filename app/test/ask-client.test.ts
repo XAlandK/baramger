@@ -1,6 +1,6 @@
 // The browser side of the assistant: the plan it sends, and the agreed messages when there is no answer.
 import { describe, expect, it } from "vitest";
-import { MESSAGES, askAssistant, planContext } from "../src/ask";
+import { MESSAGES, WORKER_URL, askAssistant, askUrl, planContext } from "../src/ask";
 import type { PlanResult } from "../src/plan";
 
 const sample = (lon: number, lat: number, d: number, t: number, radio: boolean) => ({ lon, lat, h: -2350, slope: 3, d, t, radio });
@@ -57,6 +57,16 @@ describe("planContext", () => {
 
   it("never sends crew notes (the stops carry no note field)", () => {
     expect(JSON.stringify(planContext(input()))).not.toMatch(/note/i);
+  });
+});
+
+describe("askUrl", () => {
+  it("the live Vercel site calls the Worker on Cloudflare; other sites their own /api/chat; VITE_ASK_API wins", () => {
+    expect(askUrl("baramger.vercel.app")).toBe(WORKER_URL);
+    expect(WORKER_URL).toMatch(/^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/chat$/);
+    expect(askUrl("baramger.baramger-app.workers.dev")).toBe("/api/chat");
+    expect(askUrl("localhost")).toBe("/api/chat");
+    expect(askUrl("baramger.vercel.app", "https://other.example/api/chat")).toBe("https://other.example/api/chat");
   });
 });
 
