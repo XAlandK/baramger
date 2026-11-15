@@ -222,7 +222,7 @@ Some facts we checked along the way:
 
 - Mars is drawn on the **Mars 2000 sphere** (radius 3,396,190 m). CesiumJS's built-in `Ellipsoid.MARS` is flattened and would shift latitudes by about 12 km at Jezero.
 - The slope map agrees with the rover's own tilt sensor: **1.9° mean error** at 79 rover positions (Z2) and **1.3°** at 124 (Z1).
-- Sunrise and sunset use the NASA GISS Mars24 equations, within 0.6 minutes of the rover's own times.
+- Sunrise and sunset use the NASA GISS Mars24 equations, within 0.6 minutes of the times on NASA's Perseverance weather page.
 - Earth–Mars signal delay uses JPL's approximate planet elements, checked against astropy to 0.0001 AU.
 
 ## Limits and open assumptions
