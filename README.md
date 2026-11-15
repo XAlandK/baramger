@@ -56,6 +56,12 @@ The app opens on the whole planet. Click a marked zone on the map or press **Ope
 
 **About the Z1 tube positions:** NASA publishes the exact tube spots only as a picture ([PIA25682](https://www.jpl.nasa.gov/images/pia25682-perseverances-three-forks-sample-depot-map/)), not as data. Each depot stop is where Perseverance parked while it dropped a tube, so the tube should lie within a few metres. The app says this on screen (assumption A14, to verify).
 
+### Why Jezero, and can Baramger map other places?
+
+- **The challenge asks for one place, and the team picks it.** It asks for "a layered, integrated view of a location or route on the Martian surface" ([`TheChallenge.txt`, line 3](TheChallenge.txt#L3)). No crater is required: Mount Sharp in Gale crater ([line 10](TheChallenge.txt#L10)) is only an example. A tool that "generates maps of different locations" is one of three options ([line 18](TheChallenge.txt#L18)) in a list that starts "You may (but are not required to)" ([line 16](TheChallenge.txt#L16)).
+- **Why we chose Jezero.** It is the only place where all five challenge resources play a real role. The only ground photos in the resource list are Perseverance's raw images (R5), and Perseverance works in Jezero. Gale crater, the challenge's example, is about 3,800 km away. At Jezero, Mars Trek (R1) also has a 25 cm photo map and a 1 m terrain model, sharp enough to plan a walk, and the USGS–NASA mapping program (R2) has a detailed geologic map of the crater (SIM 3464, 1:75,000). The Curiosity route map (R3) shows Gale, so we use it only as a design reference. The decision is recorded in [`docs/PLAN.md`](docs/PLAN.md) (flag 1 and decision D1).
+- **More than one zone.** Baramger already has two walk zones, and the pipeline builds a mission package for any zone listed in [`pipeline/baramger_pipeline/config.py`](pipeline/baramger_pipeline/config.py). A new zone needs its walk area, its stops (places where Perseverance parked), its science goals and the sols for its weather data. So a new zone can be added anywhere on Perseverance's route that the 25 cm HiRISE map covers (the rover's route up to about sol 1800). A place the rover never visited, such as Gale crater, would need other ground photos and terrain data and changes to the pipeline. The challenge does not ask for that.
+
 ## Run the app
 
 You need **Node.js** (tested with version 24) and **npm**. The two mission packages are already in this repository, so nothing needs to be downloaded or built first.
