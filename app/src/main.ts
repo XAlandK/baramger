@@ -27,7 +27,8 @@ import { playIntro } from "./intro";
 import { DEFAULT_LOAD, type LoadModel, addPickup, factorText, heaviest, kgText, timeFactor } from "./load";
 import { type WalkReport, buildReport, reportHtml, reportMapSvg } from "./report";
 import { earthMarsLightTime } from "./lighttime";
-import { type CrewSpot, type PathPoint, crewSpots } from "./crew";
+import { type CrewSpot, type PathPoint, crewSpots, trailHeading } from "./crew";
+import { type GroundColour, SKY_HORIZON, groundMean, isMastcamColour, isNavcam, pickGroundColour } from "./groundcolour";
 import { PREVIEW_FACTORS, REPLAY_BUTTONS, REPLAY_TIMES, WALK_BUTTONS, WALK_TIMES, nextSpeed, perSecond, timesLabel } from "./speeds";
 import { EXAMPLES, LIMITS as ASK_LIMITS, MESSAGES as ASK_MESSAGES, type AskAnswer, type AskResponse, askAssistant, planContext } from "./ask";
 
@@ -232,6 +233,11 @@ const prefs = {
     try { localStorage.setItem(key, value); } catch { /* storage is blocked */ }
   },
 };
+/** The helmet view's approximate colour: a switch in the helmet view, kept for the next visit (off until the crew turns it on). */
+const helmetColour = { on: prefs.get("baramger.helmetColour") === "1" };
+/** The ground's colour measured in each zone's rover photos (null: the zone has no colour photo of the ground), by zone key. */
+const groundColours = new Map<string, GroundColour | null>();
+const groundMeasuring = new Map<string, Promise<void>>();
 /** "1 stop", "2 stops". */
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const clockToMin = (s: string) => {
@@ -1306,11 +1312,46 @@ function placeCtl(): void {
   if (top + CTL_H <= area.bottom - 14) {
     box.style.top = `${Math.round(top - area.top)}px`;
     box.style.bottom = "auto";
-    return;
+  } else {
+    box.style.top = "auto";
+    box.style.bottom = "14px";
+    readout.style.maxWidth = `${Math.max(120, Math.round(left - area.left - 24))}px`; // the line wraps left of the box
   }
-  box.style.top = "auto";
-  box.style.bottom = "14px";
-  readout.style.maxWidth = `${Math.max(120, Math.round(left - area.left - 24))}px`; // the line wraps left of the box
+  clearWarnFromBox(box, left);
+}
+
+/**
+ * In the helmet view the visor's warning line (centred, near the visor's bottom) may reach under
+ * the open control box: it then takes the room left of the box. CSS variables on #hud, because
+ * morph() redraws the visor itself.
+ */
+function clearWarnFromBox(box: HTMLElement, left: number): void {
+  const hud = document.getElementById("hud");
+  if (!hud) return;
+  hud.style.removeProperty("--warn-left");
+  hud.style.removeProperty("--warn-max");
+  const visor = shown(hud) ? hud.querySelector(".visor") : null;
+  if (!visor) return;
+  const vr = visor.getBoundingClientRect();
+  const br = box.getBoundingClientRect();
+  const warnBottom = vr.bottom - 0.16 * vr.height; // .hud-warn: bottom 16%
+  const warnTop = warnBottom - 60; // up to three lines
+  const a = vr.left + 0.08 * vr.width; // inside the visor's rounded edge
+  const b = left - 10;
+  if (br.top < warnBottom && br.bottom > warnTop && b - a > 80) {
+    hud.style.setProperty("--warn-left", `${Math.round((a + b) / 2 - vr.left)}px`);
+    hud.style.setProperty("--warn-max", `${Math.round(b - a)}px`);
+  }
+}
+
+/**
+ * Place the box now and again when the map chips have faded in or out (0.4 s, `.map-chip`): while
+ * a chip fades, layout code sees it as shown or not by its opacity at that moment, so the box could
+ * end up over the map title that fades back in after the helmet view.
+ */
+function placeCtlAfterFade(): void {
+  placeCtl();
+  window.setTimeout(placeCtl, 450);
 }
 
 function renderCtl(): void {
@@ -1525,29 +1566,49 @@ function bindCtl(): void {
 /** At most this many points of the path walked so far are looked at (enough for 4 astronauts in single file). */
 const CREW_TRAIL_POINTS = 120;
 
-/** Where each astronaut is now, in the walk, the walk-through or the replay (empty in the plan). */
-function crewNow(): CrewSpot[] {
+/**
+ * The path the crew walked so far (the last points; present place last), the stop they stand at
+ * (if any), and whether they are on the way now (not at a stop, not before the start or after the
+ * end). In the walk, the walk-through and the replay.
+ */
+function crewTrail(): { trail: PathPoint[]; stopAt: LonLat | null; moving: boolean } {
   let trail: PathPoint[] = [];
   let stopAt: LonLat | null = null;
+  let moving = false;
   const w = walkUi.w;
   if (state.mode === "walk" && w) {
     trail = [...w.track.slice(-CREW_TRAIL_POINTS), w.pos];
     const stop = currentStop(w);
     if (stop) stopAt = stop;
+    moving = w.phase === "walking";
   } else if (state.mode === "preview" && preview.track.length) {
     const t = preview.track;
     let i = 0;
     while (i < t.length && t[i].D <= preview.D) i++;
     trail = [...t.slice(Math.max(0, i - CREW_TRAIL_POINTS), i), trackAt(preview.D)];
     if (preview.stopIdx >= 0 && preview.pauseLeft > 0) stopAt = state.stops[preview.stopIdx] ?? null;
+    moving = !stopAt && preview.D < t[t.length - 1].D;
   } else if (state.mode === "replay" && w) {
     const done = w.track.filter((p) => p.clockMin <= replay.clock).slice(-CREW_TRAIL_POINTS);
     trail = [...done, trackAtClock(w.track, replay.clock)];
     // at a stop between "arrived" and "left"
     const last = [...w.events].reverse().find((e) => e.clockMin <= replay.clock && (e.kind === "arrived" || e.kind === "left"));
     if (last?.kind === "arrived") stopAt = { lon: last.lon, lat: last.lat };
+    moving = !stopAt && replay.clock > w.startMin && replay.clock < w.clockMin;
   }
+  return { trail, stopAt, moving };
+}
+
+/** Where each astronaut is now, in the walk, the walk-through or the replay (empty in the plan). */
+function crewNow(): CrewSpot[] {
+  const { trail, stopAt } = crewTrail();
   return crewSpots(trail, state.crewSize, { stopAt, heightAt: (lon, lat) => map.heightAt(lon, lat) });
+}
+
+/** The direction the crew walks now, for the arrowhead on the crew marker; null while they stand (at a stop, at the start or the end). */
+function crewWalkHeading(): number | null {
+  const { trail, moving } = crewTrail();
+  return moving ? trailHeading(trail) : null;
 }
 
 /** The followed astronaut (A1 when the crew became smaller than the choice), or null when the camera follows the whole crew. */
@@ -1569,7 +1630,7 @@ function showCrew(p: (LonLat & { h: number }) | null): void {
     map.setCrew([]);
     return;
   }
-  map.setWalker(p, crewLabel());
+  map.setWalker(p, crewLabel(), crewWalkHeading());
   const spots = crewNow();
   const hud = state.mode === "walk" && walkUi.hud;
   // the helmet view looks through the followed one's visor (their own figure would fill the view)
@@ -1737,13 +1798,14 @@ function placeWalkCamera(): void {
 }
 
 function renderHud(): void {
+  syncHelmetColour();
   const el = $("#hud");
   const w = walkUi.w;
   if (!walkUi.hud || state.mode !== "walk" || !w || w.phase === "done") {
     const was = !el.hidden;
     el.hidden = true;
     document.body.classList.remove("hud-on");
-    if (was) placeCtl();
+    if (was) placeCtlAfterFade();
     return;
   }
   document.body.classList.add("hud-on");
@@ -1753,7 +1815,7 @@ function renderHud(): void {
   const order = state.stops.findIndex((s) => s.id === (stop ?? target)?.id) + 1;
   const alerts = walkAlerts(w);
   const top = alerts.find((a) => a.level === "bad") ?? alerts.find((a) => a.level === "care") ?? alerts[0] ?? null;
-  morph(el, hudHtml({
+  morph(el, helmetHazeHtml() + hudHtml({
     label: stop ? `AT STOP ${order}` : target ? `NEXT · STOP ${order}` : "NEXT",
     target: stop ? stop.name : tgt.name,
     distM: stop ? null : metresBetween(grid.meta, w.pos, tgt),
@@ -1762,11 +1824,91 @@ function renderHud(): void {
     radio: w.pos.radio,
     stopTimer: stop ? { elapsed: w.stopElapsed, planned: plannedStopMin(w) } : null,
     warning: top ? { level: top.level, text: top.short } : null,
-  }));
+  }) + helmetColourHtml());
   if (el.hidden) {
     el.hidden = false;
-    placeCtl(); // the visor's time-left reading is now in the box's column
+    placeCtlAfterFade(); // the visor's time-left reading is now in the box's column
   }
+}
+
+// ------------------------------------------------------------------ helmet view: approximate colour
+/** The mean colour of the ground in one rover photo (see groundcolour.ts), read from a small copy of it. */
+async function photoGroundMean(src: string): Promise<ReturnType<typeof groundMean>> {
+  const img = new Image();
+  img.decoding = "async";
+  img.src = src;
+  try {
+    await img.decode();
+    const w = 160;
+    const h = Math.max(1, Math.round((img.naturalHeight * w) / Math.max(1, img.naturalWidth)));
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const g = c.getContext("2d", { willReadFrequently: true })!;
+    g.drawImage(img, 0, 0, w, h);
+    return groundMean(g.getImageData(0, 0, w, h).data, w, h);
+  } catch {
+    return null; // not loaded, or not readable
+  }
+}
+
+/** Measure this zone's ground colour in its rover photos (Mastcam-Z colour photos, else Navcam), once per zone. */
+function measureGroundColour(): Promise<void> {
+  const key = zone.key;
+  let job = groundMeasuring.get(key);
+  if (!job) {
+    const base = PKG;
+    const pics = pkg.povImages.filter((p) => isMastcamColour(p.imageId) || isNavcam(p.instrument));
+    job = Promise.all(pics.map(async (p) => ({ imageId: p.imageId, instrument: p.instrument, mean: await photoGroundMean(`${base}${p.urls.packagePath}`) })))
+      .then((samples) => { groundColours.set(key, pickGroundColour(samples)); })
+      .catch(() => { groundColours.set(key, null); });
+    groundMeasuring.set(key, job);
+  }
+  return job;
+}
+
+/** The helmet view shows now, and its colour switch is on. */
+function helmetColourWanted(): boolean {
+  const w = walkUi.w;
+  return helmetColour.on && walkUi.hud && state.mode === "walk" && !!w && w.phase !== "done";
+}
+
+/** The approximate colour in the helmet view; the grey photo maps and the black sky everywhere else. */
+function syncHelmetColour(): void {
+  const g = helmetColourWanted() ? groundColours.get(zone.key) : null;
+  if (g === undefined) void measureGroundColour().then(() => { syncHelmetColour(); renderHud(); });
+  map.setGroundTint(g ? g.hex : null, g ? SKY_HORIZON : null);
+  document.body.classList.toggle("mars-colour", !!g); // the visor's small labels get a dark edge on the light sky
+}
+
+function toggleHelmetColour(): void {
+  helmetColour.on = !helmetColour.on;
+  prefs.set("baramger.helmetColour", helmetColour.on ? "1" : "0");
+  renderHud();
+}
+
+/** The dusty sky and the haze at the horizon, over the map (a drawing; only with the colour switch on). */
+function helmetHazeHtml(): string {
+  const on = helmetColour.on && map.groundTintNow() !== null;
+  return `<div class="hud-haze" style="--horizon: ${(map.horizonFraction() * 100).toFixed(1)}%"${on ? "" : " hidden"}></div>`;
+}
+
+/** The colour switch of the helmet view, and what the colours are. */
+function helmetColourHtml(): string {
+  const on = helmetColour.on;
+  const g = groundColours.get(zone.key);
+  const note = !on
+    ? ""
+    : g === undefined
+      ? "Measuring the ground's colour in the rover's photos…"
+      : g === null
+        ? "This zone has no colour photo of the ground: the map stays grey."
+        : `Approximate colour: the ground's colour from Perseverance's ${g.camera} photos of this zone (R5); the sky is a drawing.`;
+  return `
+  <div class="hud-colour">
+    <button type="button" id="hud-colour" class="${on ? "on" : ""}" aria-pressed="${on}" title="Show the ground and the sky in approximate Mars colours">Mars colour: ${on ? "on" : "off"}</button>
+    ${note ? `<span class="hud-colour-note">${esc(note)}</span>` : ""}
+  </div>`;
 }
 
 /** Minutes to walk straight home from where the crew is now (re-routed every few simulated minutes). */
@@ -2874,6 +3016,14 @@ function bindPanel(): void {
   }
   $("#popup").addEventListener("pointerdown", (ev) => { pressOnBackdrop = ev.target === ev.currentTarget; });
   $("#to-globe").addEventListener("click", toGlobe);
+  $("#hud").addEventListener("click", (ev) => {
+    if ((ev.target as HTMLElement).closest("#hud-colour")) toggleHelmetColour();
+  });
+  // A map chip finished fading in or out (the helmet view hides the map title): place the control
+  // box again. placeCtlAfterFade() also tries after 0.45 s; a busy page may end the fade later.
+  $("#map-area").addEventListener("transitionend", (ev) => {
+    if (ev.propertyName === "opacity" && (ev.target as HTMLElement).classList?.contains("map-chip")) placeCtl();
+  });
   $("#panel-show").addEventListener("click", () => {
     if (walkUi.hudFull) {
       // the helmet view had taken the whole window: go back to the tablet and its map
@@ -3401,6 +3551,24 @@ function overflowReport(): string[] {
       if (q.width > 0 && q.height > 0 && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom) out.push(`control box: lies over ${name}`);
     }
   }
+  // the helmet view's colour switch: inside the map, over none of the visor's readings, under no chip
+  const hc = document.querySelector("#hud .hud-colour");
+  if (shown($("#hud")) && hc instanceof HTMLElement && hc.getBoundingClientRect().width > 0) {
+    const r = hc.getBoundingClientRect();
+    const area = $("#map-area").getBoundingClientRect();
+    const box = (q: DOMRect) => [q.left, q.top, q.right, q.bottom].map(Math.round).join(",");
+    if (r.left < area.left - 0.5 || r.right > area.right + 0.5 || r.top < area.top - 0.5 || r.bottom > area.bottom + 0.5) out.push(`helmet colour switch: not inside the map (switch ${box(r)}, map ${box(area)}, ${document.body.className})`);
+    const others: [string, Element | null][] = [
+      ["#ctl", $("#ctl")],
+      ["#panel-show", document.getElementById("panel-show")],
+      ...[...document.querySelectorAll("#hud .hud-tl, #hud .hud-tr, #hud .hud-mid, #hud .hud-warn")].map((el): [string, Element | null] => [`helmet ${el.className}`, el]),
+    ];
+    for (const [name, other] of others) {
+      if (!shown(other)) continue;
+      const q = other.getBoundingClientRect();
+      if (q.width > 0 && q.height > 0 && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom) out.push(`helmet colour switch: meets ${name}`);
+    }
+  }
   // the pole names on the whole-planet screen: inside the map, and under no chip
   if (shown($("#map-area"))) {
     const area = $("#map-area").getBoundingClientRect();
@@ -3513,6 +3681,7 @@ async function main(): Promise<void> {
     (window as unknown as { __baramger: unknown }).__baramger = {
       map, state, preview, walkUi, replay, step, renderPanel, makeReport, enterZone, toGlobe, overflowReport, updateScale,
       askUi, askContext, // the Ask tab: the tour puts sample answers in askUi.items to check the layout
+      helmetColour, groundColours, // the helmet view's approximate colour
       get intro() { return intro; },
     };
   }

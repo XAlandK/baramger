@@ -16,6 +16,7 @@ import {
   crewSpots,
   metresApart,
   offset,
+  trailHeading,
 } from "../src/crew";
 
 const start = { lon: 77.3, lat: 18.49, h: -2350 };
@@ -174,5 +175,28 @@ describe("chasePose (the camera that follows one astronaut)", () => {
     expect(back.pitchDeg).toBe(CHASE_PITCH_DEG[0]);
     expect(back.aroundDeg).toBe(0);
     expect(back.rangeM).toBeCloseTo(50 - CHASE_AIM_M, 6);
+  });
+});
+
+describe("trailHeading (the arrowhead on the crew marker)", () => {
+  it("is the direction of the last stretch walked", () => {
+    expect(trailHeading(eastPath(10))).toBeCloseTo(90, 1);
+    const north = Array.from({ length: 6 }, (_, i) => ({ ...offset(start, 0, i), h: -2350 }));
+    expect(trailHeading(north)).toBeCloseTo(0, 1);
+    // east, then a turn to the south: the last stretch counts
+    const turn = [...eastPath(5), ...[1, 2, 3].map((i) => ({ ...offset(eastPath(5)[5], 180, i), h: -2350 }))];
+    expect(trailHeading(turn)).toBeCloseTo(180, 1);
+  });
+
+  it("is null while the crew has not moved (one point, or steps shorter than half a metre)", () => {
+    expect(trailHeading([])).toBeNull();
+    expect(trailHeading([start])).toBeNull();
+    expect(trailHeading([start, { ...offset(start, 90, 0.3), h: -2350 }])).toBeNull();
+  });
+
+  it("looks further back when the last points are on the spot", () => {
+    const p = eastPath(4);
+    const still = [...p, p[4], p[4], p[4]];
+    expect(trailHeading(still)).toBeCloseTo(90, 1);
   });
 });

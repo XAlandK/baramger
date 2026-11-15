@@ -44,6 +44,18 @@ export function offset(p: LonLat, deg: number, metres: number): LonLat {
   return { lon: p.lon + (Math.sin(r) * metres) / (M_PER_DEG * kx), lat: p.lat + (Math.cos(r) * metres) / M_PER_DEG };
 }
 
+/**
+ * The direction the crew walks, from the path walked so far (oldest first, present place last):
+ * the bearing of the last stretch that is longer than `minM` metres. Null while the path is too
+ * short to have a direction (standing at the start).
+ */
+export function trailHeading(trail: LonLat[], minM = 0.5): number | null {
+  const here = trail[trail.length - 1];
+  if (!here) return null;
+  for (let i = trail.length - 2; i >= 0; i--) if (metresApart(trail[i], here) > minM) return bearingTo(trail[i], here);
+  return null;
+}
+
 export interface CrewOptions {
   /** The crew is at this stop: they stand around it, facing it. */
   stopAt?: LonLat | null;
@@ -69,13 +81,7 @@ export function crewSpots(trail: PathPoint[], n: number, options: CrewOptions = 
     return h !== undefined && Number.isFinite(h) ? h : fallback;
   };
   // the walking direction: the last stretch of the path that is long enough to have one
-  let heading = options.headingDeg ?? 0;
-  for (let i = trail.length - 2; i >= 0; i--) {
-    if (metresApart(trail[i], here) > 0.5) {
-      heading = bearingTo(trail[i], here);
-      break;
-    }
-  }
+  const heading = trailHeading(trail) ?? options.headingDeg ?? 0;
   if (options.stopAt) {
     const stop = options.stopAt;
     return names.map((name, k) => {

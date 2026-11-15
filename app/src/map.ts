@@ -113,6 +113,70 @@ export const POLE_ARROW_MIN_KM = 1500;
 const markerCache = new Map<string, HTMLCanvasElement>();
 
 /** A round marker (optionally with a number or H in the middle), drawn at 2x for sharp edges. */
+/** The crew marker with an arrowhead: this many pixels wide and high (the circle stays CREW_DOT_PX). */
+const CREW_DOT_PX = 24;
+const CREW_ARROW_PX = 46;
+
+/**
+ * The crew marker while it walks: the circle and a point on its rim, drawn pointing up (north).
+ * The billboard is turned to the walking direction (setWalker).
+ */
+function crewArrowImage(fill: string, stroke = "#FFFFFF", strokeWidth = 3): { key: string; canvas: HTMLCanvasElement } {
+  const key = `crew-arrow|${fill}|${stroke}|${strokeWidth}`;
+  let c = markerCache.get(key);
+  if (!c) {
+    const k = 2;
+    const S = CREW_ARROW_PX;
+    const mid = S / 2;
+    const r = CREW_DOT_PX / 2;
+    c = document.createElement("canvas");
+    c.width = c.height = S * k;
+    const g = c.getContext("2d")!;
+    g.scale(k, k);
+    // the point: from inside the circle out to 9 px beyond its rim
+    g.beginPath();
+    g.moveTo(mid, mid - r - 9);
+    g.lineTo(mid + 8, mid - r + 4);
+    g.lineTo(mid - 8, mid - r + 4);
+    g.closePath();
+    g.lineJoin = "round";
+    g.fillStyle = fill;
+    g.fill();
+    g.lineWidth = 2.5;
+    g.strokeStyle = stroke;
+    g.stroke();
+    // the circle on top (as markerImage draws it)
+    g.beginPath();
+    g.arc(mid, mid, r - strokeWidth / 2, 0, Math.PI * 2);
+    g.fillStyle = fill;
+    g.fill();
+    g.lineWidth = strokeWidth;
+    g.strokeStyle = stroke;
+    g.stroke();
+    markerCache.set(key, c);
+  }
+  return { key, canvas: c };
+}
+
+/**
+ * A grey photo-map tile in the helmet view's approximate colour: the tile's own brightness (its
+ * detail) with the hue and saturation of `colour` (canvas blend mode "color"), and the tile's own
+ * transparency (the edges of the mapped area).
+ */
+function tintTile(img: CanvasImageSource & { width: number; height: number }, colour: string): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = img.width;
+  c.height = img.height;
+  const g = c.getContext("2d")!;
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = "color";
+  g.fillStyle = colour;
+  g.fillRect(0, 0, c.width, c.height);
+  g.globalCompositeOperation = "destination-in";
+  g.drawImage(img, 0, 0);
+  return c;
+}
+
 function markerImage(text: string, fill: string, size: number, stroke = "#0C1216", strokeWidth = 2): { key: string; canvas: HTMLCanvasElement } {
   const key = `marker|${text}|${fill}|${size}|${stroke}|${strokeWidth}`;
   let c = markerCache.get(key);
@@ -419,14 +483,7 @@ export class MapView {
       this.nameLayer.setShown(namesVisible(this.cameraHeightKm() * 1000 - ground, distance));
     });
     // The photo maps fade in while the camera comes down to the crater (see photoLayerAlpha).
-    scene.preRender.addEventListener(() => {
-      const km = this.cameraHeightKm();
-      this.photoLayers.forEach((layer, i) => {
-        const alpha = photoLayerAlpha(km, i);
-        if (layer.alpha !== alpha) layer.alpha = alpha;
-        if (layer.show !== alpha > 0) layer.show = alpha > 0; // a hidden layer loads no tiles
-      });
-    });
+    scene.preRender.addEventListener(() => this.syncPhotoLayers());
     // Zone outlines are plain lines (no built-in display range): show them only from mid distance.
     scene.preRender.addEventListener(() => {
       if (!this.zoneCenter) return;
@@ -488,6 +545,86 @@ export class MapView {
   private readonly baseLayers: Record<BaseStyle, Cesium.ImageryLayer[]> = { heights: [], colour: [] };
   /** The grey photo maps (CTX, HiRISE) on the base map, lowest first. They show only from near (see photoLayerAlpha). */
   private readonly photoLayers: Cesium.ImageryLayer[] = [];
+  /** How each photo map was made (for its tinted copy). */
+  private readonly photoSpecs: { urlTemplate: string; minLevel: number; maxLevel: number; rect: number[] | undefined; credit: string }[] = [];
+  /** The photo maps in the helmet view's approximate colour (made when first needed, one per photo map), and their colour. */
+  private tintLayers: Cesium.ImageryLayer[] = [];
+  private tintColour: string | null = null;
+  /** The ground colour shown now (null: the grey photo maps), and the sky colour (null: black space). */
+  private groundTint: string | null = null;
+  private skyTint: string | null = null;
+
+  /**
+   * The helmet view's approximate colour: the grey photo maps tinted with `colour` (the ground's
+   * colour measured in the rover's photos), and the sky `sky` (a drawing) instead of black space.
+   * Null: back to the grey maps and the black sky. Hidden layers load no tiles.
+   */
+  setGroundTint(colour: string | null, sky: string | null = null): void {
+    const skyNow = colour ? sky : null;
+    if (colour === this.groundTint && skyNow === this.skyTint) return; // called on every step of a walk: nothing to do
+    const scene = this.viewer.scene;
+    scene.backgroundColor = skyNow ? Cesium.Color.fromCssColorString(skyNow) : Cesium.Color.BLACK;
+    if (scene.skyBox) scene.skyBox.show = !skyNow; // the stars would cover the sky colour
+    this.skyTint = skyNow;
+    this.groundTint = colour;
+    if (colour && colour !== this.tintColour) {
+      for (const l of this.tintLayers) this.viewer.imageryLayers.remove(l, true);
+      this.tintLayers = this.photoLayers.map((grey, i) => this.makeTintLayer(grey, i, colour));
+      this.tintColour = colour;
+    }
+    this.syncPhotoLayers();
+    this.redraw();
+  }
+
+  /**
+   * Show each photo map at its alpha for the camera's height (it fades in while the camera comes
+   * down to the crater, see photoLayerAlpha): the grey one, or its tinted copy while the helmet
+   * view's colour is on. Before every frame, and at once when the colour is switched.
+   */
+  private syncPhotoLayers(): void {
+    const km = this.cameraHeightKm();
+    this.photoLayers.forEach((layer, i) => {
+      const alpha = photoLayerAlpha(km, i);
+      const t = this.tintLayers[i];
+      const tinted = !!this.groundTint && !!t;
+      if (layer.alpha !== alpha) layer.alpha = alpha;
+      if (layer.show !== (alpha > 0 && !tinted)) layer.show = alpha > 0 && !tinted; // a hidden layer loads no tiles
+      if (t) {
+        if (t.alpha !== alpha) t.alpha = alpha;
+        if (t.show !== (alpha > 0 && tinted)) t.show = alpha > 0 && tinted;
+      }
+    });
+  }
+
+  /** The ground colour shown now (for tests and the dev tour). */
+  groundTintNow(): string | null {
+    return this.groundTint;
+  }
+
+  private makeTintLayer(grey: Cesium.ImageryLayer, i: number, colour: string): Cesium.ImageryLayer {
+    const spec = this.photoSpecs[i];
+    const provider = new Cesium.UrlTemplateImageryProvider({
+      url: spec.urlTemplate,
+      tilingScheme: this.tiling,
+      minimumLevel: spec.minLevel,
+      maximumLevel: spec.maxLevel,
+      rectangle: spec.rect ? Cesium.Rectangle.fromDegrees(spec.rect[0], spec.rect[1], spec.rect[2], spec.rect[3]) : undefined,
+      credit: spec.credit,
+    });
+    const load = provider.requestImage.bind(provider);
+    provider.requestImage = (x, y, level, request) => load(x, y, level, request)?.then((img) => tintTile(img as CanvasImageSource & { width: number; height: number }, colour));
+    const layer = new Cesium.ImageryLayer(provider, { brightness: grey.brightness, contrast: grey.contrast, show: false });
+    layer.alpha = grey.alpha;
+    this.viewer.imageryLayers.add(layer, this.viewer.imageryLayers.indexOf(grey) + 1);
+    return layer;
+  }
+
+  /** Where the horizon (straight ahead, level) is on the map: a share of its height from the top. For the helmet view's haze. */
+  horizonFraction(): number {
+    const cam = this.viewer.camera;
+    const fovy = (cam.frustum as Cesium.PerspectiveFrustum).fovy ?? Cesium.Math.toRadians(60);
+    return 0.5 - Math.tan(-cam.pitch) / Math.tan(fovy / 2) / 2;
+  }
 
   /** The looks this mission package has tiles for. */
   baseStyles(): BaseStyle[] {
@@ -515,7 +652,10 @@ export class MapView {
     });
     const layer = this.viewer.imageryLayers.addImageryProvider(provider);
     layer.alpha = alpha;
-    if (role === "photo") this.photoLayers.push(layer);
+    if (role === "photo") {
+      this.photoLayers.push(layer);
+      this.photoSpecs.push({ urlTemplate, minLevel, maxLevel, rect, credit });
+    }
     else if (role) this.baseLayers[role].push(layer);
     return layer;
   }
@@ -1065,14 +1205,19 @@ export class MapView {
   }
 
   // ---------------------------------------------------------------- walkers, track, notes, cameras
-  private walker: { dot: Cesium.Billboard; label: Cesium.Label } | null = null;
+  private walker: { dot: Cesium.Billboard; label: Cesium.Label; arrow: boolean } | null = null;
   private trackEnt: Cesium.Entity | null = null;
   private trackPts: Cesium.Cartesian3[] = [];
   private trackGhostAt = 0;
   private trackGhostTimer = 0;
   private smoothHeading: number | null = null;
 
-  setWalker(p: (LonLat & { h: number }) | null, label = "Crew (2)"): void {
+  /**
+   * The crew marker (seen from afar) and its name. `headingDeg` = the direction the crew walks
+   * (0 = north): the circle then has an arrowhead pointing that way on the map. Null (standing at
+   * a stop, waiting at the start): the plain circle.
+   */
+  setWalker(p: (LonLat & { h: number }) | null, label = "Crew (2)", headingDeg: number | null = null): void {
     if (!p) {
       this.crewLayer.clear();
       this.walker = null;
@@ -1082,21 +1227,52 @@ export class MapView {
     const at = Cesium.Cartesian3.fromDegrees(p.lon, p.lat, p.h + 3, MARS);
     if (!this.walker) {
       this.walker = {
-        dot: this.crewLayer.dot(at, markerImage("", COLORS.selected.toCssColorString(), 24, "#FFFFFF", 3), 24, undefined, [CREW_DOT_FROM_M, Number.MAX_VALUE]),
+        dot: this.crewLayer.dot(at, markerImage("", COLORS.selected.toCssColorString(), CREW_DOT_PX, "#FFFFFF", 3), CREW_DOT_PX, undefined, [CREW_DOT_FROM_M, Number.MAX_VALUE]),
         label: this.crewLayer.label(at, {
           text: label,
           font: "600 12px Inter, system-ui, sans-serif",
           backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.8),
           backgroundPadding: new Cesium.Cartesian2(6, 3),
-          pixelOffset: new Cesium.Cartesian2(0, -24),
+          pixelOffset: new Cesium.Cartesian2(0, -30), // above the arrowhead too, when it points up
         }),
+        arrow: false,
       };
     } else {
       this.walker.dot.position = at;
       this.walker.label.position = at;
       this.walker.label.text = label;
     }
+    this.pointWalker(at, headingDeg);
     this.redraw();
+  }
+
+  /** Turn the crew marker's arrowhead to the walking direction, or show the plain circle. */
+  private pointWalker(at: Cesium.Cartesian3, headingDeg: number | null): void {
+    const w = this.walker;
+    if (!w) return;
+    const arrow = headingDeg !== null && Number.isFinite(headingDeg);
+    if (arrow !== w.arrow) {
+      const img = arrow ? crewArrowImage(COLORS.selected.toCssColorString()) : markerImage("", COLORS.selected.toCssColorString(), CREW_DOT_PX, "#FFFFFF", 3);
+      w.dot.setImage(img.key, img.canvas);
+      w.dot.width = w.dot.height = arrow ? CREW_ARROW_PX : CREW_DOT_PX;
+      w.arrow = arrow;
+    }
+    if (arrow) {
+      // the image's "up" follows the local north on screen, and is turned clockwise by the heading
+      const north = Cesium.Matrix4.getColumn(Cesium.Transforms.eastNorthUpToFixedFrame(at, MARS), 1, new Cesium.Cartesian4());
+      w.dot.alignedAxis = Cesium.Cartesian3.normalize(new Cesium.Cartesian3(north.x, north.y, north.z), new Cesium.Cartesian3());
+      w.dot.rotation = -Cesium.Math.toRadians(headingDeg);
+    } else {
+      w.dot.alignedAxis = Cesium.Cartesian3.ZERO;
+      w.dot.rotation = 0;
+    }
+  }
+
+  /** The crew marker as drawn (for tests and the dev tour): with an arrowhead, and its heading on the map. */
+  walkerState(): { arrow: boolean; headingDeg: number | null } | null {
+    const w = this.walker;
+    if (!w) return null;
+    return { arrow: w.arrow, headingDeg: w.arrow ? (((-Cesium.Math.toDegrees(w.dot.rotation)) % 360) + 360) % 360 : null };
   }
 
   /**

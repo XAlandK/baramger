@@ -425,7 +425,7 @@ body.popup-full #popup.over-map { right: 0; background: rgba(0, 0, 0, 0.5); } /*
 .hud-mid { position: absolute; top: 44%; left: 12%; display: flex; align-items: center; gap: 14px; font-size: 44px; }
 .hud-mid .hud-label { margin-left: 4px; }
 .hud-arrow { width: 64px; height: 64px; fill: #5adfd2; filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.8)); }
-.hud-warn { position: absolute; bottom: 16%; left: 50%; transform: translateX(-50%); max-width: 76%; font-family: var(--font-body); font-weight: 600; font-size: 16px;
+.hud-warn { position: absolute; bottom: 16%; left: var(--warn-left, 50%); transform: translateX(-50%); max-width: var(--warn-max, 76%); font-family: var(--font-body); font-weight: 600; font-size: 16px;
   padding: 7px 18px; border-radius: 999px; border: 2px solid; background: rgba(10, 24, 29, 0.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hud-warn.info { border-color: rgba(205, 243, 239, 0.5); color: #cdf3ef; }
 .hud-warn.care { border-color: #ffc15a; color: #ffc15a; }
@@ -436,7 +436,7 @@ body.popup-full #popup.over-map { right: 0; background: rgba(0, 0, 0, 0.5); } /*
   .hud-tr { font-size: 24px; right: 10%; }
   .hud-mid { font-size: 28px; left: 10%; gap: 10px; }
   .hud-arrow { width: 44px; height: 44px; }
-  .hud-warn { font-size: 12.5px; padding: 5px 12px; max-width: 84%; white-space: normal; text-align: center; border-radius: 14px; }
+  .hud-warn { font-size: 12.5px; padding: 5px 12px; max-width: var(--warn-max, 84%); white-space: normal; text-align: center; border-radius: 14px; }
   .visor .hud-label { font-size: 10.5px; }
 }
 
@@ -488,6 +488,20 @@ em.visited { color: var(--good); font-style: normal; }
 #intro .skip:hover { border-color: var(--accent); }
 body.intro-on .map-chip { opacity: 0; pointer-events: none; }
 body.intro-on #hud, body.intro-on #compare-handle { visibility: hidden; }
+/* Helmet view, "Mars colour" on: the ground in the colour measured in the rover's photos (map.ts),
+   the sky (the map's background) and this haze are a drawing: darker dust high up, a light band at
+   the horizon (--horizon: where level ground meets the sky, map.horizonFraction()). */
+.hud-haze { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(169, 127, 88, 0.6) 0%, rgba(169, 127, 88, 0) calc(var(--horizon) - 5%), rgba(210, 176, 137, 0.45) var(--horizon), rgba(210, 176, 137, 0) calc(var(--horizon) + 10%)); }
+.hud-haze[hidden] { display: none; }
+body.mars-colour .visor .hud-label { color: #e6faf7; text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 4px rgba(0, 0, 0, 0.8); }
+body.mars-colour .visor b { text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 6px rgba(0, 0, 0, 0.8); }
+/* top left: the map title hides there in the helmet view, and the visor's readings start lower */
+.hud-colour { position: absolute; left: 14px; top: 14px; display: grid; justify-items: start; gap: 4px; max-width: min(46%, 360px); pointer-events: auto; }
+#hud-colour { font: 600 12.5px var(--font-body); color: #cdf3ef; background: rgba(12, 18, 22, 0.75); border: 1px solid rgba(90, 223, 210, 0.55); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+#hud-colour:hover { border-color: #5adfd2; }
+#hud-colour.on { background: #d2b089; color: #1d140c; border-color: #d2b089; }
+.hud-colour-note { font: 500 11px/1.35 var(--font-body); color: #f3e4cf; background: rgba(12, 18, 22, 0.66); padding: 3px 8px; border-radius: 6px; }
 /* the helmet shows only what the walker needs: no map title, no coordinates */
 body.hud-on #map-title, body.hud-on .readout { opacity: 0; pointer-events: none; }
 /* placing a stop on a narrow map: the hint takes the place of the map title */

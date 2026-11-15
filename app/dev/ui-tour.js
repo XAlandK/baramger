@@ -259,6 +259,25 @@ export async function tour({ planOnly = false } = {}) {
   await click("#go-walk", 300);
   check("walk: now (walking)");
   await controls("walk");
+  // the helmet view, with "Mars colour" on (the crew's own choice is put back afterwards)
+  {
+    await click('#panel [data-view="hud"]', 600); // the map chips fade out (0.4 s), then the control box is placed again
+    await until(() => !document.body.classList.contains("sliding"), 5000); // a small window: the helmet view takes the whole window (the panel slides away)
+    // a slow page may end the slide before its 0.6 s animation ran: wait (up to 3 s) until the map really has the window's width
+    const wide = () => !document.body.classList.contains("panel-closed") || parseFloat(getComputedStyle(document.body).getPropertyValue("--panel-cover")) === 0;
+    for (let t = 0; t < 30 && !wide(); t++) await sleep(100);
+    await sleep(200);
+    check("walk: helmet view");
+    const was = B.helmetColour.on;
+    if (!was) await click("#hud-colour", 100);
+    await until(() => B.groundColours.size > 0 && !/Measuring/.test($(".hud-colour-note")?.textContent ?? "Measuring"), 30000);
+    await sleep(200);
+    check("walk: helmet view, Mars colour on");
+    if (!was) await click("#hud-colour", 100);
+    await click('#panel [data-view="map"]', 600);
+    await until(() => !document.body.classList.contains("sliding"), 5000);
+    await sleep(200);
+  }
   {
     const before = B.walkUi.w.clockMin;
     const slider = $("#ctl-time");
