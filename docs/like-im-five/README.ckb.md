@@ -284,6 +284,32 @@
 - <b>ڕۆبۆتەکە چی کرد؟</b> پارچەیەکی بچووکی لە بەردەکە دریل کرد و لە لوولەیەکدا پاشەکەوتی کرد.
 - <b>ئێستا چی دەزانین؟</b> لە 2025دا، <bdi>NASA</bdi> وتی ئەم پارچەیە <b>یەکێکە لە باشترین نیشانەکان تا ئێستا</b> کە لەوانەیە جاران ژیان لەسەر <bdi>Mars</bdi> هەبووبێت. بەڵام <b>بەڵگە نییە</b>. لەوانەیە پەڵەکان بەبێ هیچ شتێکی زیندووش دروست بووبن.
 
+### پەڵەکان چۆنن؟
+
+ئەمە <b>بەردە ڕاستەقینەکەیە</b>، لە زۆر نزیکەوە. <bdi>NASA</bdi> بازنەیەکی سووری بە دەوری یەکێک لە پەڵەکاندا کێشاوە. سەیری دەوروبەری بکە: <b>زۆر خاڵی کاڵی بچووکی تر دەبینیت کە بازنەیەکی تاریک دەوری داون</b>.
+
+<p align="center"><img src="img/photo-leopard-spots.jpg" width="360" alt="وێنەی ڕاستەقینە: بەردێکی سووربۆر کە خاڵی کاڵی بچووکی پێوەیە و لێوارێکی تاریکیان هەیە؛ بازنەیەکی سوور و نووسینی Leopard Spot ئاماژە بە یەکێکیان دەکەن"></p>
+
+<b>پەڵەی پڵنگئاسا لەسەر <bdi>Mars</bdi></b> · بەشێک لە بەردی <bdi>Cheyava Falls</bdi>، کە کامێرای سەر قۆڵی ڕۆبۆتەکە لە زۆر نزیکەوە گرتوویەتی، لە 18ی تەممووزی 2024. بازنە سوورەکە و نووسینەکە هی <bdi>NASA</bdi>ن (<bdi>Leopard Spot</bdi> واتە پەڵەی پڵنگئاسا). هەر پەڵەیەک تەنها چەند ملیمەترێکە، لە دەنکە برنجێک بچووکترە.
+
+<sub>وێنەی ڕاستەقینە (بڕاوە) · <bdi>WATSON camera (SHERLOC)</bdi> · <bdi>sol 1212</bdi> · <bdi>NASA/JPL-Caltech</bdi> · <bdi>PIA26368</bdi></sub>
+
+### بۆچی پێیان دەڵێن «پەڵەی پڵنگئاسا»؟
+
+<b>پڵنگ</b> پشیلەیەکی گەورەی کێوییە. لە ئەفریقا و ئاسیا دەژی. مووە زەردەکەی پڕە لە پەڵەی ڕەش، و <b>زۆربەی پەڵەکان وەک ئەڵقەن</b>: لێوارەکەیان تاریکە و ناوەڕاستەکەیان کاڵترە. پەڵەکانی سەر بەردەکە کەمێک لەوە دەچن، بۆیە زانایان ناویان نان «پەڵەی پڵنگئاسا».
+
+<p align="center"><img src="img/photo-leopard.jpg" width="360" alt="وێنەی ڕاستەقینە: پڵنگێک بە مووی زەرد و پەڵەی ڕەشەوە بەناو گیای سەوزدا دەڕوات"></p>
+
+<b>پڵنگێکی ڕاستەقینە</b> · پڵنگێک بەناو گیادا دەڕوات لە پارکی نیشتمانیی <bdi>Kruger</bdi> لە ئەفریقای باشوور، لە نیسانی 2024. ناوی تاتیانایە و تەمەنی شەش ساڵ بوو.
+
+<sub>وێنەی ڕاستەقینە (بڕاوە) · <bdi>Charles J. Sharp</bdi> · <bdi>Sharp Photography</bdi> · [<bdi>CC BY-SA 4.0</bdi>](https://creativecommons.org/licenses/by-sa/4.0/) · <bdi>via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Leopard_(Panthera_pardus_pardus)_Kruger_2.jpg)</bdi></sub>
+
+<p align="center"><img src="img/photo-leopard-fur.jpg" width="360" alt="وێنەی ڕاستەقینە لە نزیکەوە: مووی زەرد بە زۆر ئەڵقە و پەڵەی ڕەشەوە"></p>
+
+<b>مووی پڵنگ لە نزیکەوە</b> · لای هەمان پڵنگ. ئەڵقە تاریکەکان دەبینیت کە ناوەڕاستیان کاڵترە؟ ئێستا جارێکی تر سەیری بەردەکە بکەوە.
+
+<sub>وێنەی ڕاستەقینە (لە وێنەی پڵنگەکەوە بڕاوە) · <bdi>Charles J. Sharp</bdi> · <bdi>Sharp Photography</bdi> · [<bdi>CC BY-SA 4.0</bdi>](https://creativecommons.org/licenses/by-sa/4.0/) · <bdi>via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Leopard_(Panthera_pardus_pardus)_Kruger_2.jpg)</bdi></sub>
+
 > 📱 <b>لە ئەپەکەتدا</b>
 >
 > لەبەر ئەوەیە ئەپەکەت پیاسەیەک بۆ ئەوێ پلان دادەنێت. مرۆڤێک دەتوانێت لە هەموو لایەکەوە سەیری بەردەکە بکات، بەردەکانی دەوروبەری بپشکنێت، و باشترین پارچە هەڵبژێرێت بۆ ئەوەی بیهێنێتەوە بۆ زەوی.
@@ -801,7 +827,7 @@
 
 <p align="center"><img src="img/rover.svg" width="90" alt="rover"></p>
 
-<sub><b>هەموو وێنە کێشراوەکانی ئەم پەڕەیە کارتۆنن و بۆ ئەم ڕاپۆرتە کێشراون.</b> وێنەی ڕاستەقینە و داتای نەخشە نین. <b>وێنەکانی وەڵامەکانی 6 و 7 و 17 ڕاستەقینەن:</b> دوو وێنەکەی لوولەکان (وەڵامی 6 و 7) و چوار لە پێنج وێنەکەی وەڵامی 17 هی ڕۆبۆتی <bdi>Perseverance</bdi>ن (<bdi>NASA/JPL-Caltech</bdi>؛ ئەوەی <bdi>Mastcam-Z</bdi> هی <bdi>NASA/JPL-Caltech/ASU</bdi>ـە)، و یەکێکیان هی کامێرای <bdi>HiRISE</bdi>ـە لە خولگەی دەوری <bdi>Mars</bdi>دا (<bdi>NASA/JPL-Caltech/University of Arizona</bdi>، <bdi>via Mars Trek</bdi>).<br>داتا ڕاستەقینەکانی ناو ئەپەکە هی <bdi>NASA</bdi> و <bdi>JPL</bdi> و <bdi>USGS</bdi> و <bdi>NOAA</bdi>ن: <bdi>Mars Trek (R1)</bdi>، <bdi>USGS geologic map SIM 3464 (R2)</bdi>، <bdi>Perseverance raw images (R5)</bdi>، شوێنەکانی <bdi>rover</bdi> (<bdi>S1</bdi>)، کەشوهەوای بۆشایی ئاسمانی <bdi>NASA DONKI</bdi> (<bdi>S3</bdi>)، وێستگەی کەشوهەوای <bdi>rover</bdi> (<bdi>S4</bdi>) و داتای خۆری <bdi>NOAA GOES</bdi> (<bdi>S7</bdi>).</sub>
+<sub><b>هەموو وێنە کێشراوەکانی ئەم پەڕەیە کارتۆنن و بۆ ئەم ڕاپۆرتە کێشراون.</b> وێنەی ڕاستەقینە و داتای نەخشە نین. <b>وێنەکانی وەڵامەکانی 5 و 6 و 7 و 17 ڕاستەقینەن:</b> وێنەی پەڵە پڵنگئاساکان (وەڵامی 5)، دوو وێنەکەی لوولەکان (وەڵامی 6 و 7) و چوار لە پێنج وێنەکەی وەڵامی 17 هی ڕۆبۆتی <bdi>Perseverance</bdi>ن (<bdi>NASA/JPL-Caltech</bdi>؛ ئەوەی <bdi>Mastcam-Z</bdi> هی <bdi>NASA/JPL-Caltech/ASU</bdi>ـە)، و یەکێکیان هی کامێرای <bdi>HiRISE</bdi>ـە لە خولگەی دەوری <bdi>Mars</bdi>دا (<bdi>NASA/JPL-Caltech/University of Arizona</bdi>، <bdi>via Mars Trek</bdi>). پڵنگەکە و مووەکەی لە وەڵامی 5دا یەک وێنەی پڵنگێکی ڕاستەقینەی سەر زەوین، هی <bdi>Charles J. Sharp</bdi> (<bdi>CC BY-SA 4.0</bdi>، <bdi>via Wikimedia Commons</bdi>)، تەنها بۆ بەراوردکردنی پەڵەکان دانراون: هی <bdi>NASA</bdi> نین و داتای نەخشە نین.<br>داتا ڕاستەقینەکانی ناو ئەپەکە هی <bdi>NASA</bdi> و <bdi>JPL</bdi> و <bdi>USGS</bdi> و <bdi>NOAA</bdi>ن: <bdi>Mars Trek (R1)</bdi>، <bdi>USGS geologic map SIM 3464 (R2)</bdi>، <bdi>Perseverance raw images (R5)</bdi>، شوێنەکانی <bdi>rover</bdi> (<bdi>S1</bdi>)، کەشوهەوای بۆشایی ئاسمانی <bdi>NASA DONKI</bdi> (<bdi>S3</bdi>)، وێستگەی کەشوهەوای <bdi>rover</bdi> (<bdi>S4</bdi>) و داتای خۆری <bdi>NOAA GOES</bdi> (<bdi>S7</bdi>).</sub>
 
 <sub>فۆنتەکان: <bdi>Playpen Sans Arabic</bdi> و <bdi>Vazirmatn</bdi>، بە مۆڵەتی <bdi>SIL Open Font License 1.1</bdi>.</sub>
 

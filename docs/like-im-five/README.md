@@ -280,6 +280,32 @@ They live in the **Habitat**, the "H" on the map. It is their little house on Ma
 - **What did the robot do?** It drilled a small piece of the rock and saved it in a tube.
 - **What do we know now?** In 2025, NASA said this piece is **one of the best clues so far** that life might once have been on Mars. But it is **not proof**. The spots could also have been made without anything living.
 
+### What do the spots look like?
+
+Here is the **real rock**, seen very close up. NASA drew a red circle around one spot. Look around it: you can see **many more small light dots with dark rings**.
+
+<p align="center"><img src="img/photo-leopard-spots.jpg" width="360" alt="Real photo: reddish rock covered with small light dots that have dark rims; a red circle and the label Leopard Spot point at one dot"></p>
+
+**Leopard spots on Mars** · Part of the Cheyava Falls rock, seen from very close by the camera on the robot's arm, on 18 July 2024. The red circle and the label are NASA's. Each spot is only millimetres wide, smaller than a grain of rice.
+
+<sub>Real photo (cropped) · WATSON camera (SHERLOC) · sol 1212 · NASA/JPL-Caltech · PIA26368</sub>
+
+### Why "leopard" spots?
+
+A **leopard** is a big wild cat. It lives in Africa and Asia. Its yellow fur is covered with black spots, and **many of the spots are rings**: dark around the edge and lighter in the middle. The spots on the rock look a bit like that, so scientists called them "leopard spots".
+
+<p align="center"><img src="img/photo-leopard.jpg" width="360" alt="Real photo: a leopard with yellow fur and black spots walking through green grass"></p>
+
+**A real leopard** · A leopard walking through the grass in Kruger National Park, South Africa, in April 2024. She is called Tatiana and was six years old.
+
+<sub>Real photo (cropped) · Charles J. Sharp, Sharp Photography · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) · via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Leopard_(Panthera_pardus_pardus)_Kruger_2.jpg)</sub>
+
+<p align="center"><img src="img/photo-leopard-fur.jpg" width="360" alt="Real photo, close up: yellow fur with many black rings and spots"></p>
+
+**Leopard fur, close up** · The side of the same leopard. Can you see the dark rings with a lighter middle? Now look at the rock again.
+
+<sub>Real photo (cropped from the leopard photo) · Charles J. Sharp, Sharp Photography · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) · via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Leopard_(Panthera_pardus_pardus)_Kruger_2.jpg)</sub>
+
 > 📱 **In your app**
 >
 > That is why your app plans a walk there. A person could look at the rock from every side, check the rocks nearby, and choose the best piece to bring back to Earth.
@@ -795,8 +821,8 @@ The rover's photos show the ground near each stop. The borders on the rock map c
 
 <p align="center"><img src="img/rover.svg" width="90" alt="rover"></p>
 
-<sub>**All drawings on this page are cartoons made for this report.** They are not photos and not map data. **The photos in answers 6, 7 and 17 are real:** the two sample-tube photos (answers 6 and 7) and four of the five in answer 17 are from the Perseverance rover (NASA/JPL-Caltech; the Mastcam-Z one is NASA/JPL-Caltech/ASU), and one is from the HiRISE camera in orbit (NASA/JPL-Caltech/University of Arizona, via Mars Trek).<br>The real data in the app comes from NASA, JPL, USGS and NOAA: Mars Trek (R1), the USGS geologic map SIM 3464 (R2), Perseverance raw images (R5), the rover positions (S1), NASA DONKI space weather (S3), the rover's weather station (S4) and NOAA GOES Sun data (S7).</sub>
+<sub>**All drawings on this page are cartoons made for this report.** They are not photos and not map data. **The photos in answers 5, 6, 7 and 17 are real:** the leopard-spots photo (answer 5), the two sample-tube photos (answers 6 and 7) and four of the five in answer 17 are from the Perseverance rover (NASA/JPL-Caltech; the Mastcam-Z one is NASA/JPL-Caltech/ASU), and one is from the HiRISE camera in orbit (NASA/JPL-Caltech/University of Arizona, via Mars Trek). The leopard and its fur in answer 5 are one photo of a real leopard on Earth by Charles J. Sharp (CC BY-SA 4.0, via Wikimedia Commons), shown only to compare the spots: it is not NASA's and not map data.<br>The real data in the app comes from NASA, JPL, USGS and NOAA: Mars Trek (R1), the USGS geologic map SIM 3464 (R2), Perseverance raw images (R5), the rover positions (S1), NASA DONKI space weather (S3), the rover's weather station (S4) and NOAA GOES Sun data (S7).</sub>
 
 <sub>Baramger · Marswalk planner · answers first written in chat on 14 and 15 November 2026.</sub>
 
-<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 6, 7 and 17; their credits are under each photo.</sub>
+<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 5, 6, 7 and 17; their credits are under each photo.</sub>

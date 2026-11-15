@@ -6,7 +6,7 @@ there as it is. This writes:
   <out>/README.ckb.md   Central Kurdish (Sorani), inside <div dir="rtl">
   <out>/img/*.svg       each drawing as its own SVG; text in a drawing uses an
                         embedded subset of Playpen Sans Arabic (only its letters)
-  <out>/img/photo-*.jpg the real photos of the page (answers 6, 7 and 17), taken out of their
+  <out>/img/photo-*.jpg the real photos of the page (answers 5, 6, 7 and 17), taken out of their
                         data: URLs and named by each <img data-file="...">
 
 Run it again after any change to docs/Baramger-Like-Im-Five.html (from the repo root):
@@ -254,7 +254,7 @@ def page(pane: Tag, ku: bool) -> str:
         L += [f"<sub>{inline(fp, ku).strip()}</sub>", ""]
     if not ku:
         L += ["<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of "
-              "Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 6, 7 and 17; "
+              "Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 5, 6, 7 and 17; "
               "their credits are under each photo.</sub>", ""]
     if ku:
         L += ["</div>", ""]
