@@ -492,3 +492,40 @@ body.intro-on #hud, body.intro-on #compare-handle { visibility: hidden; }
 body.hud-on #map-title, body.hud-on .readout { opacity: 0; pointer-events: none; }
 /* placing a stop on a narrow map: the hint takes the place of the map title */
 body.adding.popup-full #map-title { opacity: 0; pointer-events: none; }
+
+/* ---- the mission assistant (Plan screen, Ask tab). The card takes the space that is left; a long
+   answer is faded at the bottom and "Read all" opens the whole of it, so nothing scrolls. */
+.p-body > .ask { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.ask > * { flex: none; margin: 0; }
+.ask > .ask-card { flex: 1 1 auto; min-height: 0; }
+.ask-card { display: flex; flex-direction: column; gap: 6px; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.ask-card > * { flex: none; margin: 0; }
+.ask-card > .ask-a { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.ask-top { display: flex; align-items: center; gap: 8px; min-width: 0; height: 22px; }
+.ask-top .ask-by { flex: 1 1 auto; min-width: 0; font-size: 11.5px; }
+.ask-top .pager { flex: none; margin-left: auto; }
+/* AI-written text always carries this tag (rule C5: nothing AI-made is shown as real data) */
+.ai-tag { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #cbbcff; background: rgba(160, 130, 255, 0.14); border: 1px solid rgba(160, 130, 255, 0.45); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.ai-tag.off { color: var(--muted); background: none; border-color: var(--line); }
+.ask-q { font-size: 12.5px; }
+.ask-q b { color: var(--muted); font-weight: 600; }
+.ask-a { font-size: 12.5px; line-height: 1.45; }
+.ask-a p { margin: 0 0 6px; }
+.ask-a p:last-child { margin-bottom: 0; }
+.ask-a.clipped { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 30px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 30px), transparent); }
+.ask-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 12px; }
+.ask-facts.full li { padding: 2px 0; border-bottom: 1px solid var(--line); }
+.ask-foot { display: flex; align-items: center; gap: 8px; justify-content: space-between; min-width: 0; min-height: 22px; }
+.ask-src { min-width: 0; display: flex; gap: 4px; align-items: center; }
+.ask-foot .linkish { flex: none; }
+.ask-examples { display: grid; gap: 6px; }
+.ask-examples button { text-align: left; font-weight: 500; font-size: 12.5px; padding: 6px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ask-form { display: grid; gap: 5px; }
+/* 300 characters at most: three lines show about half; the field itself may scroll while typing, never the panel */
+.ask-form textarea { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; resize: none; font-size: 12.5px; line-height: 1.35; height: 63px; overflow-y: auto; }
+.ask-form textarea:disabled { opacity: 0.5; }
+.ask-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.ask-row .primary { min-width: 84px; }
+.ask-pop-q { font-size: 13.5px; font-weight: 600; margin: 0; padding-right: 34px; overflow-wrap: anywhere; }
+.ask-views { display: grid; grid-template-columns: 1fr 1fr; }
+.pop-body .ask-a.full { font-size: 13px; }

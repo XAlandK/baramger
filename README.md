@@ -23,7 +23,7 @@ Easy cartoon answers about the NASA challenge, our app and the map, in **English
 | Step | Screen | What the crew gets |
 |---|---|---|
 | **Start** | Habitat wall screen | A short launch animation: a telescope on Earth finds Mars, then the view flies to the planet. It ends on the whole of Mars, which can be turned and zoomed freely, in height colours or in natural colour, with arrows on its spin axis for the north and south poles. The walk zones are marked; click one to fly in. "Fly to Jezero crater" shows the whole crater as a sharp photo map with its official place names. |
-| **Plan** | Habitat wall screen | A 3D map with layers (photo map, steep ground, rock types, rocky or dusty ground, the rover's path). Stops with real rover photos of each spot; the crew can add their own stops and name them. Known places keep their name on the map, also when they are not stops. The safest route between stops. A crew size and the load each astronaut carries. A safety check (time and reserve, slope, radio contact, daylight, sun activity, carried load, buddy rule, turn-back times). Walk conditions measured by Perseverance. A walk-through preview. |
+| **Plan** | Habitat wall screen | A 3D map with layers (photo map, steep ground, rock types, rocky or dusty ground, the rover's path). Stops with real rover photos of each spot; the crew can add their own stops and name them. Known places keep their name on the map, also when they are not stops. The safest route between stops. A crew size and the load each astronaut carries. A safety check (time and reserve, slope, radio contact, daylight, sun activity, carried load, buddy rule, turn-back times). Walk conditions measured by Perseverance. A walk-through preview. An **Ask** tab: an AI assistant that explains the plan and the zone's data (needs internet; see "Mission assistant"). |
 | **Walk** | Tablet on the suit arm | The next stop with distance, time and direction. Warnings ahead (steep ground, sand ripples, rocky ground, radio loss, running late, sunset). Stop timer and task list; picking up a tube or a sample adds to the crew's load and to the walking time. Skip a stop or head home, and the route re-plans from where the crew stands. Field notes pinned to the map. |
 | **Helmet** | Helmet display (HUD) | An eye-level view with only the essentials: next stop, time left, radio, and one warning at a time. |
 | **After** | Habitat | A replay of the walk, "plan and reality" per stop, and a printable walk report. "Send to Earth" shows today's Earth–Mars signal delay (about 11 minutes on 14 Nov 2026). |
@@ -35,6 +35,8 @@ On the tablet and in the helmet, the walk runs as a **time-lapse demo** along th
 **The crew, life-size.** In the walk, the walk-through and the replay, each astronaut (1 to 4, A1 in front) is a 3D figure in a NASA spacesuit (the Z2 suit, a NASA prototype for walking on planets), at real size: they walk in single file, 3 m apart, and stand around a stop facing it. Up close you see the suits; from far away the round crew marker shows where they are.
 
 **Controls.** A "Controls" box on the map moves the view with buttons (forward, back, left, right, up, down, turn, tilt, zoom; hold a button to keep moving) and a middle button that goes back to following the crew. In the walk, the walk-through and the replay it also has Play/Pause, a time slider, the play speed, and which astronaut the camera follows (A1 to A4); in the helmet view you see through that astronaut's visor.
+
+**Ask the habitat assistant.** The Plan screen's Ask tab answers questions such as "Where do we lose radio contact?", "Which stop is best for sampling, and why?" or "What's the temperature at 14:00?". It looks the answer up in the zone's mission package and in the crew's plan, and shows the data values and source IDs (R1, R2, S4…) it used. Every answer is marked **AI explanation** with the provider and model that wrote it. The assistant never decides what is safe (Baramger's safety checks do), says "I can't tell from the mission data" when the data has no answer, and declines questions that are not about the walk. It needs internet; everything else works offline.
 
 **Nothing scrolls.** Every screen is one side panel with tabs; details open in pop-ups, and long lists have pages. On a short window the panel is scaled down to fit. While the walk plays, no button moves or blinks: the screen updates only the text that changed.
 
@@ -76,11 +78,28 @@ npm test          # unit tests (vitest; the screen tests use jsdom)
 npm run build     # type check + production build into app/dist
 ```
 
+### Mission assistant (Ask tab), locally
+
+The assistant runs in a Cloudflare Worker (`app/worker/`), which keeps the AI keys. To try it locally:
+
+1. Put the keys in `app/.dev.vars` (git-ignored), one per line; any of the five is enough:
+   ```
+   GEMINI_API_KEY=...
+   GROQ_API_KEY=...
+   OPENROUTER_API_KEY=...
+   MISTRAL_API_KEY=...
+   CEREBRAS_API_KEY=...
+   ```
+2. In one terminal: `cd app && npm run build && npx wrangler dev` (the built site and the Worker on http://localhost:8787).
+3. Either open http://localhost:8787, or run `npm run dev` in a second terminal and open http://localhost:5173: the dev server passes `/api` to the Worker.
+
+Without the Worker (plain `npm run dev`), the Ask tab says the assistant isn't available; everything else works. The tests never call a real provider.
+
 `app/public/package` and `app/public/cesiumStatic` are symbolic links (to `data/package` and to the CesiumJS build in `node_modules`). On Windows, turn on symlink support in git before cloning.
 
 ## Deploy (Cloudflare)
 
-The app is hosted on Cloudflare as static files (Workers static assets, config in `app/wrangler.jsonc`).
+The app is hosted on Cloudflare as static files (Workers static assets, config in `app/wrangler.jsonc`), together with a small Worker script (`app/worker/index.ts`) that answers `POST /api/chat`, the mission assistant. All other paths are static files, as before. The live site on Vercel calls this Worker for the Ask tab.
 
 - **Automatic:** the GitHub Actions workflow `.github/workflows/ci-deploy.yml` runs the app and pipeline tests on every push and pull request. On a push to `main`, it deploys the app if the tests pass.
 - **By hand:** from the `app` folder, run `npx wrangler login` once, then `npm run deploy` (builds, then uploads `app/dist`).
@@ -89,6 +108,19 @@ The workflow needs two repository secrets (GitHub > Settings > Secrets and varia
 
 - `CLOUDFLARE_API_TOKEN`: a Cloudflare API token made from the "Edit Cloudflare Workers" template
 - `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID
+
+**The assistant's keys** are Worker secrets, set once with wrangler (they are never in git or in the app's files):
+
+```bash
+cd app
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler secret put GROQ_API_KEY
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put MISTRAL_API_KEY
+npx wrangler secret put CEREBRAS_API_KEY
+```
+
+Any subset works: a provider without a key is skipped. **On Vercel**, set the environment variable `VITE_ASK_API` to the Worker's address plus `/api/chat` (for example `https://baramger.<your-subdomain>.workers.dev/api/chat`) and build again; the Worker accepts calls from `https://baramger.vercel.app` (`ALLOWED_ORIGINS` in `app/wrangler.jsonc`). The Cloudflare copy of the site needs nothing: it calls `/api/chat` on its own address.
 
 ## Rebuild a mission package (optional)
 
@@ -158,7 +190,8 @@ Everything else the project uses, with its license. Open-source code is used as 
 | Walking speed on slopes | Tobler's hiking function (Tobler 1993), scaled to a suited astronaut's speed on flat ground (A3) | Published method |
 | Suit and body mass for the carried load | NASA JSC, "Mars Spacesuit Mass Requirements", ICES-2026-127 (NTRS 20260005410) | NASA planning values (A15–A21) |
 | Route search | A* search on the 2 m grid (Hart, Nilsson and Raphael 1968) | Published method |
-| Hosting and checks | [Vercel](https://vercel.com/) (the live site), [GitHub](https://github.com/) and GitHub Actions (tests on every push) | Services |
+| Hosting and checks | [Vercel](https://vercel.com/) (the live site), [Cloudflare Workers](https://workers.cloudflare.com/) (the mission assistant's API and a second copy of the site), [GitHub](https://github.com/) and GitHub Actions (tests on every push) | Services |
+| Mission assistant (Ask tab) | AI models called by our Worker, in this order: [Gemini](https://ai.google.dev/) `gemini-3.5-flash-lite` (Google), [Groq](https://groq.com/) `openai/gpt-oss-120b`, [OpenRouter](https://openrouter.ai/) `openai/gpt-oss-120b` (hosts DeepInfra, CoreWeave or Together), [Mistral AI](https://mistral.ai/) `ministral-14b-2512`, [Cerebras](https://www.cerebras.ai/) `gpt-oss-120b`. gpt-oss is by OpenAI (Apache 2.0) | Services, each under its own terms. Answers are labelled AI and never stored |
 | Tools used while building | [Claude Code](https://claude.com/claude-code) (Anthropic), see "Use of AI" below; MCP servers [`nasa`](https://www.npmjs.com/package/@programcomputer/nasa-mcp-server), `pds` (NASA PDS Registry API) and [`gdal-mcp`](https://pypi.org/project/gdal-mcp/) 1.1.3, used to look up and check data. Their answers were checked against the official sources | Tools, not shipped with the app |
 
 ## Use of AI
@@ -169,6 +202,7 @@ The NASA Space Apps rules ask every team to say where and how AI tools ("Super I
 - **What the AI did.** It wrote most of the code (the web app, the Python data pipeline and their tests) and the project documents, following our requests, and it checked data sources against the project's rules. It also wrote the "like I'm five" page and its Kurdish (Sorani) translation, and drew every cartoon and diagram in this repository as SVG code. It cropped and resized the photos we chose.
 - **What the team did.** The team chose the challenge and made the project's decisions: the place (Jezero crater), the two walk zones, what to build and in which order, which extra data sources to allow, and the rules for that data. These decisions are recorded in [`docs/PLAN.md`](docs/PLAN.md) and [`CLAUDE.md`](CLAUDE.md). The team tested the app and asked for changes.
 - **No AI-made data.** Every map, measurement, rover position and photo comes from NASA, USGS or NOAA (sources above). The AI did not make up any data: values that are not measured are called starting values (A1–A22) and are listed on screen.
+- **The mission assistant in the app (Ask tab).** The app itself uses AI in one place: the Ask tab on the Plan screen. A question goes to our Cloudflare Worker, which asks one of five AI providers in a fixed order (Gemini, Groq, OpenRouter, Mistral, Cerebras; the next one answers when one is busy or fails). The model may only answer from tools that read the zone's mission package and the crew's plan; it never decides what is safe (Baramger's own checks do) and says "I can't tell from the mission data" when the data has no answer. **Every answer is labelled "AI explanation"** and names the provider and model that wrote it, and it lists the source IDs and data values it used. Those values come straight from the package, not from the model. AI answers are never saved into a mission package or shown as measurements. The team chose the providers, the order, the rules and the limits; the AI coding assistant wrote the code and the tests, and checked each provider's docs and terms (results in [`docs/PLAN.md`](docs/PLAN.md), "AI mission assistant").
 - **How AI-made work is marked.** The pictures drawn with AI carry a visible **"Made with AI"** mark: the cartoons and diagrams in `docs/`, and the night sky at the start of the app. The app's small interface drawings (the outlines in the scale card, map markers and icons) were also drawn as code with AI; they are named here instead of each carrying a mark. Code and text written with AI are marked in their metadata: each commit made with the assistant names it in a `Co-Authored-By` line, and the HTML pages carry an `ai-assistance` meta tag.
 
 ## How it works
@@ -202,11 +236,12 @@ Some facts we checked along the way:
 
 ```
 app/         CesiumJS web app (launch animation, Mars globe, Plan, Walk, helmet display, replay, report)
+app/worker/  Cloudflare Worker: POST /api/chat, the mission assistant (data tools, five AI providers, fallback chain)
 app/public/models/  the crew figure (cleaned copy of NASA's Z2 Spacesuit model; made by pipeline/baramger_pipeline/suit_model.py)
 pipeline/    Python pipeline that builds and checks the mission packages
 data/        mission packages (data/package/) and the source ledger
 schema/      JSON Schema for mission packages and the source ledger
-docs/        plan, report, short summary, user scenario, MCP guide, "like I'm five" page
+docs/        plan, report, short summary, user scenario, MCP guide, "like I'm five" page, assistant demo script
 docs/like-im-five/  GitHub copy of the "like I'm five" page (English + Sorani Markdown, drawings)
 CLAUDE.md    project brief for Claude Code
 ```
