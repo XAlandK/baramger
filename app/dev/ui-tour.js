@@ -52,11 +52,14 @@ export async function tour() {
     check(`${name} + controls, view moved`);
     if ($("#ctl-follow")) {
       const sel = $("#ctl-follow");
-      sel.value = String(sel.options.length - 1);
+      const last = sel.options[sel.options.length - 1];
+      sel.value = last.value; // the last astronaut: the close follow camera
       sel.dispatchEvent(new Event("change", { bubbles: true }));
       await sleep(60);
-      check(`${name} + controls, following ${sel.options[sel.options.length - 1].text}`);
-      sel.value = "0";
+      check(`${name} + controls, following ${last.text}`);
+      for (const k of ["in", "turnLeft", "tiltDown"]) await press(k); // around the astronaut: the follow goes on
+      check(`${name} + controls, following ${last.text}, view turned`);
+      sel.value = "-1"; // back to the whole crew
       sel.dispatchEvent(new Event("change", { bubbles: true }));
       await sleep(40);
     }

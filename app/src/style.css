@@ -112,8 +112,9 @@ body.hud-on #scale { opacity: 0; pointer-events: none; } /* the helmet view look
 #ctl-time { flex: 1; min-width: 0; accent-color: var(--accent); }
 .ctl-clock { width: 3.1em; text-align: right; font-variant-numeric: tabular-nums; }
 .ctl-speed { width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
-.ctl-follow { display: flex; align-items: center; gap: 6px; }
-.ctl-follow select { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; font-size: 12.5px; }
+/* one line ("Follow [Whole crew]"): a second line would make the box taller than CTL_H */
+.ctl-follow { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; white-space: nowrap; }
+.ctl-follow select { flex: 1; min-width: 0; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; font-size: 12.5px; }
 @container (width < 300px) { #ctl { display: none; } } /* a map strip this narrow has no room for it */
 
 #compare-handle { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--fg); cursor: ew-resize; touch-action: none; z-index: 5; }
@@ -360,10 +361,11 @@ body.popup-full #popup.over-map { right: 0; background: rgba(0, 0, 0, 0.5); } /*
 /* walk-through + walk */
 .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .controls .primary, .controls .secondary { padding: 7px 9px; }
-/* The walk's footer row (Play | x30 x60 x120 | Jump to next event) fills the panel's width: with
+/* The walk's footer row (Play | x5 x10 x30 x60 x120 | Next event) fills the panel's width: with
    the Inter font loaded it needed 1 px more than the row has, and wrapped (zone Z1, 760x450).
-   A little less padding gives it about 10 px to spare. */
+   A little less padding gives it room to spare; the walk's five speed buttons get less still. */
 .controls .seg button { padding: 6px 7px; }
+.p-foot.demo .controls .seg button { padding: 6px 5px; }
 /* fixed widths: "Play" / "Pause" / "Play again" must not push the buttons next to them */
 #w-play { min-width: 64px; }
 #pv-play, #rp-play { min-width: 96px; }

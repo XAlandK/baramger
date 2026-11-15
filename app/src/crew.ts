@@ -114,3 +114,80 @@ export function crewSpots(trail: PathPoint[], n: number, options: CrewOptions = 
   }
   return out;
 }
+
+// ------------------------------------------------------------------ the camera that follows one astronaut
+/**
+ * Where the follow camera stands, seen from the astronaut it follows. `aroundDeg`: the camera's
+ * view direction compared with the astronaut's (0 = straight behind them, looking the way they
+ * face; positive = the camera has turned to the right). `pitchDeg`: the camera's tilt (negative
+ * looks down). `rangeM`: metres from the point it looks at.
+ */
+export interface ChaseOffset {
+  aroundDeg: number;
+  pitchDeg: number;
+  rangeM: number;
+}
+
+/** About 20 m behind and above the astronaut: near enough to see the figure and its name tag. */
+export const CHASE_DEFAULT: ChaseOffset = { aroundDeg: 0, pitchDeg: -22, rangeM: 20 };
+export const CHASE_RANGE_M: [number, number] = [3, 2000];
+export const CHASE_PITCH_DEG: [number, number] = [-89, -2];
+/** The camera looks at this height above the astronaut's feet (the suit is about 1.9 m tall). */
+export const CHASE_AIM_M = 1;
+/** The camera never goes lower than this above the ground (the map's lowest camera height). */
+export const CHASE_MIN_ABOVE_GROUND_M = 1.5;
+
+/** A camera place and direction (degrees; heading 0 = north, pitch negative = looking down). */
+export interface CameraPose extends PathPoint {
+  headingDeg: number;
+  pitchDeg: number;
+}
+
+const clampTo = (v: number, [lo, hi]: [number, number]) => Math.min(hi, Math.max(lo, v));
+const toRad = (d: number) => (d * Math.PI) / 180;
+const toDeg = (r: number) => (r * 180) / Math.PI;
+
+/** The offset inside its limits, with the angle around written between -180 and 180. */
+export function clampChase(o: ChaseOffset): ChaseOffset {
+  const around = ((((o.aroundDeg + 180) % 360) + 360) % 360) - 180;
+  return {
+    aroundDeg: Number.isFinite(around) ? around : 0,
+    pitchDeg: Number.isFinite(o.pitchDeg) ? clampTo(o.pitchDeg, CHASE_PITCH_DEG) : CHASE_DEFAULT.pitchDeg,
+    rangeM: Number.isFinite(o.rangeM) ? clampTo(o.rangeM, CHASE_RANGE_M) : CHASE_DEFAULT.rangeM,
+  };
+}
+
+/**
+ * The follow camera for an astronaut standing at `p` (h = the ground at their feet) and facing
+ * `headingDeg`: it looks at a point CHASE_AIM_M above their feet from the offset's direction and
+ * distance. Where the ground there is higher than the camera would be (a slope behind them), the
+ * camera goes up to CHASE_MIN_ABOVE_GROUND_M above it and still looks at the astronaut.
+ */
+export function chasePose(p: PathPoint, headingDeg: number, off: ChaseOffset, groundAt?: (lon: number, lat: number) => number): CameraPose {
+  const o = clampChase(off);
+  const aimH = p.h + CHASE_AIM_M;
+  const view = (((headingDeg + o.aroundDeg) % 360) + 360) % 360;
+  const flat = o.rangeM * Math.cos(toRad(o.pitchDeg));
+  const at = offset(p, view + 180, flat);
+  let h = aimH - o.rangeM * Math.sin(toRad(o.pitchDeg));
+  let pitch = o.pitchDeg;
+  const g = groundAt?.(at.lon, at.lat);
+  if (g !== undefined && Number.isFinite(g) && h < g + CHASE_MIN_ABOVE_GROUND_M) {
+    h = g + CHASE_MIN_ABOVE_GROUND_M;
+    pitch = -toDeg(Math.atan2(h - aimH, flat));
+  }
+  return { ...at, h, headingDeg: view, pitchDeg: pitch };
+}
+
+/**
+ * The offset that matches a camera at `cam` for an astronaut at `p` facing `headingDeg` (the
+ * inverse of chasePose, without the ground rule). Used when the mouse moved the follow camera:
+ * the follow then keeps that place around the astronaut.
+ */
+export function chaseOffsetFrom(cam: PathPoint, p: PathPoint, headingDeg: number): ChaseOffset {
+  const aimH = p.h + CHASE_AIM_M;
+  const flat = metresApart(p, cam);
+  const up = cam.h - aimH;
+  const view = flat > 0.01 ? bearingTo(cam, p) : headingDeg;
+  return clampChase({ aroundDeg: view - headingDeg, pitchDeg: -toDeg(Math.atan2(up, Math.max(flat, 1e-6))), rangeM: Math.hypot(flat, up) });
+}

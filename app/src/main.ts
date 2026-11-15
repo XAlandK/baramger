@@ -28,6 +28,7 @@ import { DEFAULT_LOAD, type LoadModel, addPickup, factorText, heaviest, kgText, 
 import { type WalkReport, buildReport, reportHtml, reportMapSvg } from "./report";
 import { earthMarsLightTime } from "./lighttime";
 import { type CrewSpot, type PathPoint, crewSpots } from "./crew";
+import { PREVIEW_FACTORS, REPLAY_BUTTONS, REPLAY_TIMES, WALK_BUTTONS, WALK_TIMES, nextSpeed, perSecond, timesLabel } from "./speeds";
 
 window.CESIUM_BASE_URL = CESIUM_BASE_URL;
 
@@ -156,8 +157,12 @@ const walkUi = {
 };
 
 const replay = { playing: false, speed: 2, clock: 0, tab: "events" as "events" | "table" };
-/** The astronaut the camera follows in the walk, the walk-through and the replay (0 = A1, who leads). */
-let followIdx = 0;
+/**
+ * The astronaut the camera follows in the walk, the walk-through and the replay (0 = A1, who
+ * leads), from close by (map.chaseView). -1 = the whole crew: the screens' own views (the walk's
+ * top view, the walk-through's drone view behind the crew).
+ */
+let followIdx = -1;
 /** The view buttons moved the camera: the walk-through and the walk stop placing it until "Follow" is pressed. */
 let camFree = false;
 /** In the replay the camera stays over the whole route, unless an astronaut was chosen to follow. */
@@ -1006,9 +1011,9 @@ function previewPanel(): string {
 // ------------------------------------------------------------------ control box (view and walk)
 /** Speeds the control box steps through: the walk and the replay in simulated minutes per second (x60 = 1), the walk-through as a factor. */
 const CTL_SPEEDS: Record<"walk" | "preview" | "replay", number[]> = {
-  walk: [0.25, 0.5, 1, 2, 4, 8],
-  preview: [0.5, 1, 2, 4, 8],
-  replay: [0.5, 1, 2, 4, 8],
+  walk: WALK_TIMES.map(perSecond),
+  preview: PREVIEW_FACTORS,
+  replay: REPLAY_TIMES.map(perSecond),
 };
 /** The view buttons, row by row (5 columns); null = an empty cell. */
 const CTL_PAD: ([Nudge | "follow", string, string] | null)[] = [
@@ -1031,7 +1036,7 @@ function simSpeed(m: SimMode): number {
 }
 
 function speedText(m: SimMode, v: number): string {
-  return m === "preview" ? `${v}×` : `×${Math.round(v * 60)}`;
+  return m === "preview" ? `${v}×` : timesLabel(v);
 }
 
 function simPlaying(m: SimMode): boolean {
@@ -1052,7 +1057,7 @@ function simTime(m: SimMode): { min: number; max: number; step: number; value: n
 /** What the middle button does: follow the crew again, or go back to the screen's own view. */
 function followTitle(): string {
   if (state.view === "globe") return "Back to the whole planet";
-  if (simMode() || state.mode === "walk") return "Follow the crew again";
+  if (simMode() || state.mode === "walk") return followIdx >= 0 ? "Follow again, from behind" : "Follow the crew again";
   return "Back to the walk zone";
 }
 
@@ -1070,7 +1075,7 @@ function ctlHtml(): string {
   if (m) {
     const speeds = CTL_SPEEDS[m];
     const v = simSpeed(m);
-    const i = speeds.indexOf(v);
+    const i = speeds.indexOf(nextSpeed(speeds, v, 0)); // a speed between two steps counts as the nearest
     const t = simTime(m);
     const names = crewNow().map((c) => c.name);
     const shown = names.length ? names : ["A1"];
@@ -1088,7 +1093,7 @@ function ctlHtml(): string {
         <button type="button" data-ctlspeed="1" aria-label="Faster" title="Faster" ${i >= speeds.length - 1 ? "disabled" : ""}>+</button>
       </div>
       <div class="ctl-row">
-        <label class="ctl-follow">Camera follows <select id="ctl-follow" aria-label="Astronaut the camera follows">${shown.map((n, k) => `<option value="${k}" ${k === followIdx ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+        <label class="ctl-follow" title="Who the camera follows">Follow <select id="ctl-follow" aria-label="Who the camera follows"><option value="-1" ${followIdx < 0 ? "selected" : ""}>Whole crew</option>${shown.map((n, k) => `<option value="${k}" ${k === followIdx ? "selected" : ""}>${n}</option>`).join("")}</select></label>
       </div>
     </div>`;
   }
@@ -1159,6 +1164,7 @@ function renderCtl(): void {
 /** One step of a view button. The camera stops following until the middle button is pressed. */
 function doNudge(kind: Nudge): void {
   if (state.mode === "walk" && walkUi.hud) return; // the helmet view is the astronaut's own eyes
+  if (chaseOn() && map.chaseNudge(kind)) return; // zoom, turn or tilt around the followed astronaut: the follow goes on
   camFree = true;
   replayFollow = false;
   if (state.mode === "walk" && walkUi.follow) {
@@ -1169,9 +1175,18 @@ function doNudge(kind: Nudge): void {
   map.nudge(kind);
 }
 
-/** The middle button: follow the crew again, or go back to the screen's own view. */
+/** True while the camera follows one astronaut from close by (the view buttons then zoom, turn and tilt around them). */
+function chaseOn(): boolean {
+  if (camFree || followIdx < 0 || !map.chasing()) return false;
+  if (state.mode === "walk") return walkUi.follow && !walkUi.hud;
+  if (state.mode === "replay") return replayFollow;
+  return state.mode === "preview";
+}
+
+/** The middle button: follow the crew again (from behind the followed astronaut), or go back to the screen's own view. */
 function ctlFollow(): void {
   camFree = false;
+  map.chaseReset();
   if (state.view === "globe") map.showPlanet(zonesMiddle());
   else if (state.mode === "walk" && walkUi.w) {
     walkUi.follow = true;
@@ -1187,11 +1202,13 @@ function ctlFollow(): void {
   renderPanel();
 }
 
-/** The replay's camera: over the followed astronaut, once one was chosen (else it keeps the overview). */
+/** The replay's camera, once the follow was chosen (else it keeps the overview): close to the followed astronaut, or over the whole crew. */
 function placeReplayCamera(): void {
-  if (!replayFollow || camFree) return;
+  const w = walkUi.w;
+  if (!replayFollow || camFree || !w) return;
   const spot = followedSpot(crewNow());
-  if (spot) map.topView(spot);
+  if (spot) map.chaseView(spot, spot.headingDeg);
+  else map.topView(trackAtClock(w.track, replay.clock));
 }
 
 /** Play or pause the walk, the walk-through or the replay (the same as their own Play buttons). */
@@ -1211,9 +1228,7 @@ function togglePlay(m: SimMode): void {
 }
 
 function stepSpeed(m: SimMode, dir: number): void {
-  const speeds = CTL_SPEEDS[m];
-  const i = speeds.indexOf(simSpeed(m));
-  const next = speeds[Math.max(0, Math.min(speeds.length - 1, (i < 0 ? speeds.indexOf(1) : i) + dir))];
+  const next = nextSpeed(CTL_SPEEDS[m], simSpeed(m), dir);
   if (m === "walk") walkUi.speed = next;
   else if (m === "preview") preview.speed = next;
   else replay.speed = next;
@@ -1313,7 +1328,8 @@ function bindCtl(): void {
       ctlDragging = false;
       ctlTime(Number(t.value), true);
     } else if (t.id === "ctl-follow") {
-      followIdx = Number(t.value) || 0;
+      const k = Number(t.value);
+      followIdx = Number.isInteger(k) && k >= 0 ? k : -1; // -1: the whole crew
       camFree = false;
       if (state.mode === "replay") replayFollow = true;
       map.resetDrone();
@@ -1359,10 +1375,16 @@ function crewNow(): CrewSpot[] {
   return crewSpots(trail, state.crewSize, { stopAt, heightAt: (lon, lat) => map.heightAt(lon, lat) });
 }
 
-/** The followed astronaut (A1 when the crew is smaller than the choice). */
+/** The followed astronaut (A1 when the crew became smaller than the choice), or null when the camera follows the whole crew. */
 function followedSpot(spots: CrewSpot[]): CrewSpot | null {
-  if (followIdx >= spots.length) followIdx = 0;
+  if (followIdx < 0) return null;
+  if (spots.length && followIdx >= spots.length) followIdx = 0;
   return spots[followIdx] ?? null;
+}
+
+/** Whose eyes the helmet view looks through: the followed astronaut, or A1 (the leader) for the whole crew. */
+function visorIdx(n: number): number {
+  return followIdx >= 0 && followIdx < n ? followIdx : 0;
 }
 
 /** The crew marker (from afar) and the astronaut figures (up close). `p` is the crew's place. */
@@ -1373,7 +1395,10 @@ function showCrew(p: (LonLat & { h: number }) | null): void {
     return;
   }
   map.setWalker(p, crewLabel());
-  map.setCrew(crewNow(), state.mode === "walk" && walkUi.hud ? followIdx : -1); // the helmet view looks through the followed one's visor
+  const spots = crewNow();
+  const hud = state.mode === "walk" && walkUi.hud;
+  // the helmet view looks through the followed one's visor (their own figure would fill the view)
+  map.setCrew(spots, hud ? visorIdx(spots.length) : -1, hud || followIdx >= spots.length ? -1 : followIdx);
 }
 
 function startPreview(): void {
@@ -1394,11 +1419,11 @@ function startPreview(): void {
   ensureLoop();
 }
 
-/** The walk-through's camera: behind the followed astronaut (A1: behind the crew, looking along the route). */
+/** The walk-through's camera: close behind the followed astronaut, or (whole crew) high behind the crew, looking along the route. */
 function placePreviewCamera(p = trackAt(preview.D), ahead = trackAt(Math.min(preview.track[preview.track.length - 1].D, preview.D + 40))): void {
   if (camFree) return; // the view buttons moved the camera: it stays where it was put
-  const spot = followIdx > 0 ? followedSpot(crewNow()) : null;
-  if (spot) map.droneView(spot, spot.headingDeg);
+  const spot = followedSpot(crewNow());
+  if (spot) map.chaseView(spot, spot.headingDeg);
   else map.droneView(p, metresBetween(grid.meta, p, ahead) > 1 ? bearingDeg(p, ahead) : 0);
 }
 
@@ -1523,10 +1548,17 @@ function crewHeading(w: WalkState): number {
 function placeWalkCamera(): void {
   const w = walkUi.w;
   if (!w) return;
-  const spot = followedSpot(crewNow());
-  // the helmet view: through the followed astronaut's visor; A1 leads and looks where the crew goes
-  if (walkUi.hud) map.firstPerson(spot ?? w.pos, followIdx > 0 && spot ? spot.headingDeg : crewHeading(w));
-  else if (walkUi.follow && !camFree) map.topView(spot ?? w.pos);
+  const spots = crewNow();
+  if (walkUi.hud) {
+    // the helmet view: through the followed astronaut's visor; A1 leads and looks where the crew goes
+    const i = visorIdx(spots.length);
+    const eye = spots[i];
+    map.firstPerson(eye ?? w.pos, i > 0 && eye ? eye.headingDeg : crewHeading(w));
+  } else if (walkUi.follow && !camFree) {
+    const spot = followedSpot(spots);
+    if (spot) map.chaseView(spot, spot.headingDeg);
+    else map.topView(w.pos);
+  }
 }
 
 function renderHud(): void {
@@ -1756,8 +1788,8 @@ function walkPanel(): string {
   <footer class="p-foot demo">
     <div class="controls">
       <button type="button" id="w-play" class="primary">${walkUi.playing ? "Pause" : "Play"}</button>
-      <div class="seg" role="group" aria-label="Speed">${[[0.5, "×30"], [1, "×60"], [2, "×120"]].map(([v, l]) => `<button type="button" data-wspeed="${v}" class="${walkUi.speed === v ? "on" : ""}">${l}</button>`).join("")}</div>
-      <button type="button" id="w-jump" class="secondary">Jump to next event</button>
+      <div class="seg" role="group" aria-label="Speed">${WALK_BUTTONS.map((x) => `<button type="button" data-wspeed="${x}" class="${walkUi.speed === perSecond(x) ? "on" : ""}" title="${x} times real time">×${x}</button>`).join("")}</div>
+      <button type="button" id="w-jump" class="secondary" title="Jump to the next event">Next event</button>
     </div>
     <label class="compare"><input type="checkbox" id="w-follow" ${walkUi.follow ? "checked" : ""}> Map follows the crew <small>· time-lapse demo of the approved route</small></label>
   </footer>`;
@@ -1870,7 +1902,7 @@ function replayPanel(): string {
     <input type="range" id="rp-slider" min="${w.startMin}" max="${w.clockMin}" step="0.5" value="${replay.clock}" aria-label="Replay time">
     <div class="controls">
       <button type="button" id="rp-play" class="primary">${replay.playing ? "Pause" : replay.clock >= w.clockMin ? "Play again" : "Play"}</button>
-      <div class="seg" role="group" aria-label="Speed">${[[1, "×60"], [2, "×120"], [4, "×240"]].map(([v, l]) => `<button type="button" data-rpspeed="${v}" class="${replay.speed === v ? "on" : ""}">${l}</button>`).join("")}</div>
+      <div class="seg" role="group" aria-label="Speed">${REPLAY_BUTTONS.map((x) => `<button type="button" data-rpspeed="${x}" class="${replay.speed === perSecond(x) ? "on" : ""}" title="${x} times real time">×${x}</button>`).join("")}</div>
     </div>
     <nav class="subtabs" aria-label="Replay sections">
       <button type="button" data-rtab="events" class="${replay.tab === "events" ? "on" : ""}">What happened</button>
@@ -2325,12 +2357,13 @@ function onUiClick(ev: Event): void {
   } else if (el.dataset.view) {
     setHud(el.dataset.view === "hud");
     map.resetDrone();
+    if (w) showCrew(w.pos); // the helmet view hides the figure whose eyes it looks through (also while paused)
     if (!walkUi.hud && w) map.topView(w.pos);
     placeWalkCamera();
     renderHud();
     renderPanel();
   } else if (el.dataset.rpspeed) {
-    replay.speed = Number(el.dataset.rpspeed);
+    replay.speed = perSecond(Number(el.dataset.rpspeed)); // the button holds the × number
     renderPanel();
   } else if (el.dataset.jump && w) {
     replay.clock = Number(el.dataset.jump);
@@ -2368,7 +2401,7 @@ function onUiClick(ev: Event): void {
     preview.speed = Number(el.dataset.pvspeed);
     renderPanel();
   } else if (el.dataset.wspeed) {
-    walkUi.speed = Number(el.dataset.wspeed);
+    walkUi.speed = perSecond(Number(el.dataset.wspeed)); // the button holds the × number
     renderPanel();
   } else if (el.dataset.idea) {
     const n = state.ideas.splice(Number(el.dataset.idea), 1)[0];

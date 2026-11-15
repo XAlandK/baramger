@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { CREW_GAP_M, CREW_RING_M, CREW_SIDE_M, bearingTo, crewNames, crewSpots, metresApart, offset } from "../src/crew";
+import {
+  CHASE_AIM_M,
+  CHASE_DEFAULT,
+  CHASE_MIN_ABOVE_GROUND_M,
+  CHASE_PITCH_DEG,
+  CHASE_RANGE_M,
+  CREW_GAP_M,
+  CREW_RING_M,
+  CREW_SIDE_M,
+  bearingTo,
+  chaseOffsetFrom,
+  chasePose,
+  clampChase,
+  crewNames,
+  crewSpots,
+  metresApart,
+  offset,
+} from "../src/crew";
 
 const start = { lon: 77.3, lat: 18.49, h: -2350 };
 /** A straight path going east, `metres` long, one point per metre. */
@@ -98,5 +115,64 @@ describe("bearingTo and offset", () => {
       expect(metresApart(start, p)).toBeCloseTo(100, 0);
       expect(bearingTo(start, p)).toBeCloseTo(deg, 0);
     }
+  });
+});
+
+describe("chasePose (the camera that follows one astronaut)", () => {
+  const p = { lon: 77.3, lat: 18.49, h: -2350 };
+  const aim = { ...p, h: p.h + CHASE_AIM_M };
+  const dist = (a: typeof p, b: typeof p) => Math.hypot(metresApart(a, b), a.h - b.h);
+
+  it("stands about 20 m behind and above the astronaut, looking at them and the way they face", () => {
+    const cam = chasePose(p, 90, CHASE_DEFAULT); // facing east
+    expect(dist(cam, aim)).toBeCloseTo(CHASE_DEFAULT.rangeM, 1);
+    expect(bearingTo(cam, p)).toBeCloseTo(90, 1); // behind = west of them, looking east
+    expect(cam.headingDeg).toBeCloseTo(90, 6);
+    expect(cam.h).toBeGreaterThan(aim.h); // above, looking down
+    expect(cam.pitchDeg).toBeCloseTo(CHASE_DEFAULT.pitchDeg, 6);
+    // the camera's tilt points at the astronaut
+    expect(-Math.atan2(cam.h - aim.h, metresApart(cam, p)) * 180 / Math.PI).toBeCloseTo(cam.pitchDeg, 4);
+  });
+
+  it("turns with the astronaut, and goes around them by the offset's angle", () => {
+    const north = chasePose(p, 0, CHASE_DEFAULT);
+    expect(bearingTo(p, north)).toBeCloseTo(180, 1); // facing north: the camera is south of them
+    const right = chasePose(p, 0, { ...CHASE_DEFAULT, aroundDeg: 90 }); // the view turned right: looking east
+    expect(right.headingDeg).toBeCloseTo(90, 6);
+    expect(bearingTo(p, right)).toBeCloseTo(270, 1);
+  });
+
+  it("goes up a slope behind the astronaut and still looks at them", () => {
+    const hill = () => p.h + 30; // the ground behind is 30 m higher
+    const cam = chasePose(p, 90, CHASE_DEFAULT, hill);
+    expect(cam.h).toBeCloseTo(p.h + 30 + CHASE_MIN_ABOVE_GROUND_M, 6);
+    expect(cam.pitchDeg).toBeLessThan(CHASE_DEFAULT.pitchDeg); // looks more down
+    expect(-Math.atan2(cam.h - aim.h, metresApart(cam, p)) * 180 / Math.PI).toBeCloseTo(cam.pitchDeg, 4);
+    // flat ground under the camera: no change
+    expect(chasePose(p, 90, CHASE_DEFAULT, () => p.h).h).toBeCloseTo(chasePose(p, 90, CHASE_DEFAULT).h, 6);
+  });
+
+  it("keeps the distance and the tilt inside their limits", () => {
+    expect(clampChase({ aroundDeg: 370, pitchDeg: 20, rangeM: 0.5 })).toEqual({ aroundDeg: 10, pitchDeg: CHASE_PITCH_DEG[1], rangeM: CHASE_RANGE_M[0] });
+    expect(clampChase({ aroundDeg: -190, pitchDeg: -120, rangeM: 1e6 })).toEqual({ aroundDeg: 170, pitchDeg: CHASE_PITCH_DEG[0], rangeM: CHASE_RANGE_M[1] });
+    expect(clampChase({ aroundDeg: Number.NaN, pitchDeg: Number.NaN, rangeM: Number.NaN })).toEqual({ aroundDeg: 0, pitchDeg: CHASE_DEFAULT.pitchDeg, rangeM: CHASE_DEFAULT.rangeM });
+  });
+
+  it("reads a moved camera back as an offset (the mouse moved it: the follow keeps that place)", () => {
+    for (const off of [CHASE_DEFAULT, { aroundDeg: 45, pitchDeg: -60, rangeM: 150 }, { aroundDeg: -120, pitchDeg: -5, rangeM: 4 }]) {
+      for (const heading of [0, 75, 300]) {
+        const back = chaseOffsetFrom(chasePose(p, heading, off), p, heading);
+        expect(back.aroundDeg).toBeCloseTo(off.aroundDeg, 2);
+        expect(back.pitchDeg).toBeCloseTo(off.pitchDeg, 2);
+        expect(back.rangeM).toBeCloseTo(off.rangeM, 2);
+      }
+    }
+  });
+
+  it("reads a camera straight above the astronaut as looking down, at the steepest allowed tilt", () => {
+    const back = chaseOffsetFrom({ ...p, h: p.h + 50 }, p, 30);
+    expect(back.pitchDeg).toBe(CHASE_PITCH_DEG[0]);
+    expect(back.aroundDeg).toBe(0);
+    expect(back.rangeM).toBeCloseTo(50 - CHASE_AIM_M, 6);
   });
 });

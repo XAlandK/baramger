@@ -8,7 +8,7 @@ import { type HeightGrid, type LonLat, bilinear, inside } from "./grid";
 import type { Leg } from "./plan";
 import { CRATER_VIEW_MAX_M, NARROW_MAP_W, POLE_ARROW_TIP, POLE_LABEL_GAP_PX, namesVisible, needsShaping, photoLayerAlpha, planetFill, planetFitAltitude, widenFactor } from "./layout";
 import { BASE_STYLES, type BaseStyle } from "./basemap";
-import { CREW_MAX, type CrewSpot } from "./crew";
+import { CHASE_DEFAULT, CREW_MAX, type CameraPose, type ChaseOffset, type CrewSpot, type PathPoint, chaseOffsetFrom, chasePose, clampChase, metresApart } from "./crew";
 
 export const MARS = new Cesium.Ellipsoid(3_396_190, 3_396_190, 3_396_190);
 const OCCLUDER = new Cesium.Ellipsoid(3_387_190, 3_387_190, 3_387_190);
@@ -22,6 +22,8 @@ export const NUDGES: Nudge[] = ["forward", "back", "left", "right", "up", "down"
 export const NUDGE_SHARE = 0.08;
 export const NUDGE_TURN_DEG = 4;
 export const NUDGE_TILT_DEG = 3;
+/** A camera move this soon after the crew's own mouse or touch input is theirs (the follow camera keeps it). */
+export const CHASE_INPUT_MS = 1500;
 /** The camera never goes higher than this (m), as with the mouse. */
 const CAMERA_MAX_M = 40_000_000;
 
@@ -321,7 +323,7 @@ export class MapView {
   private suits: Cesium.Model[] = [];
   private suitsLoading: Promise<void> | null = null;
   private crewTags!: Cesium.LabelCollection;
-  private crewNow: { spots: CrewSpot[]; hide: number } = { spots: [], hide: -1 };
+  private crewNow: { spots: CrewSpot[]; hide: number; mark: number } = { spots: [], hide: -1, mark: -1 };
   private roverEntity: Cesium.Entity | null = null;
   private readonly tiling = new Cesium.GeographicTilingScheme({ ellipsoid: MARS });
   private readonly ghosts = new Map<string, Cesium.Primitive[]>();
@@ -399,6 +401,9 @@ export class MapView {
     window.addEventListener("resize", again);
     // Any camera move by hand ends the "fitted whole-planet view" (see showPlanet).
     for (const ev of ["pointerdown", "wheel"]) scene.canvas.addEventListener(ev, () => { this.home = null; this.craterFit = null; }, { passive: true });
+    // the crew's own mouse or touch moves of the camera (the follow camera keeps them: syncChase)
+    for (const ev of ["pointerdown", "pointerup", "wheel"]) scene.canvas.addEventListener(ev, () => { this.lastInput = performance.now(); }, { passive: true });
+    scene.canvas.addEventListener("pointermove", (e) => { if (e.buttons) this.lastInput = performance.now(); }, { passive: true });
     document.addEventListener("visibilitychange", again);
     window.addEventListener("focus", again);
     window.addEventListener("pageshow", again);
@@ -626,6 +631,7 @@ export class MapView {
    * it stays fitted when the map changes size (see refit) until the camera is moved.
    */
   showPlanet(center: LonLat, altitudeM?: number): void {
+    this.chaseAt = null;
     this.viewer.camera.cancelFlight();
     this.viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, altitudeM ?? this.planetAltitude(), MARS) });
     this.home = altitudeM === undefined ? center : null;
@@ -637,6 +643,7 @@ export class MapView {
 
   flyToPlanet(center: LonLat, duration = 3): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     this.viewer.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(center.lon, center.lat - 8, this.planetAltitude(), MARS),
@@ -677,6 +684,7 @@ export class MapView {
    */
   flyToCrater(center: LonLat, heightM?: number, duration = 3, again?: () => void): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     const height = Math.min(CRATER_VIEW_MAX_M, ZONE_SPLIT_M * 0.9, heightM ?? 62_000 * this.widen());
     const destination = Cesium.Cartesian3.fromDegrees(center.lon, center.lat, height, MARS);
@@ -709,6 +717,7 @@ export class MapView {
 
   flyToSite(center: LonLat, duration = 4): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     const h = this.heightAt(center.lon, center.lat);
     const f = this.widen();
@@ -721,6 +730,7 @@ export class MapView {
 
   flyToPoint(p: LonLat): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     const h = this.heightAt(p.lon, p.lat);
     const f = this.widen();
@@ -1092,9 +1102,10 @@ export class MapView {
   /**
    * The astronauts as 3D figures at real size, one per crew member (at most 4), or none.
    * `hide` = the one whose eyes the helmet view looks through (its figure would fill the view).
+   * `mark` = the one the camera follows: its name tag has the crew marker's colour.
    */
-  setCrew(spots: CrewSpot[], hide = -1): void {
-    this.crewNow = { spots, hide };
+  setCrew(spots: CrewSpot[], hide = -1, mark = -1): void {
+    this.crewNow = { spots, hide, mark };
     if (spots.length && !this.suitsLoading) this.suitsLoading = this.loadSuits();
     this.placeCrew();
   }
@@ -1127,7 +1138,7 @@ export class MapView {
   }
 
   private placeCrew(): void {
-    const { spots, hide } = this.crewNow;
+    const { spots, hide, mark } = this.crewNow;
     this.suits.forEach((m, i) => {
       const s = spots[i];
       if (s) {
@@ -1145,9 +1156,9 @@ export class MapView {
         position: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, s.h + 2.2, MARS),
         text: s.name,
         font: "600 11px Inter, system-ui, sans-serif",
-        fillColor: Cesium.Color.WHITE,
+        fillColor: i === mark ? Cesium.Color.fromCssColorString("#0C1216") : Cesium.Color.WHITE, // dark on the bright crew colour: easier to read
         showBackground: true,
-        backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.7),
+        backgroundColor: i === mark ? COLORS.selected : Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.7),
         backgroundPadding: new Cesium.Cartesian2(4, 2),
         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
@@ -1206,6 +1217,7 @@ export class MapView {
   /** Camera behind and above the walkers, looking along their direction (walk-through). */
   droneView(p: LonLat & { h: number }, headingDeg: number, back = 120, up = 55): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     if (this.smoothHeading === null) this.smoothHeading = headingDeg;
     const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
@@ -1226,9 +1238,100 @@ export class MapView {
     this.smoothHeading = null;
   }
 
+  /** Where the follow camera stands around the astronaut (kept when the followed astronaut changes). */
+  private chaseOff: ChaseOffset = { ...CHASE_DEFAULT };
+  /** The follow camera's last place: the astronaut, the heading used and the camera. Null when another view took over. */
+  private chaseAt: { p: PathPoint; heading: number; cam: CameraPose } | null = null;
+  /** When the crew last pressed, dragged or scrolled on the map (performance.now() ms). */
+  private lastInput = -Infinity;
+
+  /**
+   * The camera that follows one astronaut from close by: behind and above them (CHASE_DEFAULT),
+   * turning with them. A mouse move of the camera since the last call is kept (syncChase), so the
+   * follow goes on from where the crew put the camera.
+   */
+  chaseView(p: PathPoint, headingDeg: number): void {
+    this.home = null;
+    this.craterFit = null;
+    this.syncChase();
+    if (this.smoothHeading === null || !this.chaseAt) this.smoothHeading = headingDeg;
+    else {
+      const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
+      this.smoothHeading = (this.smoothHeading + diff * 0.08 + 360) % 360;
+    }
+    this.placeChase(p, this.smoothHeading);
+  }
+
+  private placeChase(p: PathPoint, heading: number): void {
+    const cam = chasePose(p, heading, this.chaseOff, (lon, lat) => this.groundHeight(lon, lat));
+    this.viewer.camera.cancelFlight();
+    this.viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(cam.lon, cam.lat, cam.h, MARS),
+      orientation: { heading: Cesium.Math.toRadians(cam.headingDeg), pitch: Cesium.Math.toRadians(cam.pitchDeg), roll: 0 },
+    });
+    // where the camera really is (the same place, up to rounding): the next syncChase compares with it
+    const c = this.viewer.camera.positionCartographic;
+    this.chaseAt = { p, heading, cam: { ...cam, lon: Cesium.Math.toDegrees(c.longitude), lat: Cesium.Math.toDegrees(c.latitude), h: c.height } };
+    this.redraw();
+  }
+
+  /**
+   * If the crew moved the follow camera with the mouse (or a finger) since it was placed, keep
+   * that place around the astronaut. Only after the crew's own input (CHASE_INPUT_MS, which also
+   * covers CesiumJS's coasting after a drag): CesiumJS also lifts the camera a little where its
+   * ground is higher than ours, and that must not change the follow's distance and angle.
+   */
+  private syncChase(): void {
+    const at = this.chaseAt;
+    if (!at || performance.now() - this.lastInput > CHASE_INPUT_MS) return;
+    const c = this.viewer.camera.positionCartographic;
+    const now = { lon: Cesium.Math.toDegrees(c.longitude), lat: Cesium.Math.toDegrees(c.latitude), h: c.height };
+    if (metresApart(now, at.cam) + Math.abs(now.h - at.cam.h) < 0.2) return; // smaller: rounding, or CesiumJS lifting the camera off the ground
+    this.chaseOff = chaseOffsetFrom(now, at.p, at.heading);
+  }
+
+  /**
+   * A view button while the camera follows an astronaut: zoom changes the distance, turn goes
+   * around them, tilt looks more down or more level. The follow goes on, also while the clock
+   * is paused. False for the other buttons (and when the follow camera is not on): the caller
+   * then moves the free camera.
+   */
+  chaseNudge(kind: Nudge, steps = 1): boolean {
+    const at = this.chaseAt;
+    if (!at) return false;
+    this.syncChase();
+    const o = { ...this.chaseOff };
+    if (kind === "in") o.rangeM *= 0.88 ** steps;
+    else if (kind === "out") o.rangeM /= 0.88 ** steps;
+    else if (kind === "turnLeft") o.aroundDeg -= NUDGE_TURN_DEG * steps;
+    else if (kind === "turnRight") o.aroundDeg += NUDGE_TURN_DEG * steps;
+    else if (kind === "tiltUp") o.pitchDeg += NUDGE_TILT_DEG * steps;
+    else if (kind === "tiltDown") o.pitchDeg -= NUDGE_TILT_DEG * steps;
+    else return false;
+    this.chaseOff = clampChase(o);
+    this.placeChase(at.p, at.heading);
+    return true;
+  }
+
+  /** The follow camera goes back to its first place: behind and above the astronaut. */
+  chaseReset(): void {
+    this.chaseOff = { ...CHASE_DEFAULT };
+  }
+
+  /** True while the camera is the follow camera (no other view took over). */
+  chasing(): boolean {
+    return !!this.chaseAt;
+  }
+
+  /** The follow camera's offset now (for tests and the dev tour). */
+  chaseState(): ChaseOffset | null {
+    return this.chaseAt ? { ...this.chaseOff } : null;
+  }
+
   /** Eye-level camera for the helmet view: about 1.8 m above the ground, looking where the crew walks. */
   firstPerson(p: LonLat & { h: number }, headingDeg: number): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     if (this.smoothHeading === null) this.smoothHeading = headingDeg;
     const diff = ((headingDeg - this.smoothHeading + 540) % 360) - 180;
@@ -1248,6 +1351,7 @@ export class MapView {
   nudge(kind: Nudge, steps = 1): void {
     const cam = this.viewer.camera;
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     this.smoothHeading = null;
     cam.lookAtTransform(Cesium.Matrix4.IDENTITY);
@@ -1313,6 +1417,7 @@ export class MapView {
   /** Camera looking down on the walkers, north up (tablet map). */
   topView(p: LonLat & { h: number }, height = 380): void {
     this.home = null;
+    this.chaseAt = null;
     this.craterFit = null;
     const f = this.widen();
     this.viewer.camera.setView({
