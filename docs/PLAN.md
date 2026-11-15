@@ -502,6 +502,8 @@ The user asked for: real astronaut characters for the crew (1 to 4) instead of a
 
 71. **ℹ️ Slower clocks (2026-11-15).** The user asked for ×5 and ×10 (the slowest was ×30 on the walk tablet, ×60 in the replay window, ×15/×30 in the control box). The walk has ×5 ×10 ×30 ×60 ×120 on the tablet and ×5–×480 in the control box; the replay ×5–×240 in its window and ×5–×480 in the box. To fit five speed buttons, the walk tablet's "Jump to next event" button now says "Next event" (its tooltip keeps the long name). The walk-through is not a clock (it flies 45 m per second at 1×) and keeps 0.5×–8×.
 
+79. **ℹ️ Natural colour is the first look (2026-11-15, the user's choice).** The whole planet now opens in natural colour (the Viking colour mosaic, R1; still called "approximate", never "true colour") instead of the MOLA height colours. "Height colours" stays as the other choice of the "Mars colours" switch, and a look the crew clicked earlier is still kept for their next visit. The launch animation's telescope view shows the same look. The Viking tiles for the first view are about as big as the MOLA ones (levels 0–3: 2.3 MB against 2.6 MB on disk), so the start-up is not slower. This replaces the first-look rule of finding 45 and map round 3 (item 1).
+
 ## 9. Files in this repo
 
 - `docs/PLAN.md` — this file

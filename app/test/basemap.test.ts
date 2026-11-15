@@ -15,9 +15,9 @@ describe("base map looks: height colours or natural colour", () => {
     }
   });
 
-  it("starts with the current look (height colours) when nothing was chosen", () => {
-    expect(DEFAULT_BASE).toBe("heights");
-    expect(startBaseStyle(null, ["heights", "colour"])).toBe("heights");
+  it("starts with natural colour when nothing was chosen", () => {
+    expect(DEFAULT_BASE).toBe("colour");
+    expect(startBaseStyle(null, ["heights", "colour"])).toBe("colour");
   });
 
   it("starts with the look the crew chose last time", () => {
@@ -27,12 +27,13 @@ describe("base map looks: height colours or natural colour", () => {
 
   it("ignores a saved choice the package does not have, or a broken one", () => {
     expect(startBaseStyle("colour", ["heights"])).toBe("heights"); // an older package: height colours only
-    expect(startBaseStyle("rainbow", ["heights", "colour"])).toBe("heights");
-    expect(startBaseStyle("", ["heights", "colour"])).toBe("heights");
+    expect(startBaseStyle("rainbow", ["heights", "colour"])).toBe("colour");
+    expect(startBaseStyle("", ["heights", "colour"])).toBe("colour");
   });
 
   it("falls back to what the package has", () => {
     expect(startBaseStyle(null, ["colour"])).toBe("colour");
+    expect(startBaseStyle(null, ["heights"])).toBe("heights"); // an older package: height colours only
     expect(startBaseStyle(null, [])).toBe(DEFAULT_BASE);
   });
 

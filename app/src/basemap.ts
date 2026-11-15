@@ -1,7 +1,8 @@
 // The whole-planet map has two looks, and the crew can switch between them:
-//   "heights" = NASA MOLA height colours (the app's first look; blue is low ground, not water)
-//   "colour"  = natural colour: the Viking orbiters' colour mosaic. Its producer (USGS) calls it a
-//               colourised mosaic, so the app says "natural colour, approximate" and never "true colour".
+//   "heights" = NASA MOLA height colours (blue is low ground, not water)
+//   "colour"  = natural colour: the Viking orbiters' colour mosaic, the app's first look since
+//               2026-11-15 (the user's choice). Its producer (USGS) calls it a colourised mosaic,
+//               so the app says "natural colour, approximate" and never "true colour".
 // Both come from JPL Mars Trek (R1) and are cached in the mission package. The sharp photo maps
 // (CTX, HiRISE) are drawn on top of either look.
 
@@ -9,8 +10,8 @@ export type BaseStyle = "heights" | "colour";
 
 export const BASE_STYLES: BaseStyle[] = ["heights", "colour"];
 
-/** The look the app starts with until the crew picks one. */
-export const DEFAULT_BASE: BaseStyle = "heights";
+/** The look the app starts with until the crew picks one: Mars in (approximately) its own colours. */
+export const DEFAULT_BASE: BaseStyle = "colour";
 
 /** Which look a mission-package layer belongs to (null = not a whole-planet base map). */
 export function baseStyleOf(layerId: string): BaseStyle | null {
