@@ -6,6 +6,8 @@ there as it is. This writes:
   <out>/README.ckb.md   Central Kurdish (Sorani), inside <div dir="rtl">
   <out>/img/*.svg       each drawing as its own SVG; text in a drawing uses an
                         embedded subset of Playpen Sans Arabic (only its letters)
+  <out>/img/photo-*.jpg the real photos of the page (answers 6, 7 and 17), taken out of their
+                        data: URLs and named by each <img data-file="...">
 
 Run it again after any change to docs/Baramger-Like-Im-Five.html (from the repo root):
   curl -sSL -o /tmp/PlaypenSansArabic.ttf \
@@ -15,6 +17,7 @@ Run it again after any change to docs/Baramger-Like-Im-Five.html (from the repo 
 The preview pictures (img/preview-*.jpg) are screenshots of the HTML page and are not made by this script.
 """
 import base64
+import copy
 import html
 import io
 import os
@@ -77,8 +80,39 @@ def export_svg(svg: Tag, name: str, background: str | None = None) -> str:
     return label
 
 
-SWATCH = {"#B8B2AA": "⬜", "#ECB026": "🟨", "#D63027": "🟥"}
+SWATCH = {"#B8B2AA": "⬜", "#59C36A": "🟩", "#ECB026": "🟨", "#D63027": "🟥"}
 BOX = {"app": "📱", "note": "📝", "fact": "💡"}
+
+
+def write_photo(src: str, name: str) -> None:
+    """A real photo of the page, saved from its data: URL (both languages share the file)."""
+    m = re.match(r"data:image/jpeg;base64,(.*)", src, re.S)
+    if not m or not re.fullmatch(r"photo-[a-z0-9-]+\.jpg", name):
+        raise ValueError(f"unexpected photo: {name}")
+    data = base64.b64decode(m.group(1))
+    path = os.path.join(img_dir, name)
+    if not os.path.exists(path) or open(path, "rb").read() != data:
+        with open(path, "wb") as fh:
+            fh.write(data)
+
+
+def photo_lines(gallery: Tag, ku: bool) -> list[str]:
+    """Each photo: the picture, its title and caption, then its credit line."""
+    out = []
+    for fig in gallery.find_all("figure", class_="photo", recursive=False):
+        img = fig.find("img")
+        write_photo(img["src"], img["data-file"])
+        cap = copy.copy(fig.find("figcaption"))
+        title = cap.find("b", recursive=False)
+        credit = cap.find(class_="credit")
+        head = inline(title, ku).strip()
+        cred = re.sub(r" +", " ", inline(credit, ku)).strip()
+        title.extract()
+        credit.extract()
+        body = re.sub(r" +", " ", inline(cap, ku)).strip()
+        out += [f'<p align="center"><img src="img/{img["data-file"]}" width="360" alt="{html.escape(img.get("alt", ""))}"></p>', "",
+                f"{bold(head, ku)} · {body}", "", f"<sub>{cred}</sub>", ""]
+    return out
 
 
 def bold(text: str, ku: bool) -> str:
@@ -152,6 +186,8 @@ def blocks(node: Tag, ku: bool) -> list[str]:
             kind = next((k for k in BOX if k in cls), "app")
             title = inline(c.find(class_="tag"), ku)
             out += quote([f"{BOX[kind]} " + bold(title, ku), ""] + blocks(c, ku))
+        elif c.name == "div" and "photos" in cls:
+            out += photo_lines(c, ku)
         elif c.name == "div" and "pair" in cls:
             for mini in c.find_all(class_="mini", recursive=False):
                 out += quote(blocks(mini, ku))
@@ -217,8 +253,9 @@ def page(pane: Tag, ku: bool) -> str:
     for fp in foot.find_all("p"):
         L += [f"<sub>{inline(fp, ku).strip()}</sub>", ""]
     if not ku:
-        L += ["<sub>Drawings: each picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of "
-              "Playpen Sans Arabic (SIL Open Font License 1.1).</sub>", ""]
+        L += ["<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of "
+              "Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 6, 7 and 17; "
+              "their credits are under each photo.</sub>", ""]
     if ku:
         L += ["</div>", ""]
     text = "\n".join(L)
@@ -233,6 +270,9 @@ for lang, fname in (("en", "README.md"), ("ckb", "README.ckb.md")):
     with open(os.path.join(out_dir, fname), "w", encoding="utf-8") as fh:
         fh.write(page(panes[lang], lang == "ckb"))
 files = sorted(os.listdir(img_dir))
-print(len(files), "drawings,", sum(os.path.getsize(os.path.join(img_dir, f)) for f in files) // 1024, "KB")
+svgs = [f for f in files if f.endswith(".svg")]
+photos = [f for f in files if f.startswith("photo-")]
+print(len(svgs), "drawings,", sum(os.path.getsize(os.path.join(img_dir, f)) for f in svgs) // 1024, "KB;",
+      len(photos), "photos,", sum(os.path.getsize(os.path.join(img_dir, f)) for f in photos) // 1024, "KB")
 for fname in ("README.md", "README.ckb.md"):
     print(fname, os.path.getsize(os.path.join(out_dir, fname)) // 1024, "KB")

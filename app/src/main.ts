@@ -10,7 +10,7 @@ import "./style.css";
 import { type HeightGrid, type LonLat, type RouteGrid, bilinear, cellIndex, inside, loadBinary, loadGridMeta, metresBetween } from "./grid";
 import { DEFAULT_COST, type CostModel, isPassable } from "./router";
 import { type Check, type Conditions, type PlanInput, type PlanResult, type Sample, computePlan, fmtClock, routeLegs, suggestOrder } from "./plan";
-import { MapView, type OverlayKey, type PlacePin, type StopPin, type ZonePin } from "./map";
+import { MapView, type Nudge, type OverlayKey, type PlacePin, type StopPin, type ZonePin } from "./map";
 import { type MissionPackage, type PovImage, assumption, cameraName, isCloseUp } from "./pkg";
 import { type ProfilePoint, bindChartHover, profileChart, tempChart } from "./charts";
 import {
@@ -27,6 +27,7 @@ import { playIntro } from "./intro";
 import { DEFAULT_LOAD, type LoadModel, addPickup, factorText, heaviest, kgText, timeFactor } from "./load";
 import { type WalkReport, buildReport, reportHtml, reportMapSvg } from "./report";
 import { earthMarsLightTime } from "./lighttime";
+import { type CrewSpot, type PathPoint, crewSpots } from "./crew";
 
 window.CESIUM_BASE_URL = CESIUM_BASE_URL;
 
@@ -155,6 +156,16 @@ const walkUi = {
 };
 
 const replay = { playing: false, speed: 2, clock: 0, tab: "events" as "events" | "table" };
+/** The astronaut the camera follows in the walk, the walk-through and the replay (0 = A1, who leads). */
+let followIdx = 0;
+/** The view buttons moved the camera: the walk-through and the walk stop placing it until "Follow" is pressed. */
+let camFree = false;
+/** In the replay the camera stays over the whole route, unless an astronaut was chosen to follow. */
+let replayFollow = false;
+/** The control box on the map is open. */
+let ctlOpen = false;
+/** The time slider of the control box is being dragged: its value is not set from outside then. */
+let ctlDragging = false;
 let lastReport: { report: WalkReport; html: string } | null = null;
 
 let pkg: MissionPackage;
@@ -501,6 +512,8 @@ function renderChip(): void {
   $("#zone-select").hidden = globe || zones.length < 2;
   $("#to-globe").hidden = globe;
   $("#globe-hint").hidden = !globe;
+  map.setPoles(globe && !document.body.classList.contains("intro-on")); // no arrows in the telescope view
+  renderCtl();
 }
 
 // ------------------------------------------------------------------ whole-planet view
@@ -924,6 +937,7 @@ function dataPopup(tab: DataTab): string {
     }
     items.push(["load", `<b>Carried load.</b> A model, not a measurement: walking time grows with the mass each astronaut moves (body + suit + load).`]);
     if (pkg.placeNames?.length) items.push(["names", `<b>Place names.</b> ${pkg.placeNames.length} official names (Jezero, Belva, Neretva Vallis…) stand where the USGS map prints them: good from far away, not exact. Bright Angel, Cheyava Falls and Three Forks are the Perseverance team's own informal names.`]);
+    items.push(["crew", `<b>Crew figures.</b> NASA's Z2 Spacesuit model (NASA 3D Resources), at its real size (about 1.9 m), one per astronaut, A1 in front. The grime painted on NASA's model was taken off. The figures cannot move their legs: they glide along the route. From far away only the round crew marker can be seen.`]);
     items.push(["scale", `<b>Scale card.</b> Drawings at the map's scale in the middle of the view (a tilted view has no single scale). Real sizes from NASA: Perseverance rover 3 m, MRO orbiter 13.6 m, Space Shuttle orbiter 37 m, space station 109 m. The person (${Number(personHeightM.toFixed(1))} m) is a round value.`]);
     // the wide crater photo map is a preliminary mosaic: its limit is in the package, and the crew reads positions on it
     const wide = pkg.layers.find((l) => l.id === "tiles-ctx-wide")?.caveats?.find((c) => /preliminary/i.test(c));
@@ -989,6 +1003,379 @@ function previewPanel(): string {
   </div>`;
 }
 
+// ------------------------------------------------------------------ control box (view and walk)
+/** Speeds the control box steps through: the walk and the replay in simulated minutes per second (x60 = 1), the walk-through as a factor. */
+const CTL_SPEEDS: Record<"walk" | "preview" | "replay", number[]> = {
+  walk: [0.25, 0.5, 1, 2, 4, 8],
+  preview: [0.5, 1, 2, 4, 8],
+  replay: [0.5, 1, 2, 4, 8],
+};
+/** The view buttons, row by row (5 columns); null = an empty cell. */
+const CTL_PAD: ([Nudge | "follow", string, string] | null)[] = [
+  ["turnLeft", "↶", "Turn left"], ["forward", "↑", "Move forward"], ["turnRight", "↷", "Turn right"], ["up", "⇡", "Go up"], ["in", "+", "Zoom in"],
+  ["left", "←", "Move left"], ["follow", "◎", ""], ["right", "→", "Move right"], ["down", "⇣", "Go down"], ["out", "−", "Zoom out"],
+  ["tiltUp", "⤴", "Tilt up"], ["back", "↓", "Move back"], ["tiltDown", "⤵", "Tilt down"], null, null,
+];
+
+type SimMode = "walk" | "preview" | "replay";
+/** The walk, walk-through or replay that the box's walk controls run (none in the plan, or after a finished walk). */
+function simMode(): SimMode | null {
+  if (state.mode === "preview" && preview.track.length) return "preview";
+  if (state.mode === "replay" && walkUi.w) return "replay";
+  if (state.mode === "walk" && walkUi.w && walkUi.w.phase !== "done") return "walk";
+  return null;
+}
+
+function simSpeed(m: SimMode): number {
+  return m === "walk" ? walkUi.speed : m === "preview" ? preview.speed : replay.speed;
+}
+
+function speedText(m: SimMode, v: number): string {
+  return m === "preview" ? `${v}×` : `×${Math.round(v * 60)}`;
+}
+
+function simPlaying(m: SimMode): boolean {
+  return m === "walk" ? walkUi.playing : m === "preview" ? preview.playing : replay.playing;
+}
+
+/** The time slider: its range, value and the clock text, for each kind of run. */
+function simTime(m: SimMode): { min: number; max: number; step: number; value: number; clock: string; label: string } {
+  if (m === "preview") {
+    const total = preview.track[preview.track.length - 1].D;
+    return { min: 0, max: Math.round(total), step: 1, value: preview.D, clock: fmtClock(trackAt(preview.D).clock), label: "Place along the route" };
+  }
+  const w = walkUi.w!;
+  if (m === "replay") return { min: w.startMin, max: w.clockMin, step: 0.5, value: replay.clock, clock: fmtClock(replay.clock), label: "Replay time" };
+  return { min: w.startMin, max: w.startMin + evaMin, step: 1, value: w.clockMin, clock: fmtClock(w.clockMin), label: "Walk time (forward only)" };
+}
+
+/** What the middle button does: follow the crew again, or go back to the screen's own view. */
+function followTitle(): string {
+  if (state.view === "globe") return "Back to the whole planet";
+  if (simMode() || state.mode === "walk") return "Follow the crew again";
+  return "Back to the walk zone";
+}
+
+function ctlHtml(): string {
+  const hud = state.mode === "walk" && walkUi.hud;
+  const pad = CTL_PAD.map((b) => {
+    if (!b) return `<span class="ctl-gap"></span>`;
+    const [key, glyph, title] = b;
+    const t = key === "follow" ? followTitle() : hud ? `${title} (not in the helmet view)` : title;
+    const off = hud && key !== "follow" ? "disabled" : "";
+    return `<button type="button" data-nudge="${key}" title="${esc(t)}" aria-label="${esc(t)}" ${off}>${glyph}</button>`;
+  }).join("");
+  const m = simMode();
+  let walk = "";
+  if (m) {
+    const speeds = CTL_SPEEDS[m];
+    const v = simSpeed(m);
+    const i = speeds.indexOf(v);
+    const t = simTime(m);
+    const names = crewNow().map((c) => c.name);
+    const shown = names.length ? names : ["A1"];
+    walk = `
+    <div class="ctl-walk" data-key="ctl-${m}">
+      <div class="ctl-row">
+        <button type="button" id="ctl-play" class="ctl-play">${simPlaying(m) ? "Pause" : "Play"}</button>
+        <input type="range" id="ctl-time" min="${t.min}" max="${t.max}" step="${t.step}" value="${t.value}" aria-label="${esc(t.label)}" title="${esc(t.label)}">
+        <b class="ctl-clock" id="ctl-clock">${t.clock}</b>
+      </div>
+      <div class="ctl-row">
+        <span class="muted">Speed</span>
+        <button type="button" data-ctlspeed="-1" aria-label="Slower" title="Slower" ${i <= 0 ? "disabled" : ""}>−</button>
+        <b class="ctl-speed">${speedText(m, v)}</b>
+        <button type="button" data-ctlspeed="1" aria-label="Faster" title="Faster" ${i >= speeds.length - 1 ? "disabled" : ""}>+</button>
+      </div>
+      <div class="ctl-row">
+        <label class="ctl-follow">Camera follows <select id="ctl-follow" aria-label="Astronaut the camera follows">${shown.map((n, k) => `<option value="${k}" ${k === followIdx ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+      </div>
+    </div>`;
+  }
+  return `<div class="ctl-pad" role="group" aria-label="Move the view">${pad}</div>${walk}`;
+}
+
+/** The box's width when open (px): its column on the map is kept free for it, open or not. */
+const CTL_W = 180;
+/** The box's height when open with the walk controls (px), for the room check. */
+const CTL_H = 262;
+
+/**
+ * Where the control box goes: at the map's right edge, below every chip in that column (the
+ * "Panel" button, the map title, the scale card, the add-stop hint). If the map is too short for
+ * that, at the bottom right, and the information line (bottom left) is kept narrower than the
+ * box's column. Chip sizes do not change while a clock runs, so the box does not move then.
+ */
+function placeCtl(): void {
+  const box = document.getElementById("ctl");
+  const readout = document.getElementById("readout");
+  if (!box || !readout) return;
+  readout.style.maxWidth = "";
+  if (!shown(box)) return;
+  const area = $("#map-area").getBoundingClientRect();
+  const left = area.right - 14 - CTL_W;
+  const right = area.right - 14;
+  let top = area.top + 14;
+  // chips in the box's column, and in the helmet view the visor's readings (time left at the top right)
+  const above = [...["panel-show", "map-title", "scale", "add-hint"].map((id) => document.getElementById(id)), ...document.querySelectorAll("#hud .hud-tr")];
+  for (const el of above) {
+    if (!shown(el)) continue;
+    const q = el.getBoundingClientRect();
+    if (q.width > 0 && q.right > left - 8 && q.left < right + 8) top = Math.max(top, q.bottom + 10);
+  }
+  if (top + CTL_H <= area.bottom - 14) {
+    box.style.top = `${Math.round(top - area.top)}px`;
+    box.style.bottom = "auto";
+    return;
+  }
+  box.style.top = "auto";
+  box.style.bottom = "14px";
+  readout.style.maxWidth = `${Math.max(120, Math.round(left - area.left - 24))}px`; // the line wraps left of the box
+}
+
+function renderCtl(): void {
+  const box = document.getElementById("ctl");
+  if (!box) return;
+  const toggle = $("#ctl-toggle");
+  const body = $("#ctl-body");
+  toggle.setAttribute("aria-expanded", String(ctlOpen));
+  toggle.textContent = ctlOpen ? "Controls ▾" : "Controls ▸";
+  body.hidden = !ctlOpen;
+  placeCtl();
+  if (!ctlOpen) return;
+  const slider = document.getElementById("ctl-time") as HTMLInputElement | null;
+  const keep = ctlDragging && slider ? slider.value : null;
+  morph(body, ctlHtml());
+  const again = document.getElementById("ctl-time") as HTMLInputElement | null;
+  if (again) {
+    if (keep !== null) again.value = keep; // the user is dragging: the thumb stays under the finger
+    else {
+      const m = simMode();
+      if (m) again.value = String(simTime(m).value);
+    }
+  }
+}
+
+/** One step of a view button. The camera stops following until the middle button is pressed. */
+function doNudge(kind: Nudge): void {
+  if (state.mode === "walk" && walkUi.hud) return; // the helmet view is the astronaut's own eyes
+  camFree = true;
+  replayFollow = false;
+  if (state.mode === "walk" && walkUi.follow) {
+    walkUi.follow = false; // the "Map follows the crew" switch shows it
+    panelDirty = true;
+    ensureLoop();
+  }
+  map.nudge(kind);
+}
+
+/** The middle button: follow the crew again, or go back to the screen's own view. */
+function ctlFollow(): void {
+  camFree = false;
+  if (state.view === "globe") map.showPlanet(zonesMiddle());
+  else if (state.mode === "walk" && walkUi.w) {
+    walkUi.follow = true;
+    map.resetDrone();
+    placeWalkCamera();
+  } else if (state.mode === "preview" && preview.track.length) {
+    map.resetDrone();
+    placePreviewCamera();
+  } else if (state.mode === "replay") {
+    replayFollow = true;
+    placeReplayCamera();
+  } else map.flyToSite(pkg.site.center, 1.2);
+  renderPanel();
+}
+
+/** The replay's camera: over the followed astronaut, once one was chosen (else it keeps the overview). */
+function placeReplayCamera(): void {
+  if (!replayFollow || camFree) return;
+  const spot = followedSpot(crewNow());
+  if (spot) map.topView(spot);
+}
+
+/** Play or pause the walk, the walk-through or the replay (the same as their own Play buttons). */
+function togglePlay(m: SimMode): void {
+  const w = walkUi.w;
+  if (m === "preview") {
+    const total = preview.track[preview.track.length - 1].D;
+    if (preview.D >= total) { preview.D = 0; preview.stopIdx = -1; map.resetDrone(); }
+    preview.playing = !preview.playing;
+  } else if (m === "walk") walkUi.playing = !walkUi.playing;
+  else {
+    if (w && replay.clock >= w.clockMin) replay.clock = w.startMin;
+    replay.playing = !replay.playing;
+  }
+  renderPanel();
+  ensureLoop();
+}
+
+function stepSpeed(m: SimMode, dir: number): void {
+  const speeds = CTL_SPEEDS[m];
+  const i = speeds.indexOf(simSpeed(m));
+  const next = speeds[Math.max(0, Math.min(speeds.length - 1, (i < 0 ? speeds.indexOf(1) : i) + dir))];
+  if (m === "walk") walkUi.speed = next;
+  else if (m === "preview") preview.speed = next;
+  else replay.speed = next;
+  renderPanel();
+}
+
+/** The time slider moved. The walk-through and the replay go to that moment; a walk only runs forward. */
+function ctlTime(value: number, final: boolean): void {
+  const m = simMode();
+  if (!m) return;
+  if (m === "preview") {
+    preview.D = value;
+    preview.stopIdx = -1;
+    preview.pauseLeft = 0;
+    preview.playing = false;
+    showCrew(trackAt(preview.D));
+    placePreviewCamera();
+    panelDirty = true;
+    ensureLoop();
+  } else if (m === "replay") {
+    const w = walkUi.w!;
+    replay.clock = value;
+    replay.playing = false;
+    showCrew(trackAtClock(w.track, replay.clock));
+    placeReplayCamera();
+    panelDirty = true;
+    ensureLoop();
+  } else {
+    $("#ctl-clock").textContent = fmtClock(value);
+    if (final) walkForwardTo(value);
+  }
+}
+
+/** Run the walk on to a later moment (the walk cannot go back: the replay after the walk can). */
+function walkForwardTo(target: number): void {
+  const w = walkUi.w;
+  if (!w || w.phase === "done") return;
+  if (target <= w.clockMin + 0.01) {
+    flash("A walk only runs forward. After the walk, the Replay can go back in time.");
+    renderPanel();
+    return;
+  }
+  for (let guard = 0; w.clockMin < target - 1e-6 && (w.phase as string) !== "done" && guard < 100_000; guard++) {
+    for (const e of tick(w, Math.min(0.5, target - w.clockMin))) if (e.type === "home") walkUi.playing = false;
+  }
+  walkUi.message = "";
+  if ((w.phase as string) === "done") setHud(false);
+  showCrew(w.pos);
+  map.setTrack(w.track);
+  placeWalkCamera();
+  renderHud();
+  renderPanel();
+}
+
+function bindCtl(): void {
+  const box = $("#ctl");
+  let repeat = 0;
+  let again = 0;
+  const stop = () => {
+    window.clearTimeout(again);
+    window.clearInterval(repeat);
+    again = 0;
+    repeat = 0;
+  };
+  box.addEventListener("pointerdown", (ev) => {
+    const b = (ev.target as HTMLElement).closest("[data-nudge]") as HTMLButtonElement | null;
+    if (b && !b.disabled && b.dataset.nudge !== "follow") {
+      ev.preventDefault();
+      const kind = b.dataset.nudge as Nudge;
+      doNudge(kind);
+      stop();
+      again = window.setTimeout(() => { repeat = window.setInterval(() => doNudge(kind), 60); }, 320); // hold to keep moving
+      b.setPointerCapture?.(ev.pointerId);
+    }
+    if ((ev.target as HTMLElement).id === "ctl-time") ctlDragging = true;
+  });
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) box.addEventListener(type, () => { stop(); ctlDragging = false; });
+  box.addEventListener("click", (ev) => {
+    const el = (ev.target as HTMLElement).closest("button") as HTMLButtonElement | null;
+    if (!el || el.disabled) return;
+    const m = simMode();
+    if (el.id === "ctl-toggle") {
+      ctlOpen = !ctlOpen;
+      renderCtl();
+    } else if (el.dataset.nudge === "follow") ctlFollow();
+    else if (el.dataset.nudge && (ev as MouseEvent).detail === 0) doNudge(el.dataset.nudge as Nudge); // Enter or Space (a press already moved on pointerdown)
+    else if (el.id === "ctl-play" && m) togglePlay(m);
+    else if (el.dataset.ctlspeed && m) stepSpeed(m, Number(el.dataset.ctlspeed));
+  });
+  box.addEventListener("input", (ev) => {
+    const t = ev.target as HTMLInputElement;
+    if (t.id === "ctl-time") ctlTime(Number(t.value), false);
+  });
+  box.addEventListener("change", (ev) => {
+    const t = ev.target as HTMLInputElement | HTMLSelectElement;
+    if (t.id === "ctl-time") {
+      ctlDragging = false;
+      ctlTime(Number(t.value), true);
+    } else if (t.id === "ctl-follow") {
+      followIdx = Number(t.value) || 0;
+      camFree = false;
+      if (state.mode === "replay") replayFollow = true;
+      map.resetDrone();
+      const w = walkUi.w;
+      if (state.mode === "walk" && w) {
+        walkUi.follow = true;
+        showCrew(w.pos); // the helmet view hides the followed astronaut's own figure
+        placeWalkCamera();
+        renderHud();
+      } else if (state.mode === "preview") placePreviewCamera();
+      else placeReplayCamera();
+      renderPanel();
+    }
+  });
+}
+
+// ------------------------------------------------------------------ crew figures
+/** At most this many points of the path walked so far are looked at (enough for 4 astronauts in single file). */
+const CREW_TRAIL_POINTS = 120;
+
+/** Where each astronaut is now, in the walk, the walk-through or the replay (empty in the plan). */
+function crewNow(): CrewSpot[] {
+  let trail: PathPoint[] = [];
+  let stopAt: LonLat | null = null;
+  const w = walkUi.w;
+  if (state.mode === "walk" && w) {
+    trail = [...w.track.slice(-CREW_TRAIL_POINTS), w.pos];
+    const stop = currentStop(w);
+    if (stop) stopAt = stop;
+  } else if (state.mode === "preview" && preview.track.length) {
+    const t = preview.track;
+    let i = 0;
+    while (i < t.length && t[i].D <= preview.D) i++;
+    trail = [...t.slice(Math.max(0, i - CREW_TRAIL_POINTS), i), trackAt(preview.D)];
+    if (preview.stopIdx >= 0 && preview.pauseLeft > 0) stopAt = state.stops[preview.stopIdx] ?? null;
+  } else if (state.mode === "replay" && w) {
+    const done = w.track.filter((p) => p.clockMin <= replay.clock).slice(-CREW_TRAIL_POINTS);
+    trail = [...done, trackAtClock(w.track, replay.clock)];
+    // at a stop between "arrived" and "left"
+    const last = [...w.events].reverse().find((e) => e.clockMin <= replay.clock && (e.kind === "arrived" || e.kind === "left"));
+    if (last?.kind === "arrived") stopAt = { lon: last.lon, lat: last.lat };
+  }
+  return crewSpots(trail, state.crewSize, { stopAt, heightAt: (lon, lat) => map.heightAt(lon, lat) });
+}
+
+/** The followed astronaut (A1 when the crew is smaller than the choice). */
+function followedSpot(spots: CrewSpot[]): CrewSpot | null {
+  if (followIdx >= spots.length) followIdx = 0;
+  return spots[followIdx] ?? null;
+}
+
+/** The crew marker (from afar) and the astronaut figures (up close). `p` is the crew's place. */
+function showCrew(p: (LonLat & { h: number }) | null): void {
+  if (!p) {
+    map.setWalker(null);
+    map.setCrew([]);
+    return;
+  }
+  map.setWalker(p, crewLabel());
+  map.setCrew(crewNow(), state.mode === "walk" && walkUi.hud ? followIdx : -1); // the helmet view looks through the followed one's visor
+}
+
 function startPreview(): void {
   if (!state.plan || state.busy) return;
   leavePlanEditing();
@@ -999,11 +1386,20 @@ function startPreview(): void {
   preview.pauseLeft = 0;
   preview.stopIdx = -1;
   preview.playing = true;
+  camFree = false;
   state.mode = "preview";
   state.selected = null;
   map.resetDrone();
   renderPanel();
   ensureLoop();
+}
+
+/** The walk-through's camera: behind the followed astronaut (A1: behind the crew, looking along the route). */
+function placePreviewCamera(p = trackAt(preview.D), ahead = trackAt(Math.min(preview.track[preview.track.length - 1].D, preview.D + 40))): void {
+  if (camFree) return; // the view buttons moved the camera: it stays where it was put
+  const spot = followIdx > 0 ? followedSpot(crewNow()) : null;
+  if (spot) map.droneView(spot, spot.headingDeg);
+  else map.droneView(p, metresBetween(grid.meta, p, ahead) > 1 ? bearingDeg(p, ahead) : 0);
 }
 
 function stepPreview(dt: number): void {
@@ -1028,8 +1424,8 @@ function stepPreview(dt: number): void {
   if (preview.D >= total) preview.playing = false;
   const p = trackAt(preview.D);
   const ahead = trackAt(Math.min(total, preview.D + 40));
-  map.setWalker(p, crewLabel());
-  map.droneView(p, metresBetween(grid.meta, p, ahead) > 1 ? bearingDeg(p, ahead) : 0);
+  showCrew(p);
+  placePreviewCamera(p, ahead);
   panelDirty = true;
 }
 
@@ -1075,7 +1471,8 @@ function openWalk(fresh = false): void {
   state.mode = "walk";
   state.selected = null;
   walkUi.playing = false;
-  map.setWalker(walkUi.w.pos, crewLabel());
+  camFree = false;
+  showCrew(walkUi.w.pos);
   map.setTrack(walkUi.w.track);
   map.setNotes(walkUi.w.notes);
   map.resetDrone();
@@ -1126,16 +1523,20 @@ function crewHeading(w: WalkState): number {
 function placeWalkCamera(): void {
   const w = walkUi.w;
   if (!w) return;
-  if (walkUi.hud) map.firstPerson(w.pos, crewHeading(w));
-  else if (walkUi.follow) map.topView(w.pos);
+  const spot = followedSpot(crewNow());
+  // the helmet view: through the followed astronaut's visor; A1 leads and looks where the crew goes
+  if (walkUi.hud) map.firstPerson(spot ?? w.pos, followIdx > 0 && spot ? spot.headingDeg : crewHeading(w));
+  else if (walkUi.follow && !camFree) map.topView(spot ?? w.pos);
 }
 
 function renderHud(): void {
   const el = $("#hud");
   const w = walkUi.w;
   if (!walkUi.hud || state.mode !== "walk" || !w || w.phase === "done") {
+    const was = !el.hidden;
     el.hidden = true;
     document.body.classList.remove("hud-on");
+    if (was) placeCtl();
     return;
   }
   document.body.classList.add("hud-on");
@@ -1155,7 +1556,10 @@ function renderHud(): void {
     stopTimer: stop ? { elapsed: w.stopElapsed, planned: plannedStopMin(w) } : null,
     warning: top ? { level: top.level, text: top.short } : null,
   }));
-  el.hidden = false;
+  if (el.hidden) {
+    el.hidden = false;
+    placeCtl(); // the visor's time-left reading is now in the box's column
+  }
 }
 
 /** Minutes to walk straight home from where the crew is now (re-routed every few simulated minutes). */
@@ -1407,10 +1811,12 @@ function openReplay(): void {
   replay.clock = w.startMin;
   replay.playing = false;
   replay.tab = "events";
+  replayFollow = false;
+  camFree = false;
   map.setRoute(state.plan.legs, model.comfortSlopeDeg);
   map.setTrack(w.track);
   map.setNotes(w.notes);
-  map.setWalker(trackAtClock(w.track, replay.clock), crewLabel());
+  showCrew(trackAtClock(w.track, replay.clock));
   map.flyToSite(pkg.site.center, 1.5);
   renderHud();
   renderPanel();
@@ -1492,7 +1898,8 @@ function stepReplay(dt: number): void {
   if (!w || !replay.playing) return;
   replay.clock = Math.min(w.clockMin, replay.clock + replay.speed * dt);
   if (replay.clock >= w.clockMin) replay.playing = false;
-  map.setWalker(trackAtClock(w.track, replay.clock), crewLabel());
+  showCrew(trackAtClock(w.track, replay.clock));
+  placeReplayCamera();
   panelDirty = true;
 }
 
@@ -1589,7 +1996,7 @@ function stepWalk(dtReal: number): void {
     // The tab the crew chose stays open (Progress, Notes): arriving never changes the screen
     // under them. The first tab's label turns into "At stop" with a dot instead.
   }
-  map.setWalker(w.pos, crewLabel());
+  showCrew(w.pos);
   map.setTrack(w.track);
   if ((w.phase as string) === "done" && walkUi.hud) setHud(false); // tick() may have ended the walk
   placeWalkCamera();
@@ -1605,7 +2012,7 @@ function jumpToNextEvent(): void {
   advanceToNextEvent(w, (s) => walkAlerts(s).filter((a) => a.level !== "info").map((a) => a.key));
   if (`${w.phase} ${w.queue.length}` !== before) walkUi.message = ""; // arrived or left: the old message is over
   if (w.phase === "done") setHud(false);
-  map.setWalker(w.pos, crewLabel());
+  showCrew(w.pos);
   map.setTrack(w.track);
   placeWalkCamera();
   renderHud();
@@ -1627,7 +2034,7 @@ function backToPlan(): void {
   replay.playing = false;
   preview.playing = false;
   renderHud();
-  map.setWalker(null);
+  showCrew(null);
   if (!w || w.phase !== "done") map.setTrack([]);
   if (state.plan) map.setRoute(state.plan.legs, model.comfortSlopeDeg);
   refreshMap();
@@ -1928,7 +2335,7 @@ function onUiClick(ev: Event): void {
   } else if (el.dataset.jump && w) {
     replay.clock = Number(el.dataset.jump);
     replay.playing = false;
-    map.setWalker(trackAtClock(w.track, replay.clock), crewLabel());
+    showCrew(trackAtClock(w.track, replay.clock));
     renderPanel();
   } else if (el.dataset.mode) {
     if (el.dataset.mode !== "walk") backToPlan();
@@ -2131,7 +2538,7 @@ function onUiInput(ev: Event): void {
     const wasPlaying = replay.playing;
     replay.clock = Number(t.value);
     replay.playing = false;
-    map.setWalker(trackAtClock(w.track, replay.clock), crewLabel());
+    showCrew(trackAtClock(w.track, replay.clock));
     const done = w.track.filter((p) => p.clockMin <= replay.clock);
     let walked = 0;
     for (let i = 1; i < done.length; i++) walked += metresBetween(grid.meta, done[i - 1], done[i]);
@@ -2525,12 +2932,14 @@ const INTRO_FAR_M = 220_000_000; // from here Mars is a small disc in the eyepie
 function showApp(): void {
   if (!document.body.classList.contains("intro-on")) return;
   slide(() => document.body.classList.remove("intro-on"));
+  map.setPoles(state.view === "globe");
 }
 
 /** Launch animation: a telescope on Earth finds Mars, then the view flies to the planet. */
 function runIntro(ready: Promise<void>): Promise<void> {
   return new Promise((resolve) => {
     document.body.classList.add("intro-on");
+    map.setPoles(false);
     const lt = earthMarsLightTime(new Date());
     intro = playIntro($("#intro"), {
       ready,
@@ -2573,6 +2982,7 @@ function slide(change: () => void): void {
   slideTimer = window.setTimeout(() => {
     document.body.classList.remove("sliding");
     positionHandle();
+    placeCtl(); // the map area has its new width
     map?.redraw();
   }, 700);
 }
@@ -2613,6 +3023,7 @@ function updateScale(): void {
   if (!card) return;
   el.setAttribute("aria-label", `Map scale. ${card.about}`); // the card takes no pointer, so it has no tooltip
   morph(el, html);
+  placeCtl();
 }
 
 /** Runs a few times a second at most, and once more after the last frame (the map draws only when it changes). */
@@ -2672,6 +3083,37 @@ function overflowReport(): string[] {
       if (q.width > 0 && q.height > 0 && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom) out.push(`scale card: lies over #${id}`);
     }
   }
+  // the control box: its rows fit, it stays inside the map, and it covers no other chip
+  const ctl = $("#ctl");
+  if (shown(ctl) && shown($("#map-area")) && ctl.getBoundingClientRect().width > 0) {
+    for (const row of ctl.querySelectorAll(".ctl-row, .ctl-pad")) check(row, "control box row");
+    const r = ctl.getBoundingClientRect();
+    const area = $("#map-area").getBoundingClientRect();
+    if (r.left < area.left - 0.5 || r.right > area.right + 0.5 || r.top < area.top - 0.5 || r.bottom > area.bottom + 0.5) out.push("control box: not inside the map");
+    const others: [string, Element | null][] = [
+      ...["map-title", "scale", "readout", "globe-hint", "add-hint", "size-hint", "panel-show"].map((id): [string, Element | null] => [`#${id}`, document.getElementById(id)]),
+      ...[...document.querySelectorAll("#hud .hud-tl, #hud .hud-tr, #hud .hud-mid, #hud .hud-warn")].map((el): [string, Element | null] => [`helmet ${el.className}`, el]),
+    ];
+    for (const [name, other] of others) {
+      if (!shown(other)) continue;
+      const q = other.getBoundingClientRect();
+      if (q.width > 0 && q.height > 0 && r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom) out.push(`control box: lies over ${name}`);
+    }
+  }
+  // the pole names on the whole-planet screen: inside the map, and under no chip
+  if (shown($("#map-area"))) {
+    const area = $("#map-area").getBoundingClientRect();
+    for (const b of map.poleLabelBoxes()) {
+      if (b.left >= area.right) continue; // under the panel, which lies over a narrow map: not seen
+      if (b.left < area.left - 0.5 || b.right > area.right + 0.5 || b.top < area.top - 0.5 || b.bottom > area.bottom + 0.5) out.push(`pole name "${b.name}": not inside the map`);
+      for (const id of ["map-title", "scale", "globe-hint", "readout", "size-hint", "panel-show"]) { // the open control box is a tool window: it may cover the map
+        const other = document.getElementById(id);
+        if (!shown(other)) continue;
+        const q = other.getBoundingClientRect();
+        if (q.width > 0 && q.height > 0 && b.left < q.right && q.left < b.right && b.top < q.bottom && q.top < b.bottom) out.push(`pole name "${b.name}": lies under #${id}`);
+      }
+    }
+  }
   return out;
 }
 
@@ -2682,6 +3124,7 @@ async function main(): Promise<void> {
     positionHandle();
     if (walkUi.hud && !walkUi.hudFull) setHud(true);
     if (state.popup) renderPopup(); // page sizes of the pop-up lists depend on the window's width
+    placeCtl();
   });
   // Coming from the zone menu or a zone marker: skip the planet view and go straight into the zone.
   const enterSite = session.get("baramger.enter") === "site";
@@ -2719,6 +3162,7 @@ async function main(): Promise<void> {
   document.title = `Baramger · ${zone.name}`;
   state.view = enterSite ? "site" : "globe";
   bindPanel();
+  bindCtl();
   bindCompareHandle();
   await loadZonePins();
   renderPanel();

@@ -65,7 +65,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:fo
 .note a { color: var(--care); }
 .hint { top: 14px; left: calc((100% - var(--panel-cover)) / 2); max-width: calc(100% - var(--panel-cover) - 16px); transform: translateX(-50%); border-color: var(--accent); color: var(--fg); display: flex; gap: 10px; align-items: center; text-align: center; }
 #size-hint { z-index: 31; top: 6px; border-color: var(--care); color: var(--care); font-size: 12.5px; background: rgba(12, 18, 22, 0.94); }
-#globe-hint { top: auto; bottom: 34px; border-color: var(--line); color: var(--muted); font-size: 12.5px; pointer-events: none; }
+#globe-hint { top: auto; bottom: 34px; left: 14px; transform: none; text-align: left; max-width: calc(50% - 70px); border-color: var(--line); color: var(--muted); font-size: 12.5px; pointer-events: none; } /* inside #map-area, bottom left: the south pole's name is right of the middle */
+@container (width < 560px) { #globe-hint { max-width: calc(100% - 28px); } } /* NARROW_MAP_W: full width, and the planet leaves room above it (planetFill) */
 .hint button { background: none; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; cursor: pointer; }
 .readout { bottom: 34px; left: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); max-width: calc(100% - var(--panel-cover) - 28px); }
 .readout:empty { display: none; }
@@ -86,8 +87,34 @@ body[data-screen="globe"] .readout:not(.flash) { display: none; }
 .sc-cap { height: 16px; font-size: 11.5px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @container (min-width: 560px) { #scale { position: absolute; top: 46px; right: 0; } } /* 560 = NARROW_MAP_W in layout.ts */
 @container (max-width: 195px) { #scale { display: none; } }
-@container (width < 560px) and (height < 600px) { body[data-screen="globe"] #scale { display: none; } } /* NARROW_MAP_W, SHORT_MAP_H in layout.ts */
+@container (width < 560px) { body[data-screen="globe"] #scale { display: none; } } /* NARROW_MAP_W in layout.ts */
 body.hud-on #scale { opacity: 0; pointer-events: none; } /* the helmet view looks along the ground: no single scale */
+
+/* The control box (map, top right): view buttons; in a walk, the walk-through and the replay
+   also play / pause, the time, the speed and who the camera follows. Every changing text has a
+   fixed width, so no button moves while a clock runs. Its place is set by placeCtl() (main.ts):
+   below the chips in its column, or at the bottom right on a short map. */
+#ctl { top: 167px; left: auto; right: 14px; bottom: auto; padding: 6px; display: grid; gap: 6px; justify-items: end; pointer-events: auto; z-index: 6; }
+#ctl-toggle { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font: 600 12.5px var(--font-body); cursor: pointer; width: 7.6em; text-align: left; }
+#ctl-toggle:hover { border-color: var(--accent); }
+#ctl-body { display: grid; gap: 8px; }
+#ctl-body[hidden] { display: none; }
+.ctl-pad { display: grid; grid-template-columns: repeat(5, 30px); grid-auto-rows: 30px; gap: 4px; }
+.ctl-pad button { display: grid; place-items: center; padding: 0; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; font-size: 16px; line-height: 1; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ctl-pad button:hover:not(:disabled) { border-color: var(--accent); }
+.ctl-pad button:disabled { opacity: 0.35; cursor: default; }
+.ctl-pad [data-nudge="follow"] { color: var(--accent); }
+.ctl-walk { display: grid; gap: 6px; width: 166px; font-size: 12.5px; }
+.ctl-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ctl-row button { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 0; width: 24px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.ctl-row button:disabled { opacity: 0.35; cursor: default; }
+.ctl-row .ctl-play { width: 4.4em; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+#ctl-time { flex: 1; min-width: 0; accent-color: var(--accent); }
+.ctl-clock { width: 3.1em; text-align: right; font-variant-numeric: tabular-nums; }
+.ctl-speed { width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.ctl-follow { display: flex; align-items: center; gap: 6px; }
+.ctl-follow select { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; font-size: 12.5px; }
+@container (width < 300px) { #ctl { display: none; } } /* a map strip this narrow has no room for it */
 
 #compare-handle { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--fg); cursor: ew-resize; touch-action: none; z-index: 5; }
 #compare-handle span { position: absolute; top: 50%; font-size: 11px; font-weight: 600; background: rgba(12,18,22,.85); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
@@ -166,7 +193,7 @@ p { margin: 0; }
 
 /* stops: one line each, so ten fit without scrolling */
 .stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.stop { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 2px 4px 2px 8px; min-height: 30px; }
+.stop { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1px 4px 1px 8px; min-height: 30px; } /* 1 px padding: on a scaled-down panel at pixel ratio 1 a border rounds up to 1.6 px, and the row must stay 30 px */
 .stop.base { grid-template-columns: 24px minmax(0, 1fr); }
 .num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 11px; flex: none; }
 .num.base { background: #fff; }
@@ -332,7 +359,11 @@ body.popup-full #popup.over-map { right: 0; background: rgba(0, 0, 0, 0.5); } /*
 
 /* walk-through + walk */
 .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.controls .primary, .controls .secondary { padding: 7px 10px; }
+.controls .primary, .controls .secondary { padding: 7px 9px; }
+/* The walk's footer row (Play | x30 x60 x120 | Jump to next event) fills the panel's width: with
+   the Inter font loaded it needed 1 px more than the row has, and wrapped (zone Z1, 760x450).
+   A little less padding gives it about 10 px to spare. */
+.controls .seg button { padding: 6px 7px; }
 /* fixed widths: "Play" / "Pause" / "Play again" must not push the buttons next to them */
 #w-play { min-width: 64px; }
 #pv-play, #rp-play { min-width: 96px; }

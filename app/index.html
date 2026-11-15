@@ -21,9 +21,13 @@
           </div>
           <div id="scale" class="map-chip" role="group" aria-label="Map scale" hidden></div>
         </div>
+        <div id="globe-hint" class="map-chip hint" hidden>Drag to turn Mars · scroll to zoom · click a marked zone</div>
+        <div id="ctl" class="map-chip ctl" role="group" aria-label="View and walk controls">
+          <button type="button" id="ctl-toggle" aria-expanded="false" aria-controls="ctl-body" title="Buttons to move the view, and to control the walk">Controls</button>
+          <div id="ctl-body" hidden></div>
+        </div>
       </div>
       <div id="add-hint" class="map-chip hint" hidden>Click the map to place the new stop. <button id="add-cancel" type="button">Cancel</button></div>
-      <div id="globe-hint" class="map-chip hint" hidden>Drag to turn Mars · scroll to zoom · click a marked zone</div>
       <div id="size-hint" class="map-chip hint" role="status" hidden>This window is too short to show everything. Make it taller (at least 420 px).</div>
       <div id="readout" class="map-chip readout" aria-live="off"></div>
       <div id="compare-handle" hidden><span>Photo</span><span>Layers</span></div>

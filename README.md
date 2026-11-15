@@ -22,7 +22,7 @@ Easy cartoon answers about the NASA challenge, our app and the map, in **English
 
 | Step | Screen | What the crew gets |
 |---|---|---|
-| **Start** | Habitat wall screen | A short launch animation: a telescope on Earth finds Mars, then the view flies to the planet. It ends on the whole of Mars, which can be turned and zoomed freely, in height colours or in natural colour. The walk zones are marked; click one to fly in. "Fly to Jezero crater" shows the whole crater as a sharp photo map with its official place names. |
+| **Start** | Habitat wall screen | A short launch animation: a telescope on Earth finds Mars, then the view flies to the planet. It ends on the whole of Mars, which can be turned and zoomed freely, in height colours or in natural colour, with arrows on its spin axis for the north and south poles. The walk zones are marked; click one to fly in. "Fly to Jezero crater" shows the whole crater as a sharp photo map with its official place names. |
 | **Plan** | Habitat wall screen | A 3D map with layers (photo map, steep ground, rock types, rocky or dusty ground, the rover's path). Stops with real rover photos of each spot; the crew can add their own stops and name them. Known places keep their name on the map, also when they are not stops. The safest route between stops. A crew size and the load each astronaut carries. A safety check (time and reserve, slope, radio contact, daylight, sun activity, carried load, buddy rule, turn-back times). Walk conditions measured by Perseverance. A walk-through preview. |
 | **Walk** | Tablet on the suit arm | The next stop with distance, time and direction. Warnings ahead (steep ground, sand ripples, rocky ground, radio loss, running late, sunset). Stop timer and task list; picking up a tube or a sample adds to the crew's load and to the walking time. Skip a stop or head home, and the route re-plans from where the crew stands. Field notes pinned to the map. |
 | **Helmet** | Helmet display (HUD) | An eye-level view with only the essentials: next stop, time left, radio, and one warning at a time. |
@@ -31,6 +31,10 @@ Easy cartoon answers about the NASA challenge, our app and the map, in **English
 On the tablet and in the helmet, the walk runs as a **time-lapse demo** along the approved route. On Mars, the suits' navigation would give the real position.
 
 **A sense of scale.** A small card in the top-right corner of the map shows a scale bar and a drawing at the same scale (on a narrow map it sits under the map title). It changes with the zoom: a person in a suit, the Perseverance rover, NASA's Mars Reconnaissance Orbiter, a Space Shuttle orbiter, the International Space Station. From far away it says how many space stations would fit in the bar.
+
+**The crew, life-size.** In the walk, the walk-through and the replay, each astronaut (1 to 4, A1 in front) is a 3D figure in a NASA spacesuit (the Z2 suit, a NASA prototype for walking on planets), at real size: they walk in single file, 3 m apart, and stand around a stop facing it. Up close you see the suits; from far away the round crew marker shows where they are.
+
+**Controls.** A "Controls" box on the map moves the view with buttons (forward, back, left, right, up, down, turn, tilt, zoom; hold a button to keep moving) and a middle button that goes back to following the crew. In the walk, the walk-through and the replay it also has Play/Pause, a time slider, the play speed, and which astronaut the camera follows (A1 to A4); in the helmet view you see through that astronaut's visor.
 
 **Nothing scrolls.** Every screen is one side panel with tabs; details open in pop-ups, and long lists have pages. On a short window the panel is scaled down to fit. While the walk plays, no button moves or blinks: the screen updates only the text that changed.
 
@@ -127,6 +131,7 @@ Extra sources are used **next to** the five resources, never instead of them. Ea
 | S4 | [Perseverance MEDA weather, NASA PDS](https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/) | Air and ground temperature, air pressure | NASA/JPL-Caltech/CAB (MEDA), NASA PDS |
 | S7 | [NOAA Space Weather Prediction Center](https://www.swpc.noaa.gov/) | Solar flares and particle levels (measured near Earth) | NOAA SWPC |
 | S3 | [NASA DONKI](https://kauai.ccmc.gsfc.nasa.gov/DONKI/) | The number of solar particle events in the 30 days before the build: one sentence under "Checks and limits", when the service answers at build time. The sun values on screen are NOAA's | NASA CCMC DONKI |
+| S9 | [NASA 3D Resources: Z2 Spacesuit](https://science.nasa.gov/3d-resources/z2-spacesuit/) | The 3D crew figures (the app ships a cleaned, lighter copy: see Limits) | NASA/LaRC/Advanced Concepts Lab, via NASA 3D Resources |
 | S8 | NASA fact pages ([Perseverance](https://science.nasa.gov/mission/mars-2020-perseverance/rover-components/), [MRO press kit](https://www.jpl.nasa.gov/news/press_kits/mro-launch.pdf), [Space Shuttle](https://www.nasa.gov/reference/the-space-shuttle/), [space station](https://www.nasa.gov/international-space-station/space-station-facts-and-figures/)) | Real sizes of the drawings in the scale card | NASA; NASA/JPL-Caltech (Perseverance, MRO) |
 
 The full source ledger, with what was checked and when, is in [`data/sources.registry.json`](data/sources.registry.json). Every photo in the app carries its own credit line.
@@ -156,12 +161,15 @@ Some facts we checked along the way:
 - **The planet's colours are approximate.** The whole-planet map has two looks from Mars Trek. "Height colours" is the MOLA height map (blue is low ground, not water). "Natural colour" is the Viking orbiter mosaic, which its producer (USGS) calls a colourised mosaic. Mars Trek has no true-colour map of the planet, and its photo maps of Jezero (CTX, HiRISE) are grey.
 - **The wide photo map of the crater is for context only.** Mars Trek calls that CTX mosaic preliminary: it lies about 80 m off the controlled mosaic and shows seams. Routes, slopes and stops use only the controlled HiRISE and CTX data of each walk zone. The whole-crater view stays inside this photo map when the window's shape allows it; on a very wide or a tall, narrow window the coarser planet map shows at its edges. The mosaic also has one small gap (about 3 km²) south-west of the rim.
 - **Place names** are the ten official names printed on the USGS map (Jezero, Belva, Neretva Vallis and others). Each stands where the map prints it: good from far away, not exact. Bright Angel, Cheyava Falls and Three Forks are the Perseverance team's own informal names.
+- **The crew figures** are NASA's Z2 Spacesuit model, drawn at its own size (about 1.93 m). The app's copy leaves out NASA's duplicate JPEG pictures and an unused bump picture, and takes off the grime painted on the suit's white fabric (seams, stripes, flag and patches kept). The model has no moving legs, so the figures glide along the route. From the tablet's top view they are only a few pixels tall; the round crew marker shows them there.
+- **The walk's time slider only goes forward.** A walk is played as it happens; going back in time is what the replay after the walk is for.
 - **The scale card** measures the map's scale at the middle of the view; a tilted view has no single scale. Its drawings are simple silhouettes with real overall sizes (NASA); the person (1.8 m, starting value A22) is a round value.
 
 ## Repository layout
 
 ```
 app/         CesiumJS web app (launch animation, Mars globe, Plan, Walk, helmet display, replay, report)
+app/public/models/  the crew figure (cleaned copy of NASA's Z2 Spacesuit model; made by pipeline/baramger_pipeline/suit_model.py)
 pipeline/    Python pipeline that builds and checks the mission packages
 data/        mission packages (data/package/) and the source ledger
 schema/      JSON Schema for mission packages and the source ledger

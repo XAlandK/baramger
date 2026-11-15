@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  NAMES_FAR_M, NAMES_HIGH_M, NAMES_LOW_M, NARROW_MAP_W, PANEL_W, PHOTO_FULL_KM, PHOTO_GONE_KM, CRATER_VIEW_MAX_M, SHORT_MAP_H, cleanStopName, craterView, discRadiusPx, fovAcross,
-  namesVisible, needsShaping, photoAlpha, photoLayerAlpha, planetFitAltitude, uiLayout, widenFactor,
+  NAMES_FAR_M, NAMES_HIGH_M, NAMES_LOW_M, NARROW_MAP_W, PANEL_W, PHOTO_FULL_KM, PHOTO_GONE_KM, CRATER_VIEW_MAX_M, POLE_ARROW_TIP, POLE_HINT_ROOM_PX, POLE_LABEL_GAP_PX, POLE_LABEL_W_PX, POLE_TITLE_W, axisPointPx, cleanStopName, craterView, discRadiusPx, fovAcross,
+  namesVisible, needsShaping, photoAlpha, photoLayerAlpha, planetFill, planetFitAltitude, uiLayout, widenFactor,
 } from "../src/layout";
 import css from "../src/style.css?raw";
 
@@ -273,36 +273,6 @@ describe("craterView: the whole crater, with every zone and its name in view", (
     }
   });
 
-  /**
-   * The scale card on a narrow map sits under the map title: 14..182 px from the left and 80..191 px
-   * from the top on the whole-planet screen (measured in the app). A zone takes its marker (14 px
-   * around its middle) and its name stacked over or under it (121 px wide, up to 48 px away).
-   */
-  const underCard = (v: View, w: number, h: number, groundM = 0) =>
-    zones.some((z) => {
-      const at = place(v, z, w, h, groundM);
-      const x = ((1 + at.x) / 2) * w;
-      const y = ((1 - at.y) / 2) * h;
-      return x - 60.5 < 182 + 4 && x + 60.5 > 14 - 4 && y - 48 < 191 + 4 && y + 45 > 80 - 4;
-    });
-
-  it("keeps the zones clear of the scale card on a narrow map that is tall enough for the card", () => {
-    for (const w of [200, 219, 300, 364, 412, 472, 522, 559]) {
-      for (const h of [SHORT_MAP_H, 640, 720, 896, 1030, 1080]) {
-        for (const options of [{ groundM: 0 }, { photoBox, groundM: -2500 }]) {
-          const v = craterView(jezero, zones, w, h, FOV, options)!;
-          expect(underCard(v, w, h, options.groundM), `${w}x${h}`).toBe(false);
-        }
-      }
-    }
-  });
-
-  it("would put a zone under the card on a narrow map that is short too (so that map has no card)", () => {
-    for (const [w, h] of [[522, 450], [477, 420]] as [number, number][]) {
-      const v = craterView(jezero, zones, w, h, FOV, { photoBox, groundM: -2500 })!;
-      expect(underCard(v, w, h, -2500), `${w}x${h}`).toBe(true);
-    }
-  });
 });
 
 describe("photoAlpha: the grey photo maps show only from near", () => {
@@ -384,8 +354,62 @@ describe("style.css uses the map sizes of layout.ts", () => {
     expect(css).toContain(`@container (min-width: ${NARROW_MAP_W}px) { #scale {`);
   });
 
-  it("shows no scale card on a whole-planet map that is narrow and short", () => {
-    expect(css).toContain(`@container (width < ${NARROW_MAP_W}px) and (height < ${SHORT_MAP_H}px) { body[data-screen="globe"] #scale { display: none; } }`);
-    expect(css).toMatch(/#map-area \{[^}]*container-type: size;/); // a height query needs a container with a known height
+  it("shows no scale card on a narrow whole-planet map (the north pole's name and the zones need that place)", () => {
+    expect(css).toContain(`@container (width < ${NARROW_MAP_W}px) { body[data-screen="globe"] #scale { display: none; } }`);
+  });
+
+  it("keeps the 'drag to turn Mars' hint left of the south pole's name, and lets it span a narrow map", () => {
+    expect(css).toMatch(/#globe-hint \{[^}]*left: 14px;[^}]*transform: none;[^}]*max-width: calc\(50% - 70px\);/);
+    expect(css).toContain(`@container (width < ${NARROW_MAP_W}px) { #globe-hint { max-width: calc(100% - 28px); } }`);
+  });
+});
+
+describe("the pole arrows on the whole-planet screen", () => {
+  const R = 3_396_190;
+  const MAPS: [number, number][] = [[888, 800], [1528, 900], [632, 560], [632, 768], [412, 718], [219, 720], [662, 450], [500, 600], [414, 896], [1024, 768], [1920, 1080], [2560, 1080], [402, 520], [500, 450], [560, 400]];
+  const where = (w: number, h: number) => {
+    const fill = planetFill(w, h, FOV, R);
+    const alt = planetFitAltitude(w, h, FOV, R, fill);
+    return {
+      fill,
+      north: h / 2 - axisPointPx(w, h, FOV, R, alt, POLE_ARROW_TIP), // px from the top: the north name's middle
+      south: h / 2 - axisPointPx(w, h, FOV, R, alt, -POLE_ARROW_TIP), // px from the top: the south name's middle
+      disc: discRadiusPx(w, h, FOV, R, alt),
+    };
+  };
+
+  it("keeps both pole names inside the map, the north one below the title on a narrow map", () => {
+    for (const [w, h] of MAPS) {
+      expect(w / 2 + POLE_LABEL_GAP_PX + POLE_LABEL_W_PX, `${w}x${h} right edge`).toBeLessThanOrEqual(w - 4);
+      const p = where(w, h);
+      expect(p.north - 12, `${w}x${h} north`).toBeGreaterThanOrEqual(w < POLE_TITLE_W ? 90 - 0.5 : 10 - 0.5);
+      expect(h - (p.south + 12), `${w}x${h} south`).toBeGreaterThanOrEqual((w < NARROW_MAP_W ? POLE_HINT_ROOM_PX : 34) - 0.5);
+    }
+  });
+
+  it("leaves the planet as large as before where there is room", () => {
+    for (const [w, h] of [[888, 800], [1528, 900], [1920, 1080], [632, 768], [414, 896]] as [number, number][]) expect(planetFill(w, h, FOV, R), `${w}x${h}`).toBe(0.7);
+  });
+
+  it("makes the planet smaller only on a narrow, short map, and only as much as it needs", () => {
+    expect(planetFill(662, 450, FOV, R)).toBe(0.7); // wide: the names are right of the title column
+    const small = planetFill(402, 520, FOV, R); // narrow and short: the north name must pass under the title
+    expect(small).toBeLessThan(0.7);
+    expect(small).toBeGreaterThan(0.55);
+  });
+
+  it("puts the names right of the title column from POLE_TITLE_W on", () => {
+    expect(POLE_TITLE_W / 2 + POLE_LABEL_GAP_PX).toBeGreaterThanOrEqual(258); // the title chip ends at about 254 px
+  });
+
+  it("draws the arrows out of the disc", () => {
+    const p = where(888, 800);
+    expect(800 / 2 - p.north).toBeGreaterThan(p.disc + 20); // the tip (and its name) is well outside the disc
+    expect(POLE_ARROW_TIP).toBeGreaterThan(1.1);
+  });
+
+  it("puts the north pole above the middle and the south pole below it", () => {
+    expect(axisPointPx(888, 800, FOV, R, 7e6, 1)).toBeGreaterThan(0);
+    expect(axisPointPx(888, 800, FOV, R, 7e6, -1)).toBeLessThan(0);
   });
 });

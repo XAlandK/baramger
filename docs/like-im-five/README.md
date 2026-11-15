@@ -6,9 +6,9 @@
 
 <sub>Baramger · Marswalk planner</sub>
 
-First, two big stories: the NASA challenge and our app. Then twelve easy answers about the Baramger map: the robot, the rocks, the crew, the house on Mars and the colours on the map.
+First, two big stories: the NASA challenge and our app. Then seventeen easy answers about the Baramger map: the robot, the rocks, the crew, the house on Mars, the colours on the map and the safety checks.
 
-**2 big stories** · **12 questions** · **simple English** · **cartoon drawings**
+**2 big stories** · **17 questions** · **simple English** · **cartoon drawings** · **real Mars photos**
 
 > 🖍️ **This is the GitHub copy.** GitHub can't show the cartoon page itself. For the full design and the **English | کوردی** button, download [`Baramger-Like-Im-Five.html`](../Baramger-Like-Im-Five.html) and open it in a web browser.
 
@@ -35,6 +35,11 @@ First, two big stories: the NASA challenge and our app. Then twelve easy answers
 - **10** · [What is a sol?](#sol)
 - **11** · [The Habitat](#habitat)
 - **12** · [The red and yellow areas](#colours)
+- **13** · ["Suggest order"](#order)
+- **14** · [Time and reserve](#reserve)
+- **15** · [Radio contact](#radio)
+- **16** · [Sun activity](#sun)
+- **17** · [Rock types, with real photos](#rocks)
 
 ---
 
@@ -303,6 +308,16 @@ The robot does the same thing on Mars:
 2. **It puts the piece into a small metal tube.** That tube is the "jar".
 3. **It closes the tube with a lid**, so no dust or air gets in.
 
+### What does a tube look like?
+
+Here is a **real tube on Mars**. It is a thin metal tube, white and gold, about as long as a marker pen. The rock piece is closed inside, so you cannot see it.
+
+<p align="center"><img src="img/photo-tube-close-up.jpg" width="360" alt="Real photo: a thin white and gold metal tube lying on reddish, pebbly ground"></p>
+
+**A real sample tube on Mars** · The first tube the robot put down at Three Forks, lying on the ground. The camera on the robot's arm took this photo from close by, on 21 December 2022.
+
+<sub>Real photo · WATSON camera (SHERLOC) · sol 653 · NASA/JPL-Caltech</sub>
+
 ### Why does it keep the rocks?
 
 The robot has some tools to look at rocks. But on Earth, scientists have **huge, powerful machines**, much too big to fit on the robot. Those machines can see far more.
@@ -330,6 +345,14 @@ Remember the robot's little rock tubes from question 6, the "jars" with rock pie
 - The robot kept many tubes **inside its body**.
 - But it made **copies** of some of them, and it put **10 tubes on the ground** at Three Forks. This happened at the end of 2022 and the start of 2023.
 - It did not put them all in one pile. It put them **far apart, one by one, in a long zig-zag line**, like leaving cookies along a path.
+
+This is what it looked like on the day the robot put down the **first tube**. Look in the middle of the photo: the tube is the **small white stick in the robot's shadow**. One of the robot's wheels is at the bottom right.
+
+<p align="center"><img src="img/photo-tube-at-three-forks.jpg" width="360" alt="Real photo: a small white tube lying in the shadow of the rover, with a rover wheel at the bottom right"></p>
+
+**The first tube at Three Forks** · Lying on the ground in the robot's shadow, on the day the robot put it down (21 December 2022). A wheel of the robot is at the bottom right.
+
+<sub>Real photo · WATSON camera (SHERLOC) · sol 653 · NASA/JPL-Caltech</sub>
 
 ### Why leave them on the ground?
 
@@ -570,10 +593,210 @@ To make sure the map tells the truth, the project compared it with the **robot's
 
 ---
 
+<a id="order"></a>
+
+## 13. What does "Suggest order" do?
+
+<p align="center"><img src="img/en-order.svg" width="300" alt="Cartoon: a house with an H and four numbered stops joined by a short dashed loop, an astronaut walking on it, and a bird flying in a straight line"></p>
+
+Imagine you live in a house, and you want to visit four friends today, then come back home.
+
+You could visit them in any order. But if you go to a friend far away first, then come back near your house, then go far again, your legs get very tired. 😩
+
+**"Suggest order" is a helper that picks a smart order for you.** It says: "Go to the friend closest to you first. Then the next closest one. Then the next. Then go home." So you walk less. 🚶
+
+### On Mars
+
+- 🏠 your house = the **Habitat**
+- 👫 your friends = the **stops** (1, 2, 3, 4)
+
+But the helper is a little silly. It draws **straight lines** on the map, like a bird flying. It does not see the big hills or the dangerous red places. So after it picks the order, you press **"Find safest route"**. That one finds the real, safe path for your feet. 🛡️
+
+And **you are still the boss**: if you don't like the order, you can move the stops yourself with the ↑ and ↓ arrows.
+
+> 📱 **In your app**
+>
+> The **"Suggest order"** button is in the **Stops** tab. It works when you have **3 stops or more**. It only changes the **order** of the stops: it does not add or remove stops, and it does not change their minutes. After it, press **"Find safest route"**.
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="reserve"></a>
+
+## 14. What is "Time and reserve"?
+
+<p align="center"><img src="img/en-reserve.svg" width="300" alt="Cartoon: a time battery for the 6-hour walk, mostly green for walking, with a yellow part kept as the reserve"></p>
+
+**"Time and reserve" checks that the walk is not too long, and that some time is always left over.**
+
+### The walk has a time limit
+
+An astronaut can stay outside in a spacesuit only for a **limited time**. The suit's air, water and batteries last only so long, and people get tired. In the app, a walk may last at most **6 hours** (360 minutes).
+
+### What is the reserve?
+
+Think of a juice box on a school trip. You don't drink it all on the way there. You keep some for the way back, and for when something goes wrong.
+
+The **reserve** is that "keep some" time. The app always keeps at least **30%** of the 6 hours unused: about **1 hour and 48 minutes**. It is for surprises: a slow, sandy stretch, a broken tool, a tired friend, or the walk back.
+
+### What do the colours mean?
+
+- 🟩 **Green:** the plan uses at most 70% of the time (**252 minutes or less**). The whole reserve is still there.
+- 🟨 **Yellow:** the plan fits in 6 hours, but it **eats into the reserve**. Be careful.
+- 🟥 **Red:** the plan is **longer than 6 hours**. Remove a stop or make the stops shorter.
+
+For example: **221 minutes** planned, and **139 minutes (38%)** left over. 38% is more than 30%, so it is green.
+
+### Turn-back times
+
+The app also tells the crew the **latest time to leave the last stop** and still keep the whole reserve. It is like a parent saying: "We must leave the park by 4 o'clock."
+
+> 📝 **One honest note**
+>
+> 6 hours and 30% are **planning numbers** chosen for this project. Experts still need to check them (assumptions **A4** and **A5**, marked "to verify").
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="radio"></a>
+
+## 15. What is "Radio contact with the habitat"?
+
+<p align="center"><img src="img/en-radio.svg" width="300" alt="Cartoon: radio waves go in a straight line from the Habitat antenna to one astronaut, but a hill blocks them for a second astronaut behind it"></p>
+
+**It checks that the astronauts can always talk to the Habitat by radio.**
+
+### How does the radio work?
+
+The Habitat has a radio **antenna** on top, about **3 metres** high. The astronauts have radios in their suits.
+
+Radio is like the beam of a flashlight: it goes in **straight lines**. If a **hill** stands between you and the house, the hill blocks it, like hiding behind a wall in hide-and-seek. Then nobody at home can hear you.
+
+### What does the app check?
+
+The app goes along the whole route, little bit by little bit, and each time it asks: "From here, can I see the antenna in a straight line?" Scientists call this **line of sight**.
+
+- 🟩 **Green:** radio for the **whole walk**.
+- 🟨 **Yellow:** a few **short stretches** with no radio. Stay together there.
+- 🟥 **Red:** no radio for **more than 15 minutes** in one go. Move a stop, or put a radio helper (a "relay") on a hill.
+
+On your screen, the app found **"3 short stretches"** with no radio, so it is yellow. The friends must stick together there.
+
+The Habitat was put on flat ground where it can "see" as much of the walk as possible (see [question 11](#habitat)).
+
+> 📝 **One honest note**
+>
+> The 3-metre antenna and the 15 minutes are **planning numbers** to check later (assumptions **A7** and **A9**).
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="sun"></a>
+
+## 16. What is "Sun activity"?
+
+<p align="center"><img src="img/en-sun.svg" width="300" alt="Cartoon: the Sun throws tiny particles into space; a satellite near Earth counts them, and Mars is farther away"></p>
+
+**It checks if the Sun is having a storm.**
+
+### Storms from the Sun?
+
+Sometimes the Sun throws out clouds of **tiny, super-fast bits** (particles). This is called a **solar particle storm**. These bits can go through a spacesuit and **hurt people's bodies**.
+
+On Earth, our thick air and our planet's invisible magnetic shield stop most of them. Mars has **very thin air and no magnetic shield around the whole planet**. So on Mars, people must go to a safe place when a storm comes.
+
+### Where does the app get the news?
+
+- **NOAA GOES satellites** watch the Sun from near Earth. They count the fast bits: the "particle level", in **pfu** (source **S7**).
+- **NASA DONKI**, NASA's list of space-weather events, says how many particle storms there were in the last 30 days (source **S3**). On 14 November 2026 it listed **none**.
+
+### What do the colours mean?
+
+- 🟩 **Green, "Quiet":** the particle level is **under 10 pfu**. For example 0.213 pfu: very quiet.
+- 🟨 **Yellow:** a very strong flash on the Sun (an **X-class flare**) in the last 24 hours. Watch out: a storm may follow.
+- 🟥 **Red:** a particle storm, **10 pfu or more**. The walk must wait.
+
+> 📝 **One honest note**
+>
+> These numbers are measured **near Earth, not near Mars**. Mars is about **1.5 times farther** from the Sun than Earth, and it is often on another side of the Sun. So a storm seen near Earth **may or may not** reach Mars. It is the best warning the app has. 10 pfu is NOAA's first storm level (assumption **A12**, to verify).
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
+<a id="rocks"></a>
+
+## 17. What are the rock types?
+
+<p align="center"><img src="img/en-rocks.svg" width="300" alt="Cartoon: a map coloured in patches for different kinds of ground, with a magnifying glass looking at a rock"></p>
+
+**A rock-type map is like a colouring map of the ground.** Each colour shows a different kind of ground.
+
+In your app, this layer is called **"Rock types"**. It comes from a real map made by scientists at the **USGS** (the U.S. Geological Survey): map SIM 3464, by V. Z. Sun and K. M. Stack, 2020 (resource **R2**). They looked at photos taken from space and drew a line around each kind of ground.
+
+### What do the names mean?
+
+Each kind has a short code and a name. The names mostly say **what the ground looks like**:
+
+- **Aeb, Eolian bedform unit:** "eolian" means made by the wind. Sand that the wind piled up into **ripples and dunes**, like the little waves on a beach.
+- **NHjf2, Jezero fan 2 unit:** part of the **old river fan** (the delta), where a river long ago dropped sand and mud into a lake.
+- **Njf, Jezero floor unit:** the **floor**, the bottom of Jezero crater.
+- **Nue and Nle, Upper and Lower etched units:** "etched" means scratched. This rock looks **scraped and carved**.
+- **Nnp1, Nili Planum 1 unit:** rock like the big, high plains around Jezero, called **Nili Planum**.
+- **cr, Crater rim unit:** the **rim**, the high edge of the crater.
+- **su, Smooth unit:** ground that looks **smooth** in photos from space.
+
+### Real photos!
+
+These are **real photos**, not drawings. The **Perseverance** rover took four of them at the stops of your walks. One was taken from space.
+
+<p align="center"><img src="img/photo-jezero-floor.jpg" width="360" alt="Real photo: flat ground covered with small pebbles, with part of the rover at the bottom"></p>
+
+**Jezero floor unit (Njf)** · Flat ground covered with small pebbles, at the Three Forks sample depot (zone Z1). Part of the rover is at the bottom.
+
+<sub>Real photo · Left Mastcam-Z camera · sol 670 · NASA/JPL-Caltech/ASU</sub>
+
+<p align="center"><img src="img/photo-jezero-fan.jpg" width="360" alt="Real photo: broken rocks next to a rover wheel, with the rover&#x27;s shadow"></p>
+
+**Jezero fan 2 unit (NHjf2)** · Broken rocks next to the rover's wheel, at the stop of sol 1159 (zone Z2). You can see the rover's shadow.
+
+<sub>Real photo · Left Navigation Camera (Navcam) · sol 1159 · NASA/JPL-Caltech</sub>
+
+<p align="center"><img src="img/photo-upper-etched.jpg" width="360" alt="Real photo: flat, light-coloured rock with dark stones on top and a slope far away"></p>
+
+**Upper etched unit (Nue)** · Flat, light-coloured rock with dark stones on top, at the Cheyava Falls stop (zone Z2).
+
+<sub>Real photo · Left Navigation Camera (Navcam) · sol 1210 · NASA/JPL-Caltech</sub>
+
+<p align="center"><img src="img/photo-nili-planum.jpg" width="360" alt="Real photo: a rocky hillside under a pale sky"></p>
+
+**Nili Planum 1 unit (Nnp1)** · A rocky hillside, at the stop of sol 1254 (zone Z2).
+
+<sub>Real photo · Left Navigation Camera (Navcam) · sol 1254 · NASA/JPL-Caltech</sub>
+
+<p align="center"><img src="img/photo-sand-ripples.jpg" width="360" alt="Real photo from space: long wavy sand ripples"></p>
+
+**Eolian bedform unit (Aeb)** · Sand ripples seen from space, in Bright Angel (zone Z2). The picture is about 150 m wide, and north is up.
+
+<sub>Real photo · HiRISE camera on the Mars Reconnaissance Orbiter · NASA/JPL-Caltech/University of Arizona (HiRISE), via Mars Trek (R1)</sub>
+
+The rover's photos show the ground near each stop. The borders on the rock map can be **100 to 200 m off** (the USGS says so itself), so a photo near a border may show the ground next door.
+
+> 📱 **In your app**
+>
+> Open the **Layers** tab and tick **"Rock types"**. Then point at the map: the line at the bottom of the map names the rock type under your mouse.
+
+<sub>[↑ all questions](#toc)</sub>
+
+---
+
 <p align="center"><img src="img/rover.svg" width="90" alt="rover"></p>
 
-<sub>**All drawings on this page are cartoons made for this report.** They are not photos and not map data.<br>The real data in the app comes from NASA, JPL, USGS and NOAA: Mars Trek (R1), the USGS geologic map (R2), Perseverance raw images (R5), the rover positions (S1), the rover's weather station (S4) and NOAA Sun data (S7).</sub>
+<sub>**All drawings on this page are cartoons made for this report.** They are not photos and not map data. **The photos in answers 6, 7 and 17 are real:** the two sample-tube photos (answers 6 and 7) and four of the five in answer 17 are from the Perseverance rover (NASA/JPL-Caltech; the Mastcam-Z one is NASA/JPL-Caltech/ASU), and one is from the HiRISE camera in orbit (NASA/JPL-Caltech/University of Arizona, via Mars Trek).<br>The real data in the app comes from NASA, JPL, USGS and NOAA: Mars Trek (R1), the USGS geologic map SIM 3464 (R2), Perseverance raw images (R5), the rover positions (S1), NASA DONKI space weather (S3), the rover's weather station (S4) and NOAA GOES Sun data (S7).</sub>
 
-<sub>Baramger · Marswalk planner · answers first written in chat on 14 November 2026.</sub>
+<sub>Baramger · Marswalk planner · answers first written in chat on 14 and 15 November 2026.</sub>
 
-<sub>Drawings: each picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of Playpen Sans Arabic (SIL Open Font License 1.1).</sub>
+<sub>Drawings: each `.svg` picture in `img/` is a cartoon made for this page. Text in the drawings uses a subset of Playpen Sans Arabic (SIL Open Font License 1.1). The `photo-*.jpg` pictures are the real photos of answers 6, 7 and 17; their credits are under each photo.</sub>

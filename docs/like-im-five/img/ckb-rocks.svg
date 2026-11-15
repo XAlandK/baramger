@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 170" width="220" height="170" role="img" aria-label="کارتۆن: نەخشەیەک کە بە پارچەی ڕەنگاوڕەنگ بۆ جۆرە جیاوازەکانی زەوی ڕەنگ کراوە، لەگەڵ زەرەبینێک کە سەیری بەردێک دەکات">
+<!-- Cartoon drawing from docs/Baramger-Like-Im-Five.html (not map data). Text font: a subset of Playpen Sans Arabic, Copyright 2023 The Playpen Sans Project Authors (https://github.com/TypeTogether/Playpen-Sans), SIL Open Font License 1.1. -->
+<defs><symbol id="sparkle" viewBox="-10 -10 20 20">
+      <path d="M0 -9 Q2 -2 9 0 Q2 2 0 9 Q-2 2 -9 0 Q-2 -2 0 -9Z" fill="#FFD84D" stroke="#2B2633" stroke-linejoin="round" stroke-width="1.6"></path>
+    </symbol></defs>
+          <defs><clipPath id="ku-clip-rocks"><rect height="120" rx="10" width="132" x="20" y="20"></rect></clipPath></defs>
+          <rect fill="#FFE3C2" height="158" rx="22" stroke="#2B2633" stroke-width="4" width="208" x="6" y="6"></rect>
+          <rect fill="#fff" height="120" rx="10" width="132" x="20" y="20"></rect>
+          <g clip-path="url(#ku-clip-rocks)" stroke="#2B2633" stroke-linejoin="round" stroke-width="2.5">
+            <path d="M20 20 H90 Q80 50 96 70 Q70 86 20 80 Z" fill="#3B8EA5"></path>
+            <path d="M90 20 H152 V64 Q120 60 96 70 Q80 50 90 20 Z" fill="#E09F3E"></path>
+            <path d="M20 80 Q70 86 96 70 Q104 98 84 140 H20 Z" fill="#8E6AC8"></path>
+            <path d="M96 70 Q120 60 152 64 V104 Q120 112 104 98 Q100 86 96 70 Z" fill="#5BAE5B"></path>
+            <path d="M104 98 Q120 112 152 104 V140 H84 Q104 120 104 98 Z" fill="#D1495B"></path>
+          </g>
+          <rect fill="none" height="120" rx="10" stroke="#2B2633" stroke-width="4" width="132" x="20" y="20"></rect>
+          <path d="M180 128 L202 150" stroke="#2B2633" stroke-linecap="round" stroke-width="9"></path>
+          <circle cx="162" cy="110" fill="#CDEFF5" r="26" stroke="#2B2633" stroke-width="5"></circle>
+          <path d="M146 118 Q144 104 156 98 Q168 92 176 102 Q182 114 172 120 Q158 126 146 118Z" fill="#C25B3C" stroke="#2B2633" stroke-linejoin="round" stroke-width="3"></path>
+          <circle cx="158" cy="108" fill="#7A3A26" r="2.5"></circle><circle cx="168" cy="112" fill="#7A3A26" r="2"></circle><circle cx="162" cy="102" fill="#7A3A26" r="1.8"></circle>
+          <path d="M150 96 Q152 90 158 88" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="3"></path>
+          <use height="20" href="#sparkle" width="20" x="178" y="22"></use>
+        </svg>

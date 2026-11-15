@@ -60,6 +60,59 @@ export function planetFitAltitude(w: number, h: number, fov: number, radius: num
   return radius / Math.sin((small / 2) * fill) - radius;
 }
 
+/** The pole arrows on the whole-planet screen end this far from the planet's centre (in planet radii). */
+export const POLE_ARROW_TIP = 1.24;
+/** Each pole's name starts this many px to the right of its arrow's tip, and is about this wide. */
+export const POLE_LABEL_GAP_PX = 12;
+export const POLE_LABEL_W_PX = 86; // "South pole" is 67 px in 600 13px Inter, plus 8 px padding each side
+/** The whole-planet view looks down on this latitude (the zones' latitude minus 8 degrees, see map.showPlanet). */
+export const PLANET_VIEW_LAT = 10.5;
+/** Below this map width the north pole's name (right of the map's middle) is in the same column as the map title. */
+export const POLE_TITLE_W = 2 * (258 - POLE_LABEL_GAP_PX);
+const POLE_LABEL_HALF_PX = 12;
+/** On a narrow map the hint spans the map's width at the bottom: its top is at most this many px above the map's bottom. */
+export const POLE_HINT_ROOM_PX = 116;
+
+/**
+ * Where a point on the planet's spin axis, `k` planet radii from the centre (k > 0 north,
+ * k < 0 south), appears on the whole-planet view: px above (+) or below (-) the map's middle.
+ * The camera is `altitude` m above the point at latitude `viewLatDeg` and looks at the centre.
+ */
+export function axisPointPx(w: number, h: number, fov: number, radius: number, altitude: number, k: number, viewLatDeg = PLANET_VIEW_LAT): number {
+  const focal = Math.max(w, h) / 2 / Math.tan(fov / 2);
+  const lat = (viewLatDeg * Math.PI) / 180;
+  return (focal * k * radius * Math.cos(lat)) / (radius + altitude - k * radius * Math.sin(lat));
+}
+
+/**
+ * How much of the map's smaller side the whole planet may take (at most 0.7), so that the names
+ * beside the tips of the pole arrows stay inside the map: the north one below the map title when
+ * they share a column (a narrow map), the south one above the map's credit line. The planet is
+ * smaller only on a narrow, short map. The "drag to turn Mars" hint sits in the bottom left
+ * corner, left of the middle column.
+ */
+export function planetFill(w: number, h: number, fov: number, radius: number, viewLatDeg = PLANET_VIEW_LAT): number {
+  const top = w < POLE_TITLE_W ? 90 : 10; // px from the map's top edge to the north name's top
+  // px from the map's bottom edge to the south name's bottom: the credit line; on a narrow map
+  // also the "drag to turn Mars" hint, which then spans the map (up to 3 lines)
+  const bottom = w < NARROW_MAP_W ? POLE_HINT_ROOM_PX : 34;
+  const fits = (fill: number) => {
+    const alt = planetFitAltitude(w, h, fov, radius, fill);
+    const north = axisPointPx(w, h, fov, radius, alt, POLE_ARROW_TIP, viewLatDeg);
+    const south = -axisPointPx(w, h, fov, radius, alt, -POLE_ARROW_TIP, viewLatDeg);
+    return h / 2 - north - POLE_LABEL_HALF_PX >= top && h / 2 - south - POLE_LABEL_HALF_PX >= bottom;
+  };
+  if (fits(0.7)) return 0.7;
+  let lo = 0.2;
+  let hi = 0.7;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+}
+
 /** How large the planet's disc is on screen: its radius in px, seen from `altitude` m above the sphere. */
 export function discRadiusPx(w: number, h: number, fov: number, radius: number, altitude: number): number {
   const focal = Math.max(w, h) / 2 / Math.tan(fov / 2);
@@ -95,15 +148,11 @@ export const CRATER_VIEW_MAX_M = 108_000;
 /**
  * A map narrower than this (px) has the zone names over and under their markers, not beside them.
  * (A name beside its marker needs 150 px of map; on a tall map under 560 px that room would push
- * the crater's rim out of the view.) The scale card also sits under the map title below this width.
+ * the crater's rim out of the view.) The scale card also sits under the map title below this width,
+ * and on the whole-planet screen there is no card below this width: under the title it would lie
+ * over a walk zone in the whole-crater view, and over the north pole's name (rule in style.css).
  */
 export const NARROW_MAP_W = 560;
-/**
- * On the whole-planet screen a map that is narrower than NARROW_MAP_W and also shorter than this (px)
- * shows no scale card: under the map title the card would lie over a walk zone or its name in the
- * whole-crater view. The rule itself is in style.css (a container query on #map-area).
- */
-export const SHORT_MAP_H = 600;
 /** Room (px) between a zone marker and the map's edge for a name beside it, or for a name stacked on it (some px to spare). */
 const NAME_BESIDE_PX = 160;
 const NAME_STACKED_PX = 70;

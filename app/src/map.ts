@@ -6,13 +6,24 @@ import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { type HeightGrid, type LonLat, bilinear, inside } from "./grid";
 import type { Leg } from "./plan";
-import { CRATER_VIEW_MAX_M, NARROW_MAP_W, namesVisible, needsShaping, photoLayerAlpha, planetFitAltitude, widenFactor } from "./layout";
+import { CRATER_VIEW_MAX_M, NARROW_MAP_W, POLE_ARROW_TIP, POLE_LABEL_GAP_PX, namesVisible, needsShaping, photoLayerAlpha, planetFill, planetFitAltitude, widenFactor } from "./layout";
 import { BASE_STYLES, type BaseStyle } from "./basemap";
+import { CREW_MAX, type CrewSpot } from "./crew";
 
 export const MARS = new Cesium.Ellipsoid(3_396_190, 3_396_190, 3_396_190);
 const OCCLUDER = new Cesium.Ellipsoid(3_387_190, 3_387_190, 3_387_190);
 
 export type OverlayKey = "slope" | "geology" | "themis";
+
+/** The view buttons: move on the ground (as seen on screen), up and down, turn, tilt, zoom. */
+export type Nudge = "forward" | "back" | "left" | "right" | "up" | "down" | "turnLeft" | "turnRight" | "tiltUp" | "tiltDown" | "in" | "out";
+export const NUDGES: Nudge[] = ["forward", "back", "left", "right", "up", "down", "turnLeft", "turnRight", "tiltUp", "tiltDown", "in", "out"];
+/** One press moves this share of the camera's height above the ground (at least 1 m), or turns / tilts by these degrees. */
+export const NUDGE_SHARE = 0.08;
+export const NUDGE_TURN_DEG = 4;
+export const NUDGE_TILT_DEG = 3;
+/** The camera never goes higher than this (m), as with the mouse. */
+const CAMERA_MAX_M = 40_000_000;
 
 /** A named place that is always labelled, whether or not it is a stop in the plan. */
 export interface PlacePin extends LonLat {
@@ -59,7 +70,43 @@ const COLORS = {
   selected: Cesium.Color.fromCssColorString("#FF8A5B"),
   base: Cesium.Color.WHITE,
   rover: Cesium.Color.fromCssColorString("#E8E1D9").withAlpha(0.85),
+  pole: Cesium.Color.fromCssColorString("#F2EDE6"),
 };
+
+/**
+ * The crew figure: NASA's Z2 Spacesuit 3D model (NASA 3D Resources, extra source S9), at its real
+ * size (about 1.93 m). The app's copy only leaves out NASA's JPEG copies of its WebP pictures
+ * (pipeline/baramger_pipeline/suit_model.py).
+ */
+const SUIT_URL = `${import.meta.env.BASE_URL}models/z2-spacesuit.glb`;
+/** Shown in the map's "Data attribution" list while the figures are on the map (the same credit as source S9). */
+const SUIT_CREDIT = "Crew figures: Z2 Spacesuit 3D model, NASA/LaRC/Advanced Concepts Lab, via NASA 3D Resources (cleaned copy)";
+/**
+ * Light on the crew figures: a light from the viewer's side of this strength, plus an even,
+ * colourless light from all around. CesiumJS's own all-around light is made for Earth's sky and
+ * made the white suits look dull and greenish ("dirty"). NASA's picture of the suit also has
+ * some dirt painted on, which a brighter light makes less dark.
+ */
+const SUIT_LIGHT = 2.2;
+const SUIT_AMBIENT = 0.9;
+function suitLighting(): Cesium.ImageBasedLighting {
+  const ibl = new Cesium.ImageBasedLighting();
+  ibl.imageBasedLightingFactor = new Cesium.Cartesian2(1, 0); // no Earth sky reflected in the suit
+  ibl.sphericalHarmonicCoefficients = [new Cesium.Cartesian3(SUIT_AMBIENT, SUIT_AMBIENT, SUIT_AMBIENT), ...Array.from({ length: 8 }, () => new Cesium.Cartesian3())];
+  return ibl;
+}
+/** Turn (degrees) that makes NASA's model face the heading it is given (found by looking at it). */
+const SUIT_FACING_DEG = -90;
+/** The round crew marker shows only from this far (m): nearer, the real-size figures can be seen. */
+export const CREW_DOT_FROM_M = 220;
+/** Each astronaut's name tag (A1, A2 ...) shows up to this distance (m). */
+export const CREW_TAG_TO_M = 160;
+
+/** The lowest the camera may go above the ground (m): under the helmet view's eye height (1.8 m). */
+export const CAMERA_MIN_ABOVE_GROUND_M = 1.5;
+
+/** The pole arrows show only on a camera this high (km), so they never stand on a close horizon. */
+export const POLE_ARROW_MIN_KM = 1500;
 
 const markerCache = new Map<string, HTMLCanvasElement>();
 
@@ -269,6 +316,12 @@ export class MapView {
   private noteLayer!: MarkerLayer;
   private crewLayer!: MarkerLayer;
   private routeEntities: Cesium.Entity[] = [];
+  private poleEntities: Cesium.Entity[] = [];
+  private polesWanted = false;
+  private suits: Cesium.Model[] = [];
+  private suitsLoading: Promise<void> | null = null;
+  private crewTags!: Cesium.LabelCollection;
+  private crewNow: { spots: CrewSpot[]; hide: number } = { spots: [], hide: -1 };
   private roverEntity: Cesium.Entity | null = null;
   private readonly tiling = new Cesium.GeographicTilingScheme({ ellipsoid: MARS });
   private readonly ghosts = new Map<string, Cesium.Primitive[]>();
@@ -310,6 +363,12 @@ export class MapView {
     this.nameLayer = new MarkerLayer(scene); // under the markers: a name never hides a stop or a zone
     this.placeLayer = new MarkerLayer(scene);
     this.zoneLayer = new MarkerLayer(scene);
+    this.crewTags = scene.primitives.add(new Cesium.LabelCollection({ blendOption: Cesium.BlendOption.TRANSLUCENT }));
+    // The crew figures are lit from the viewer's side ("head-light"): the map has no sun position
+    // for Mars, and CesiumJS's own sun is placed for Earth.
+    const light = new Cesium.DirectionalLight({ direction: Cesium.Cartesian3.clone(scene.camera.directionWC), intensity: SUIT_LIGHT });
+    scene.light = light;
+    scene.preRender.addEventListener(() => Cesium.Cartesian3.clone(scene.camera.directionWC, light.direction));
     scene.globe.baseColor = Cesium.Color.fromCssColorString("#5b3f2e");
     scene.fog.enabled = false;
     if (scene.moon) scene.moon.show = false;
@@ -317,7 +376,9 @@ export class MapView {
     // beside Mars in the whole-planet view and in the launch animation: wrong, and not Mars data.
     if (scene.sun) scene.sun.show = false;
     scene.backgroundColor = Cesium.Color.BLACK;
-    scene.screenSpaceCameraController.minimumZoomDistance = 25;
+    // CesiumJS keeps the camera at least this high above the ground (also a camera the app places).
+    // It was 25 m, which lifted the helmet view (1.8 m) and every close look at the crew to 25 m.
+    scene.screenSpaceCameraController.minimumZoomDistance = CAMERA_MIN_ABOVE_GROUND_M;
     scene.screenSpaceCameraController.maximumZoomDistance = 40_000_000; // free flight around the planet, without losing it (see refit)
     // The map only redraws when asked (requestRenderMode). Ask again whenever map tiles finish
     // loading, or a still camera (the whole-planet view) would keep showing an empty globe.
@@ -361,6 +422,7 @@ export class MapView {
       const show = d > 6000 && d < 600_000;
       for (const prim of this.ghosts.get("zones") ?? []) if (prim.show !== show) prim.show = show;
     });
+    scene.preRender.addEventListener(() => this.syncPoles());
     scene.globe.maximumScreenSpaceError = 1.5;
   }
 
@@ -535,7 +597,7 @@ export class MapView {
   /** The camera height from which the whole planet fits the map: the disc takes about 70% of the smaller side. */
   planetAltitude(): number {
     const { w, h, fov } = this.lens();
-    return planetFitAltitude(w, h, fov, MARS.maximumRadius);
+    return planetFitAltitude(w, h, fov, MARS.maximumRadius, planetFill(w, h, fov, MARS.maximumRadius)); // room for the pole names
   }
 
   /**
@@ -749,6 +811,76 @@ export class MapView {
    * (they are a few km apart), so one marker stands for the crater; closer in, each zone has
    * its own marker, its name and the outline of its walk area.
    */
+  /**
+   * Mars's spin axis as an arrow out of each pole, with the pole's name (the whole-planet screen).
+   * The axis is the z axis of the planetocentric frame that every map layer uses. The arrows are
+   * real 3D lines, so they turn with the planet and the far one hides behind Mars.
+   */
+  setPoles(show: boolean): void {
+    if (show && !this.poleEntities.length) {
+      const r = MARS.maximumRadius;
+      for (const [sign, name] of [[1, "North pole"], [-1, "South pole"]] as const) {
+        this.poleEntities.push(this.viewer.entities.add({
+          polyline: {
+            positions: [new Cesium.Cartesian3(0, 0, sign * r), new Cesium.Cartesian3(0, 0, sign * r * POLE_ARROW_TIP)],
+            width: 18,
+            arcType: Cesium.ArcType.NONE, // a straight line in space, not along the ground
+            material: new Cesium.PolylineArrowMaterialProperty(COLORS.pole),
+          },
+        }));
+        this.poleEntities.push(this.viewer.entities.add({
+          position: new Cesium.Cartesian3(0, 0, sign * r * POLE_ARROW_TIP), // beside the tip: clear of the title and of the hint
+          label: {
+            text: name,
+            font: "600 13px Inter, system-ui, sans-serif",
+            fillColor: Cesium.Color.WHITE,
+            showBackground: true,
+            backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.78),
+            backgroundPadding: new Cesium.Cartesian2(8, 5),
+            horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            pixelOffset: new Cesium.Cartesian2(POLE_LABEL_GAP_PX, 0),
+          },
+        }));
+      }
+    }
+    this.polesWanted = show;
+    this.syncPoles();
+    this.redraw();
+  }
+
+  private syncPoles(): void {
+    const show = this.polesWanted && this.cameraHeightKm() > POLE_ARROW_MIN_KM;
+    for (const e of this.poleEntities) if (e.show !== show) e.show = show;
+  }
+
+  /** Is a pole arrow on (for tests and the dev tour)? */
+  polesShown(): boolean {
+    return this.poleEntities.length > 0 && this.poleEntities[0].show;
+  }
+
+  /** Where the pole names are on screen (CSS px, like getBoundingClientRect), leaving out a name behind Mars. */
+  poleLabelBoxes(): { name: string; left: number; top: number; right: number; bottom: number }[] {
+    if (!this.polesShown()) return [];
+    const scene = this.viewer.scene;
+    const canvas = scene.canvas.getBoundingClientRect();
+    const occluder = new Cesium.EllipsoidalOccluder(MARS, scene.camera.positionWC);
+    const ctx = document.createElement("canvas").getContext("2d")!;
+    ctx.font = "600 13px Inter, system-ui, sans-serif";
+    const now = Cesium.JulianDate.now();
+    const out: { name: string; left: number; top: number; right: number; bottom: number }[] = [];
+    for (const e of this.poleEntities) {
+      const pos = e.position?.getValue(now);
+      if (!e.label || !pos || !occluder.isPointVisible(pos)) continue;
+      const at = Cesium.SceneTransforms.worldToWindowCoordinates(scene, pos);
+      if (!at) continue;
+      const name = String(e.label.text?.getValue(now) ?? "");
+      const left = canvas.left + at.x + POLE_LABEL_GAP_PX;
+      out.push({ name, left, right: left + ctx.measureText(name).width + 16, top: canvas.top + at.y - 13, bottom: canvas.top + at.y + 13 });
+    }
+    return out;
+  }
+
   setZones(zones: ZonePin[], crater: (LonLat & { label: string; elevM: number }) | null): void {
     this.zoneArgs = [zones, crater];
     // On a narrow map a name beside its marker would be cut off at the map's edge:
@@ -919,7 +1051,7 @@ export class MapView {
     const at = Cesium.Cartesian3.fromDegrees(p.lon, p.lat, p.h + 3, MARS);
     if (!this.walker) {
       this.walker = {
-        dot: this.crewLayer.dot(at, markerImage("", COLORS.selected.toCssColorString(), 24, "#FFFFFF", 3), 24),
+        dot: this.crewLayer.dot(at, markerImage("", COLORS.selected.toCssColorString(), 24, "#FFFFFF", 3), 24, undefined, [CREW_DOT_FROM_M, Number.MAX_VALUE]),
         label: this.crewLayer.label(at, {
           text: label,
           font: "600 12px Inter, system-ui, sans-serif",
@@ -933,6 +1065,74 @@ export class MapView {
       this.walker.label.position = at;
       this.walker.label.text = label;
     }
+    this.redraw();
+  }
+
+  /**
+   * The astronauts as 3D figures at real size, one per crew member (at most 4), or none.
+   * `hide` = the one whose eyes the helmet view looks through (its figure would fill the view).
+   */
+  setCrew(spots: CrewSpot[], hide = -1): void {
+    this.crewNow = { spots, hide };
+    if (spots.length && !this.suitsLoading) this.suitsLoading = this.loadSuits();
+    this.placeCrew();
+  }
+
+  /** How many crew figures are loaded and shown (for tests and the dev tour). */
+  crewShown(): { loaded: number; shown: number; ready: number } {
+    return { loaded: this.suits.length, shown: this.suits.filter((m) => m.show).length, ready: this.suits.filter((m) => m.ready).length };
+  }
+
+  private async loadSuits(): Promise<void> {
+    for (let i = 0; i < CREW_MAX; i++) {
+      try {
+        // the same address each time: CesiumJS reads and decodes the file once and shares it
+        const m = await Cesium.Model.fromGltfAsync({
+          url: SUIT_URL,
+          credit: SUIT_CREDIT,
+          show: false,
+          shadows: Cesium.ShadowMode.DISABLED,
+          imageBasedLighting: suitLighting(),
+        });
+        m.readyEvent.addEventListener(() => this.redraw());
+        this.viewer.scene.primitives.add(m);
+        this.suits.push(m);
+      } catch (err) {
+        console.warn("The crew figure could not be loaded; the crew marker stays.", err);
+        return;
+      }
+    }
+    this.placeCrew();
+  }
+
+  private placeCrew(): void {
+    const { spots, hide } = this.crewNow;
+    this.suits.forEach((m, i) => {
+      const s = spots[i];
+      if (s) {
+        const at = Cesium.Cartesian3.fromDegrees(s.lon, s.lat, s.h, MARS);
+        const hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(s.headingDeg + SUIT_FACING_DEG), 0, 0);
+        m.modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(at, hpr, MARS);
+      }
+      const show = !!s && i !== hide;
+      if (m.show !== show) m.show = show;
+    });
+    this.crewTags.removeAll();
+    spots.forEach((s, i) => {
+      if (i === hide) return;
+      this.crewTags.add({
+        position: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, s.h + 2.2, MARS),
+        text: s.name,
+        font: "600 11px Inter, system-ui, sans-serif",
+        fillColor: Cesium.Color.WHITE,
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString("#0C1216").withAlpha(0.7),
+        backgroundPadding: new Cesium.Cartesian2(4, 2),
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, CREW_TAG_TO_M),
+      });
+    });
     this.redraw();
   }
 
@@ -1018,6 +1218,75 @@ export class MapView {
       orientation: { heading: Cesium.Math.toRadians(this.smoothHeading), pitch: Cesium.Math.toRadians(-7), roll: 0 },
     });
     this.redraw();
+  }
+
+  /**
+   * One step of a view button. Moves follow the camera's heading (forward = the way the camera
+   * looks, along the ground), heights stay above the ground, and steps grow with the height.
+   */
+  nudge(kind: Nudge, steps = 1): void {
+    const cam = this.viewer.camera;
+    this.home = null;
+    this.craterFit = null;
+    this.smoothHeading = null;
+    cam.lookAtTransform(Cesium.Matrix4.IDENTITY);
+    const here = Cesium.Cartographic.fromCartesian(cam.positionWC, MARS);
+    if (!here) return;
+    const lon = Cesium.Math.toDegrees(here.longitude);
+    const lat = Cesium.Math.toDegrees(here.latitude);
+    const ground = this.groundHeight(lon, lat);
+    const above = Math.max(CAMERA_MIN_ABOVE_GROUND_M, here.height - ground);
+    const step = Math.max(1, NUDGE_SHARE * above) * steps;
+    let heading = cam.heading;
+    let pitch = cam.pitch;
+    let dest = Cesium.Cartesian3.clone(cam.positionWC);
+    const lowest = () => ground + CAMERA_MIN_ABOVE_GROUND_M + 0.5;
+    if (kind === "forward" || kind === "back" || kind === "left" || kind === "right") {
+      const enu = Cesium.Transforms.eastNorthUpToFixedFrame(cam.positionWC, MARS);
+      const east = Cesium.Matrix4.getColumn(enu, 0, new Cesium.Cartesian4());
+      const north = Cesium.Matrix4.getColumn(enu, 1, new Cesium.Cartesian4());
+      const ang = heading + (kind === "back" ? Math.PI : kind === "left" ? -Math.PI / 2 : kind === "right" ? Math.PI / 2 : 0);
+      const dir = new Cesium.Cartesian3(east.x * Math.sin(ang) + north.x * Math.cos(ang), east.y * Math.sin(ang) + north.y * Math.cos(ang), east.z * Math.sin(ang) + north.z * Math.cos(ang));
+      const moved = Cesium.Cartesian3.add(cam.positionWC, Cesium.Cartesian3.multiplyByScalar(dir, step, dir), new Cesium.Cartesian3());
+      const to = Cesium.Cartographic.fromCartesian(moved, MARS);
+      if (!to) return;
+      const toGround = this.groundHeight(Cesium.Math.toDegrees(to.longitude), Cesium.Math.toDegrees(to.latitude));
+      to.height = Math.max(toGround + (here.height - ground), toGround + CAMERA_MIN_ABOVE_GROUND_M + 0.5); // the same height above the ground
+      dest = Cesium.Cartographic.toCartesian(to, MARS);
+    } else if (kind === "up" || kind === "down") {
+      const h = kind === "up" ? Math.min(CAMERA_MAX_M, here.height + step) : Math.max(lowest(), here.height - step);
+      dest = Cesium.Cartesian3.fromRadians(here.longitude, here.latitude, h, MARS);
+    } else if (kind === "turnLeft" || kind === "turnRight") {
+      heading += Cesium.Math.toRadians(NUDGE_TURN_DEG * steps * (kind === "turnLeft" ? -1 : 1));
+    } else if (kind === "tiltUp" || kind === "tiltDown") {
+      pitch = Cesium.Math.clamp(pitch + Cesium.Math.toRadians(NUDGE_TILT_DEG * steps * (kind === "tiltUp" ? 1 : -1)), -Cesium.Math.PI_OVER_TWO, Cesium.Math.toRadians(10));
+    } else {
+      // zoom: along the view direction, but never through the ground
+      const dist = step * 1.5 * (kind === "in" ? 1 : -1);
+      const moved = Cesium.Cartesian3.add(cam.positionWC, Cesium.Cartesian3.multiplyByScalar(cam.directionWC, dist, new Cesium.Cartesian3()), new Cesium.Cartesian3());
+      const to = Cesium.Cartographic.fromCartesian(moved, MARS);
+      if (!to) return;
+      const toGround = this.groundHeight(Cesium.Math.toDegrees(to.longitude), Cesium.Math.toDegrees(to.latitude));
+      if (to.height < toGround + CAMERA_MIN_ABOVE_GROUND_M + 0.5) return; // the ground is in the way
+      to.height = Math.min(CAMERA_MAX_M, to.height);
+      dest = Cesium.Cartographic.toCartesian(to, MARS);
+    }
+    cam.setView({ destination: dest, orientation: { heading, pitch, roll: 0 } });
+    this.redraw();
+  }
+
+  /** The ground's height under a place: the map's height grids near the zone, the drawn globe elsewhere. */
+  private groundHeight(lon: number, lat: number): number {
+    if (inside(this.context.meta, lon, lat)) return this.heightAt(lon, lat);
+    const h = this.viewer.scene.globe.getHeight(Cesium.Cartographic.fromDegrees(lon, lat, 0));
+    return h ?? 0;
+  }
+
+  /** The camera as numbers (for tests and the dev tour): place, height above the sphere, heading and tilt in degrees. */
+  cameraState(): { lon: number; lat: number; h: number; heading: number; pitch: number } {
+    const cam = this.viewer.camera;
+    const c = cam.positionCartographic;
+    return { lon: Cesium.Math.toDegrees(c.longitude), lat: Cesium.Math.toDegrees(c.latitude), h: c.height, heading: Cesium.Math.toDegrees(cam.heading), pitch: Cesium.Math.toDegrees(cam.pitch) };
   }
 
   /** Camera looking down on the walkers, north up (tablet map). */
