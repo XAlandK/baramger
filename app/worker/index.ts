@@ -4,7 +4,7 @@
 
 import { type AskRequest, type AskResponse, type CheckInfo, type HistoryTurn, LIMITS, MESSAGES, type PlanContext } from "./api";
 import { answerQuestion } from "./chain";
-import type { KeyName } from "./providers";
+import type { KeyName, UrlVar } from "./providers";
 import { PackageStore } from "./tools";
 
 export interface Env {
@@ -16,9 +16,19 @@ export interface Env {
   OPENROUTER_API_KEY?: string;
   MISTRAL_API_KEY?: string;
   CEREBRAS_API_KEY?: string;
+  CLOUDFLARE_AI_TOKEN?: string; // a token made with Cloudflare's "Workers AI" template
+  CLOUDFLARE_ACCOUNT_ID?: string; // goes into Workers AI's URL; not a secret on its own
 }
 
-const KEY_NAMES: KeyName[] = ["GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "MISTRAL_API_KEY", "CEREBRAS_API_KEY"];
+const KEY_NAMES: (KeyName | UrlVar)[] = [
+  "GEMINI_API_KEY",
+  "GROQ_API_KEY",
+  "OPENROUTER_API_KEY",
+  "MISTRAL_API_KEY",
+  "CEREBRAS_API_KEY",
+  "CLOUDFLARE_AI_TOKEN",
+  "CLOUDFLARE_ACCOUNT_ID",
+];
 
 let store: PackageStore | null = null; // one per Worker instance: package files are read once
 

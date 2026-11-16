@@ -5,13 +5,17 @@
 // is skipped. Every model is from a non-Chinese developer (rule C1); see docs/PLAN.md, "AI mission
 // assistant", for the checks behind each choice.
 
-export type KeyName = "GEMINI_API_KEY" | "GROQ_API_KEY" | "OPENROUTER_API_KEY" | "MISTRAL_API_KEY" | "CEREBRAS_API_KEY";
+export type KeyName = "GEMINI_API_KEY" | "GROQ_API_KEY" | "OPENROUTER_API_KEY" | "MISTRAL_API_KEY" | "CEREBRAS_API_KEY" | "CLOUDFLARE_AI_TOKEN";
+/** Settings that are not keys but go into a provider's URL (Cloudflare's account id). */
+export type UrlVar = "CLOUDFLARE_ACCOUNT_ID";
 
 export interface ProviderConfig {
   id: string;
   label: string; // shown under each answer: "Written by <label> · <model>"
   keyName: KeyName;
-  url: string; // the full chat-completions URL
+  url: string; // the full chat-completions URL; "{NAME}" in it is filled from the setting urlVar names
+  /** The setting that fills "{NAME}" in url. Without it the provider counts as not set up. */
+  urlVar?: UrlVar;
   model: string;
   why: string; // why this model (recorded for the team)
   maxTokensField: "max_tokens" | "max_completion_tokens";
@@ -124,7 +128,29 @@ export const PROVIDER_CHAIN: ProviderConfig[] = [
     toolMessageName: false,
     extra: { reasoning_effort: "low", reasoning_format: "hidden", parallel_tool_calls: false },
   },
+  {
+    id: "cloudflare",
+    label: "Cloudflare Workers AI",
+    keyName: "CLOUDFLARE_AI_TOKEN",
+    urlVar: "CLOUDFLARE_ACCOUNT_ID",
+    url: "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
+    model: "@cf/openai/gpt-oss-120b",
+    why: "Workers AI's own copy of gpt-oss-120b (OpenAI, US, Apache 2.0), run by Cloudflare (US); not one of the billed \"Third-party\" models. Free: 10,000 neurons a day per Cloudflare account (about 30 questions), shared with any other app on that account. Cloudflare does not train on customer content. Its catalogue also has Kimi, GLM, Qwen and DeepSeek, which are never called.",
+    maxTokensField: "max_tokens",
+    maxTokens: 2048,
+    requiredChoice: "required",
+    namedChoice: false, // not documented for Workers AI's OpenAI-compatible endpoint
+    toolMessageName: false,
+  },
 ];
+
+/** The URL to call: "{NAME}" filled from the setting `urlVar` names. Undefined when that setting is missing or malformed. */
+export function providerUrl(p: ProviderConfig, settings: Partial<Record<string, string | undefined>>): string | undefined {
+  if (!p.urlVar) return p.url;
+  const value = settings[p.urlVar]?.trim();
+  if (!value || !/^[0-9a-f]{32}$/i.test(value)) return undefined; // a Cloudflare account id is 32 hex digits
+  return p.url.replace(`{${p.urlVar}}`, value);
+}
 
 // ------------------------------------------------------------------ the client
 export interface ToolCall {

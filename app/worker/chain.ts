@@ -3,7 +3,7 @@
 // provider (never with the first provider's half-finished tool-call history: formats and IDs differ).
 
 import { LIMITS, MESSAGES, type AskRequest, type AskResponse, type Fact, type Skip, type SourceRef } from "./api";
-import { type AssistantMessage, type FailKind, type KeyName, PROVIDER_CHAIN, type ProviderConfig, callChat, requestBody } from "./providers";
+import { type AssistantMessage, type FailKind, type KeyName, PROVIDER_CHAIN, type ProviderConfig, type UrlVar, callChat, providerUrl, requestBody } from "./providers";
 import { FINAL_ANSWER, type PackageStore, TOOLS, runTool, toolSpecs } from "./tools";
 
 export interface ChainDeps {
@@ -17,7 +17,7 @@ export interface ChainDeps {
 
 export interface ChainInput {
   req: AskRequest;
-  keys: Partial<Record<KeyName, string | undefined>>;
+  keys: Partial<Record<KeyName | UrlVar, string | undefined>>; // keys, and settings that go into a URL
   store: PackageStore;
   country?: string; // the visitor's country (Cloudflare), for providers that may not serve some places
 }
@@ -121,8 +121,28 @@ function checkFinal(args: Record<string, unknown>, dataCalls: number): { ok: tru
   return { ok: true, kind: "answer", text: clean(answer), declared };
 }
 
+/**
+ * final_answer's arguments written as the reply text instead of a tool call (gpt-oss on Cloudflare Workers AI did
+ * this, 2026-11-16): a JSON object with a string "answer", maybe inside a ``` fence. Null for anything else.
+ */
+function answerJson(content: string): Record<string, unknown> | null {
+  const t = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  if (!t.startsWith("{") || !t.endsWith("}")) return null;
+  try {
+    const parsed: unknown = JSON.parse(t);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && typeof (parsed as { answer?: unknown }).answer === "string") {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // not JSON after all: read as plain text
+  }
+  return null;
+}
+
 /** A plain-text answer (answerMode "text", or a model that skipped final_answer), checked like a final_answer. */
 function checkText(content: string, dataCalls: number): { ok: true; kind: "answer" | "cannot_tell" | "off_topic"; text: string; declared: string[] } | { ok: false; detail: string } {
+  const json = answerJson(content);
+  if (json) return checkFinal(json, dataCalls); // never show the crew raw JSON
   let t = content.trim();
   if (/^\W*OFF[\s_-]*TOPIC\b/i.test(t)) return { ok: true, kind: "off_topic", text: MESSAGES.offTopic, declared: [] };
   let declared: string[] = [];
@@ -251,8 +271,11 @@ export async function answerQuestion(input: ChainInput, deps: ChainDeps): Promis
     const prompts = { tool: systemPrompt(input.req, zone, others, "tool"), text: systemPrompt(input.req, zone, others, "text") };
     const pkg = await input.store.pkg(zone.key);
     const names = new Map(pkg.sources.map((s) => [s.id.split("-")[0], s.name]));
-    for (const p of chain) {
-      const key = input.keys[p.keyName];
+    for (const listed of chain) {
+      // A provider whose URL needs a setting (Cloudflare's account id) counts as unset without it.
+      const url = providerUrl(listed, input.keys);
+      const p: ProviderConfig = { ...listed, url: url ?? listed.url };
+      const key = url === undefined ? undefined : input.keys[p.keyName];
       if (!key) {
         skipped.push({ provider: p.label, why: "no key set" });
         tries.push({ p: p.id, outcome: "no_key" });

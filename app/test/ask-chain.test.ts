@@ -6,8 +6,9 @@ import { PROVIDER_CHAIN, retryAfterSeconds } from "../worker/providers";
 import { diskStore } from "./disk-store";
 
 const store = diskStore();
-const ALL_KEYS = { GEMINI_API_KEY: "g", GROQ_API_KEY: "q", OPENROUTER_API_KEY: "o", MISTRAL_API_KEY: "m", CEREBRAS_API_KEY: "c" };
-const HOST: Record<string, string> = { "generativelanguage.googleapis.com": "gemini", "api.groq.com": "groq", "openrouter.ai": "openrouter", "api.mistral.ai": "mistral", "api.cerebras.ai": "cerebras" };
+const CF_ACCOUNT = "0123456789abcdef0123456789abcdef";
+const ALL_KEYS = { GEMINI_API_KEY: "g", GROQ_API_KEY: "q", OPENROUTER_API_KEY: "o", MISTRAL_API_KEY: "m", CEREBRAS_API_KEY: "c", CLOUDFLARE_AI_TOKEN: "f", CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT };
+const HOST: Record<string, string> = { "generativelanguage.googleapis.com": "gemini", "api.groq.com": "groq", "openrouter.ai": "openrouter", "api.mistral.ai": "mistral", "api.cerebras.ai": "cerebras", "api.cloudflare.com": "cloudflare" };
 
 type Body = { model: string; messages: { role: string; content?: string; tool_calls?: unknown[]; name?: string; tool_call_id?: string }[]; tool_choice: unknown; [k: string]: unknown };
 type Handler = (body: Body, signal: AbortSignal) => Promise<Response> | Response;
@@ -31,13 +32,13 @@ function goodModel(answer = "At 14:00 the air is about −49 °C (median of past
 const hang: Handler = (_b, signal) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
 
 function setup(handlers: Partial<Record<string, Handler>>, clock = { t: 1_000_000 }) {
-  const calls: { provider: string; body: Body }[] = [];
+  const calls: { provider: string; body: Body; url: string; auth: string }[] = [];
   const logs: Record<string, unknown>[] = [];
   const deps: ChainDeps = {
     fetch: (async (url: string, init: RequestInit) => {
       const provider = HOST[new URL(url).host];
       const body = JSON.parse(String(init.body)) as Body;
-      calls.push({ provider, body });
+      calls.push({ provider, body, url, auth: String((init.headers as Record<string, string>).Authorization) });
       const h = handlers[provider];
       if (!h) return json({ error: { message: "server down" } }, 503);
       return h(body, init.signal!);
@@ -61,7 +62,7 @@ beforeEach(() => resetRests());
 
 describe("the chain config", () => {
   it("keeps the agreed order and only non-Chinese models", () => {
-    expect(PROVIDER_CHAIN.map((p) => p.id)).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras"]);
+    expect(PROVIDER_CHAIN.map((p) => p.id)).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras", "cloudflare"]);
     for (const p of PROVIDER_CHAIN) expect(p.model).not.toMatch(/qwen|deepseek|kimi|moonshot|glm|zai|minimax|yi-|ernie|hunyuan|doubao/i);
   });
 
@@ -190,7 +191,7 @@ describe("fallback", () => {
     const t = setup({});
     const r = await ask(t.deps);
     expect(r).toEqual({ ok: false, error: "unavailable", message: MESSAGES.unavailable });
-    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras"]);
+    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras", "cloudflare"]);
     expect(t.logs.at(-1)).toMatchObject({ ok: false });
   });
 
@@ -348,3 +349,56 @@ describe("kinds of answers", () => {
     expect(r.text).not.toContain("**");
   });
 });
+
+describe("Cloudflare Workers AI (last in the chain)", () => {
+  const onlyCloudflare = { CLOUDFLARE_AI_TOKEN: "f", CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT };
+
+  it("is called at its account's URL, with the token and Workers AI's own gpt-oss-120b", async () => {
+    const t = setup({ cloudflare: goodModel() });
+    const r = answered(await ask(t.deps, Q, onlyCloudflare));
+    expect(r.provider).toBe("Cloudflare Workers AI");
+    expect(r.model).toBe("@cf/openai/gpt-oss-120b");
+    expect(t.calls[0].url).toBe(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/v1/chat/completions`);
+    expect(t.calls[0].auth).toBe("Bearer f");
+    expect(t.calls[0].body.model).toBe("@cf/openai/gpt-oss-120b");
+  });
+
+  it("is answered only after every other provider failed", async () => {
+    const t = setup({ cloudflare: goodModel() });
+    const r = answered(await ask(t.deps));
+    expect(r.provider).toBe("Cloudflare Workers AI");
+    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras", "cloudflare"]);
+  });
+
+  it("without the account id (or with a malformed one) it counts as not set up, and nothing is sent", async () => {
+    for (const account of [undefined, "", "acc123", `${CF_ACCOUNT}/../x`]) {
+      const t = setup({ cloudflare: goodModel() });
+      const r = await ask(t.deps, Q, { CLOUDFLARE_AI_TOKEN: "f", CLOUDFLARE_ACCOUNT_ID: account });
+      expect(r.ok).toBe(false);
+      expect(t.calls).toHaveLength(0);
+    }
+  });
+});
+
+describe("a model that writes final_answer's arguments as text (gpt-oss on Workers AI, 2026-11-16)", () => {
+  const lookThenSay = (content: string): Handler => (body) =>
+    body.messages.some((m) => m.role === "tool") ? textReply(content) : toolReply(call("get_conditions", { zone: "z2", local_time: "14:00" }));
+
+  it("the JSON is read as a final answer: the crew sees the answer, never the braces", async () => {
+    const reply = JSON.stringify({ answer: "At 14:00 the air is about −49 °C.", sources: ["S4"], cannot_tell: false, off_topic: false });
+    const t = setup({ gemini: lookThenSay(reply) });
+    const r = answered(await ask(t.deps, Q, { GEMINI_API_KEY: "g" }));
+    expect(r.text).toBe("At 14:00 the air is about −49 °C.");
+    expect(r.text).not.toContain("{");
+    expect(r.sources.map((s) => s.id)).toContain("S4");
+  });
+
+  it("also inside a ``` fence, and with cannot_tell", async () => {
+    const reply = "```json\n" + JSON.stringify({ answer: "I can't tell from the mission data.", sources: [], cannot_tell: true, off_topic: false }) + "\n```";
+    const t = setup({ gemini: lookThenSay(reply) });
+    const r = answered(await ask(t.deps, Q, { GEMINI_API_KEY: "g" }));
+    expect(r.kind).toBe("cannot_tell");
+    expect(r.text.startsWith(MESSAGES.cannotTell)).toBe(true);
+  });
+});
+

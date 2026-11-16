@@ -1,4 +1,4 @@
-// LIVE check of the five providers with real keys: the five example questions, in both zones,
+// LIVE check of the providers with real keys: the five example questions, in both zones,
 // one provider at a time, through the Worker's own chain and tools (only the HTTP layer is left out).
 // Skipped unless ASK_LIVE=1. Keys are read from app/.dev.vars (git-ignored). Never run in CI.
 //
@@ -8,6 +8,7 @@
 //   ASK_DEBUG=1     also writes each raw provider reply (cut to 1,500 characters; replies never hold the key)
 //   ASK_Q=3,4       only these questions (1 = the first)
 //   ASK_PATCH='{"requiredChoice":"auto"}'   try other provider settings (merged into the provider's config)
+//   ASK_KEYS_FILE=<file>  read the keys from that file instead of app/.dev.vars
 //
 // It prints one line per question: provider, zone, kind, tools, time, and the start of the answer.
 import { appendFile, readFile } from "node:fs/promises";
@@ -30,7 +31,8 @@ const out = async (line: string) => {
 };
 
 async function keys(): Promise<Record<string, string>> {
-  const text = await readFile(new URL("../.dev.vars", import.meta.url).pathname, "utf8").catch(() => "");
+  // ASK_KEYS_FILE reads the keys from another file in the same KEY=value form (e.g. a short-lived token).
+  const text = await readFile(env.ASK_KEYS_FILE ?? new URL("../.dev.vars", import.meta.url).pathname, "utf8").catch(() => "");
   const out: Record<string, string> = {};
   for (const line of text.split("\n")) {
     const m = /^\s*([A-Z_]+)\s*=\s*"?([^"\r]*)"?\s*$/.exec(line);
@@ -99,7 +101,7 @@ describe.skipIf(!LIVE)("live providers", () => {
           resetRests();
           const logs: Record<string, unknown>[] = [];
           const r = await answerQuestion(
-            { req: { zone, question, context: ctx }, keys: { [p.keyName]: k[p.keyName] }, store },
+            { req: { zone, question, context: ctx }, keys: { [p.keyName]: k[p.keyName], ...(p.urlVar ? { [p.urlVar]: k[p.urlVar] } : {}) }, store },
             { fetch: env.ASK_DEBUG ? debugFetch : fetch, now: () => Date.now(), log: (e) => logs.push(e), chain: [p], perProviderMs: 30_000, totalMs: 40_000 },
           );
           results.push(r);
