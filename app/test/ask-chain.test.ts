@@ -2,7 +2,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { MESSAGES, type AskAnswer, type AskRequest, type AskResponse } from "../worker/api";
 import { answerQuestion, resetRests, type ChainDeps } from "../worker/chain";
-import { PROVIDER_CHAIN, retryAfterSeconds } from "../worker/providers";
+import { CEREBRAS, GEMINI, PROVIDER_CHAIN, retryAfterSeconds } from "../worker/providers";
+
+/** The chain the general tests run on: the real one with a Gemini-shaped provider in front, as it was until
+ * 2026-11-16, so the fallback rules (rests, thought signatures, country skips) stay covered. */
+const TEST_CHAIN = [GEMINI, ...PROVIDER_CHAIN];
 import { diskStore } from "./disk-store";
 
 const store = diskStore();
@@ -45,6 +49,7 @@ function setup(handlers: Partial<Record<string, Handler>>, clock = { t: 1_000_00
     }) as typeof fetch,
     now: () => clock.t,
     log: (e) => logs.push(e),
+    chain: TEST_CHAIN,
     perProviderMs: 200,
     totalMs: 2000,
   };
@@ -62,7 +67,7 @@ beforeEach(() => resetRests());
 
 describe("the chain config", () => {
   it("keeps the agreed order and only non-Chinese models", () => {
-    expect(PROVIDER_CHAIN.map((p) => p.id)).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras", "cloudflare"]);
+    expect(PROVIDER_CHAIN.map((p) => p.id)).toEqual(["groq", "openrouter", "mistral", "cloudflare"]);
     for (const p of PROVIDER_CHAIN) expect(p.model).not.toMatch(/qwen|deepseek|kimi|moonshot|glm|zai|minimax|yi-|ernie|hunyuan|doubao/i);
   });
 
@@ -77,7 +82,7 @@ describe("one provider answers", () => {
     const t = setup({ gemini: goodModel() });
     const r = answered(await ask(t.deps));
     expect(r.provider).toBe("Gemini (Google)");
-    expect(r.model).toBe(PROVIDER_CHAIN[0].model);
+    expect(r.model).toBe(GEMINI.model);
     expect(r.kind).toBe("answer");
     expect(r.tools).toEqual(["get_conditions"]);
     expect(r.sources.map((s) => s.id)).toEqual(["S4"]);
@@ -191,7 +196,7 @@ describe("fallback", () => {
     const t = setup({});
     const r = await ask(t.deps);
     expect(r).toEqual({ ok: false, error: "unavailable", message: MESSAGES.unavailable });
-    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras", "cloudflare"]);
+    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cloudflare"]);
     expect(t.logs.at(-1)).toMatchObject({ ok: false });
   });
 
@@ -367,7 +372,7 @@ describe("Cloudflare Workers AI (last in the chain)", () => {
     const t = setup({ cloudflare: goodModel() });
     const r = answered(await ask(t.deps));
     expect(r.provider).toBe("Cloudflare Workers AI");
-    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cerebras", "cloudflare"]);
+    expect(t.providersCalled()).toEqual(["gemini", "groq", "openrouter", "mistral", "cloudflare"]);
   });
 
   it("without the account id (or with a malformed one) it counts as not set up, and nothing is sent", async () => {
@@ -399,6 +404,25 @@ describe("a model that writes final_answer's arguments as text (gpt-oss on Worke
     const r = answered(await ask(t.deps, Q, { GEMINI_API_KEY: "g" }));
     expect(r.kind).toBe("cannot_tell");
     expect(r.text.startsWith(MESSAGES.cannotTell)).toBe(true);
+  });
+});
+
+describe("the chain since 2026-11-16 (team decisions)", () => {
+  it("has no Gemini (its terms exclude sites likely visited by under-18s) and no Cerebras (no free tier)", () => {
+    const ids = PROVIDER_CHAIN.map((p) => p.id);
+    expect(ids).not.toContain(GEMINI.id);
+    expect(ids).not.toContain(CEREBRAS.id);
+  });
+
+  it("the real chain never calls Gemini, even with its key set", async () => {
+    const t = setup({ gemini: goodModel(), groq: goodModel() });
+    const r = answered(await answerQuestion({ req: Q, keys: ALL_KEYS, store }, { ...t.deps, chain: undefined }));
+    expect(r.provider).toBe("Groq");
+    expect(t.providersCalled()).not.toContain("gemini");
+  });
+
+  it("Cloudflare gets its own 25 s, not the chain's 15 s", () => {
+    expect(PROVIDER_CHAIN.find((p) => p.id === "cloudflare")?.timeoutMs).toBe(25_000);
   });
 });
 

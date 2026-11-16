@@ -1,6 +1,7 @@
 // The AI providers and one small chat-completions client for all of them.
 //
-// PROVIDER_CHAIN is the fallback order. Change the order (or a model) here only; the chain logic
+// PROVIDER_CHAIN is the fallback order: Groq, OpenRouter, Mistral, Cloudflare Workers AI (since 2026-11-16; Gemini and
+// Cerebras are defined below it but not used). Change the order (or a model) here only; the chain logic
 // in chain.ts reads this list and has no provider names in it. A provider whose key is not set
 // is skipped. Every model is from a non-Chinese developer (rule C1); see docs/PLAN.md, "AI mission
 // assistant", for the checks behind each choice.
@@ -36,34 +37,42 @@ export interface ProviderConfig {
    * ending with a "Sources:" line. gpt-oss on Groq loses a final_answer call (empty reply, tested 2026-11-15).
    */
   answerMode?: "tool" | "text";
+  /** Its own time per question instead of the chain's 15 s (Workers AI's gpt-oss took up to 25 s on 2026-11-16). */
+  timeoutMs?: number;
 }
 
+/**
+ * Gemini: out of the chain since 2026-11-16 (team decision). Google's Gemini API terms forbid using it in a site
+ * "likely to be accessed by individuals under the age of 18", and Baramger is a public NASA Space Apps site that
+ * students visit. Kept here, unused, in case that changes; the chain tests still use it as a Gemini-shaped provider.
+ */
+export const GEMINI: ProviderConfig = {
+  id: "gemini",
+  label: "Gemini (Google)",
+  keyName: "GEMINI_API_KEY",
+  url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+  model: "gemini-3.5-flash-lite",
+  why: "Google's advice for new projects (gemini-2.5-flash is redirected to it on 2026-12-01); fastest current model, function calling on the free tier; Google (US). Thinking set to low: Google warns that minimal thinking can end tool use too early.",
+  maxTokensField: "max_tokens",
+  maxTokens: 2048, // thinking and answer together
+  requiredChoice: "required",
+  namedChoice: false, // not documented for the Gemini compatibility layer
+  toolMessageName: true,
+  extra: { extra_body: { google: { thinking_config: { thinking_level: "low" } } } },
+  // Free-tier terms: no API clients for users in the EEA, Switzerland or the UK, and only in Gemini's
+  // available regions. The chain skips Gemini for visitors from these places (Cloudflare's country code).
+  skipCountries: [
+    // EEA (EU 27 + Iceland, Liechtenstein, Norway), Switzerland, United Kingdom
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+    "IS", "LI", "NO", "CH", "GB",
+    // EU outermost regions with their own codes
+    "GP", "MQ", "GF", "RE", "YT", "MF",
+    // not in Gemini's list of available regions (read 2026-11-15); T1 = Tor (place unknown)
+    "AF", "BY", "CN", "CU", "HK", "IR", "KP", "MM", "MO", "RU", "SY", "T1",
+  ],
+};
+
 export const PROVIDER_CHAIN: ProviderConfig[] = [
-  {
-    id: "gemini",
-    label: "Gemini (Google)",
-    keyName: "GEMINI_API_KEY",
-    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    model: "gemini-3.5-flash-lite",
-    why: "Google's advice for new projects (gemini-2.5-flash is redirected to it on 2026-12-01); fastest current model, function calling on the free tier; Google (US). Thinking set to low: Google warns that minimal thinking can end tool use too early.",
-    maxTokensField: "max_tokens",
-    maxTokens: 2048, // thinking and answer together
-    requiredChoice: "required",
-    namedChoice: false, // not documented for the Gemini compatibility layer
-    toolMessageName: true,
-    extra: { extra_body: { google: { thinking_config: { thinking_level: "low" } } } },
-    // Free-tier terms: no API clients for users in the EEA, Switzerland or the UK, and only in Gemini's
-    // available regions. The chain skips Gemini for visitors from these places (Cloudflare's country code).
-    skipCountries: [
-      // EEA (EU 27 + Iceland, Liechtenstein, Norway), Switzerland, United Kingdom
-      "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
-      "IS", "LI", "NO", "CH", "GB",
-      // EU outermost regions with their own codes
-      "GP", "MQ", "GF", "RE", "YT", "MF",
-      // not in Gemini's list of available regions (read 2026-11-15); T1 = Tor (place unknown)
-      "AF", "BY", "CN", "CU", "HK", "IR", "KP", "MM", "MO", "RU", "SY", "T1",
-    ],
-  },
   {
     id: "groq",
     label: "Groq",
@@ -115,20 +124,6 @@ export const PROVIDER_CHAIN: ProviderConfig[] = [
     // free key (tested 2026-11-15): 2 requests and 40,000 tokens a minute for each Ministral model, 0 for Mistral Small
   },
   {
-    id: "cerebras",
-    label: "Cerebras",
-    keyName: "CEREBRAS_API_KEY",
-    url: "https://api.cerebras.ai/v1/chat/completions",
-    model: "gpt-oss-120b",
-    why: "The only non-Chinese model on Cerebras's shared endpoints; OpenAI (US), Apache 2.0.",
-    maxTokensField: "max_completion_tokens",
-    maxTokens: 1536, // counted against the token quota before the call runs: keep it modest
-    requiredChoice: "required",
-    namedChoice: true,
-    toolMessageName: false,
-    extra: { reasoning_effort: "low", reasoning_format: "hidden", parallel_tool_calls: false },
-  },
-  {
     id: "cloudflare",
     label: "Cloudflare Workers AI",
     keyName: "CLOUDFLARE_AI_TOKEN",
@@ -141,8 +136,25 @@ export const PROVIDER_CHAIN: ProviderConfig[] = [
     requiredChoice: "required",
     namedChoice: false, // not documented for Workers AI's OpenAI-compatible endpoint
     toolMessageName: false,
+    timeoutMs: 25_000, // live test 2026-11-16: answers took 5–25 s; the chain's 45 s total still applies
   },
 ];
+
+/** Cerebras: out of the chain since 2026-11-16. Its free tier ended in July 2026 (every call answered 402). */
+export const CEREBRAS: ProviderConfig = {
+  id: "cerebras",
+  label: "Cerebras",
+  keyName: "CEREBRAS_API_KEY",
+  url: "https://api.cerebras.ai/v1/chat/completions",
+  model: "gpt-oss-120b",
+  why: "The only non-Chinese model on Cerebras's shared endpoints; OpenAI (US), Apache 2.0.",
+  maxTokensField: "max_completion_tokens",
+  maxTokens: 1536, // counted against the token quota before the call runs: keep it modest
+  requiredChoice: "required",
+  namedChoice: true,
+  toolMessageName: false,
+  extra: { reasoning_effort: "low", reasoning_format: "hidden", parallel_tool_calls: false },
+};
 
 /** The URL to call: "{NAME}" filled from the setting `urlVar` names. Undefined when that setting is missing or malformed. */
 export function providerUrl(p: ProviderConfig, settings: Partial<Record<string, string | undefined>>): string | undefined {

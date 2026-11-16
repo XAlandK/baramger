@@ -298,7 +298,9 @@ export async function answerQuestion(input: ChainInput, deps: ChainDeps): Promis
         break;
       }
       const started = deps.now();
-      const out = await tryProvider(p, key, input, zones.map((z) => z.key), prompts[p.answerMode ?? "tool"], started + Math.min(perProvider, left), deps);
+      // a provider may have its own time (Cloudflare: 25 s); a test's perProviderMs wins
+      const own = deps.perProviderMs ?? p.timeoutMs ?? perProvider;
+      const out = await tryProvider(p, key, input, zones.map((z) => z.key), prompts[p.answerMode ?? "tool"], started + Math.min(own, left), deps);
       const ms = deps.now() - started;
       if (out.ok) {
         tries.push({ p: p.id, outcome: "answered", ms, rounds: out.rounds });
